@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+{% load static %}
+{% with version="?version=1" %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link href="{% static 'css/googleapis-css2.css' %}{{version}}" rel="stylesheet">
+    <title>Weaver</title>
+    <link rel="shortcut icon" href="{% static 'img/favicon.png' %}{{version}}">
+
+    <!-- CSS -->
+    <link href="{% static 'css/bootstrap.min.css' %}{{version}}" rel="stylesheet"
+          integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor">
+    <link rel="stylesheet" type="text/css" media="all" href="{% static 'css/style.css' %}{{version}}"/>
+    <link rel="stylesheet" type="text/css" media="all" href="{% static 'css/style_inventory.css' %}{{version}}"/>
+    <link rel="stylesheet" type="text/css" media="all" href="{% static 'css/style_protocols.css' %}{{version}}"/>
+    <link rel="stylesheet" href="{% static 'css/bootstrap-icons.css' %}{{version}}">
+    <link rel="stylesheet" type="text/css" media="print" href="{% static 'css/style_inventory_print.css' %}{{version}}"/>
+    <!-- /CSS -->
+
+    <!-- JS -->
+    <script type="text/javascript" src="{% static 'js/bootstrap.bundle.min.js' %}{{version}}" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2"></script>
+    <script type="text/javascript" src="{% static 'js/jquery-3.6.0.min.js' %}{{version}}"></script>
+    <script type="text/javascript" src="{% static 'js/inventory.js' %}{{version}}"></script>
+    <script type="text/javascript" src="{% static 'js/protocols.js' %}{{version}}"></script>
+    <script type="text/javascript" src="{% static 'js/qrcode.min.js' %}{{version}}"></script>
+    <script type="text/javascript" src="{% static 'js/table_search.js' %}{{version}}"></script>
+    {% if request.get_full_path == "/inventory/plasmid/create/wizard" %}
+    <script defer type="text/javascript" src="{% static 'js/wizard.js' %}{{version}}"></script>
+    {% endif %}
+    {% if request.get_full_path == "/inventory/plasmids/" %}
+    <script defer type="text/javascript" src="{% static 'js/plasmids_table.js' %}{{version}}"></script>
+    {% endif %}
+    {% if request.get_full_path == "/inventory/glycerolstocks/" %}
+    <script defer type="text/javascript" src="{% static 'js/glycerolstocks_table.js' %}{{version}}"></script>
+    {% endif %}
+    {% if request.get_full_path == "/inventory/services/gtr/" %}
+    <!-- <script defer type="text/javascript" src="{% static 'js/gtr.js' %}{{version}}"></script>-->
+    {% endif %}
+    {% if request.get_full_path == "/inventory/services/l0d/" %}
+    <script>!function(e){function r(r){for(var n,l,f=r[0],i=r[1],a=r[2],c=0,s=[];c<f.length;c++)l=f[c],Object.prototype.hasOwnProperty.call(o,l)&&o[l]&&s.push(o[l][0]),o[l]=0;for(n in i)Object.prototype.hasOwnProperty.call(i,n)&&(e[n]=i[n]);for(p&&p(r);s.length;)s.shift()();return u.push.apply(u,a||[]),t()}function t(){for(var e,r=0;r<u.length;r++){for(var t=u[r],n=!0,f=1;f<t.length;f++){var i=t[f];0!==o[i]&&(n=!1)}n&&(u.splice(r--,1),e=l(l.s=t[0]))}return e}var n={},o={1:0},u=[];function l(r){if(n[r])return n[r].exports;var t=n[r]={i:r,l:!1,exports:{}};return e[r].call(t.exports,t,t.exports,l),t.l=!0,t.exports}l.m=e,l.c=n,l.d=function(e,r,t){l.o(e,r)||Object.defineProperty(e,r,{enumerable:!0,get:t})},l.r=function(e){"undefined"!=typeof Symbol&&Symbol.toStringTag&&Object.defineProperty(e,Symbol.toStringTag,{value:"Module"}),Object.defineProperty(e,"__esModule",{value:!0})},l.t=function(e,r){if(1&r&&(e=l(e)),8&r)return e;if(4&r&&"object"==typeof e&&e&&e.__esModule)return e;var t=Object.create(null);if(l.r(t),Object.defineProperty(t,"default",{enumerable:!0,value:e}),2&r&&"string"!=typeof e)for(var n in e)l.d(t,n,function(r){return e[r]}.bind(null,n));return t},l.n=function(e){var r=e&&e.__esModule?function(){return e.default}:function(){return e};return l.d(r,"a",r),r},l.o=function(e,r){return Object.prototype.hasOwnProperty.call(e,r)},l.p="/";var f=this.webpackJsonpl0d=this.webpackJsonpl0d||[],i=f.push.bind(f);f.push=r,f=f.slice();for(var a=0;a<f.length;a++)r(f[a]);var p=i;t()}([])</script>
+    <script defer type="text/javascript" src="{% static 'js/l0d.2.js' %}{{version}}"></script>
+    <script defer type="text/javascript" src="{% static 'js/l0d.js' %}{{version}}"></script>
+    <link rel="stylesheet" type="text/css" media="all" href="{% static 'css/l0d.css' %}{{version}}"/>
+    {% endif %}
+    <!-- /JS -->
+
+    <!-- Sorteable tables -->
+    <link rel="stylesheet" type="text/css" media="all" href="{% static 'css/bootstrap-sortable.css' %}{{version}}"/>
+    <script type="text/javascript" src="{% static 'js/moment.min.js' %}{{version}}"></script>
+    <script type="text/javascript" src="{% static 'js/bootstrap-sortable.js' %}{{version}}"></script>
+    <!-- /Sorteable tables -->
+    <!-- /plasmid sequence viewer -->
+
+    <!-- Select2 -->
+    <link rel="stylesheet" type="text/css" href="{% static 'css/select2.min.css' %}{{version}}"/>
+    <script type="text/javascript" src="{% static 'js/select2.min.js' %}{{version}}"></script>
+    <!-- /Select2 -->
+
+    <!-- OVE -->
+    <link rel="stylesheet" type="text/css" href="{% static 'css/ove-main.css' %}{{version}}"/>
+    <script type="text/javascript" src="{% static 'js/bio-parsers.js' %}{{version}}"></script>
+    <!-- /OVE -->
+
+</head>
+<body>
+<nav>
+    <div class="container">
+        <div id="nav-wrapper">
+            <div id="nav-logo" class="mt-4">
+                <a href="/">
+                    <img src="{% static 'img/logo.png' %}{{version}}" alt="Weaver logo"/>
+                </a>
+            </div>
+            <div id="nav-right">
+                <div id="nav-session">
+                    {% if user.is_authenticated %}
+                    <span>Welcome, {{ user.get_username }}</span>
+                    <a href="{% url 'profile' %}" class="btn btn-outline-secondary" role="button">Profile</a>
+                    <a href="{% url 'logout_view' %}" class="btn btn-outline-secondary" role="button">Logout</a>
+                    {% else %}
+                    <a href="{% url 'login_view' %}" class="btn btn-outline-secondary" role="button">Login</a>
+                    {% endif %}
+                </div>
+                <div id="nav-menu" class="nav justify-content-end mt-2">
+                    <div class="btn-group me-2 dropdown-center">
+                      <a role="button" class="btn btn-light border" href="{% url 'plasmids' %}">Plasmids</a>
+                      <button type="button" class="btn btn-secondary opacity-25 dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                        <span class="visually-hidden">Toggle Dropdown</span>
+                      </button>
+                      <ul class="dropdown-menu">
+                        <li><a class="dropdown-item text-center small" href="{% url 'plasmid_validations' %}">Validation</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-center small" href="{% url 'plasmid_create_wizard' %}">+ Create</a></li>
+                      </ul>
+                    </div>
+                    <div class="btn-group me-2 dropdown-center">
+                      <a role="button" class="btn btn-light border" href="{% url 'glycerolstocks' %}">Glycerol Stocks</a>
+                      <button type="button" class="btn btn-secondary opacity-25 dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                        <span class="visually-hidden">Toggle Dropdown</span>
+                      </button>
+                      <ul class="dropdown-menu">
+                        <li><a class="dropdown-item text-center small" href="{% url 'glycerolstock_boxes' %}">Boxes</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-center small" href="{% url 'glycerolstock_create' %}">+ Create</a></li>
+                      </ul>
+                    </div>
+                    <div class="btn-group me-2 dropdown-center">
+                      <a role="button" class="btn btn-light border" href="{% url 'recipes' %}">Recipes</a>
+                      <button type="button" class="btn btn-secondary opacity-25 dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                        <span class="visually-hidden">Toggle Dropdown</span>
+                      </button>
+                      <ul class="dropdown-menu">
+                        <li><a class="dropdown-item text-center small" href="{% url 'recipe_create' %}">+ Create</a></li>
+                      </ul>
+                    </div>
+                    <div class="btn-group me-2 dropdown-center">
+                      <button class="btn btn-light border dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Components</button>
+                      <ul class="dropdown-menu">
+                          <li><a class="dropdown-item text-center small" href="{% url 'primers' %}">Primers</a></li>
+                          <li><a class="dropdown-item text-center small" href="{% url 'restrictionenzymes' %}">Restriction Enzymes</a></li>
+                      </ul>
+                    </div>
+                    <div class="btn-group me-2 dropdown-center">
+                      <button class="btn btn-light border dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Services</button>
+                      <ul class="dropdown-menu">
+                          <li><a class="dropdown-item text-center small" href="{% url 'services-l0d' %}">L0 Designer</a></li>
+                          <li><a class="dropdown-item text-center small" href="{% url 'services-blast' %}">Blast</a></li>
+                          <li><a class="dropdown-item text-center small" href="{% url 'services-gtr' %}">GTR</a></li>
+                          <li><a class="dropdown-item text-center small" href="{% url 'services-stats' %}">Stats</a></li>
+                      </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+{% endwith %}
+<div class="container">

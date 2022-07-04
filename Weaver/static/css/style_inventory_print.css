@@ -1,0 +1,66 @@
+
+/* print */
+#label-instructions,
+#label-print-button,
+#header,
+nav,
+#footer,
+#recipe-concentration-wrapper{
+    display:none !important;
+}
+div#label {
+    position:absolute;
+    left: 0;
+    top: 0;
+    height: 18mm;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    margin-top: .12in;
+    margin-left: .85in;
+    background: none;
+    /*transform: rotate(90deg);
+    transform-origin: 9mm 9mm; */
+}
+div#label.plasmid {
+    margin-left: .2in;
+    transform: rotate(90deg);
+    transform-origin: 10mm 10mm;
+}
+div#label-qrcode {
+    border-right: solid 1px #000;
+}
+div#label-qrcode img {
+    width: 18mm;
+    padding: 0;
+    margin: 0;
+    margin-right: 24mm;
+    margin-left: 4mm;
+}
+div#label-info{
+    margin: 0;
+    padding: 0;
+}
+div#label.plasmid div#label-info > *{
+    margin-bottom: .45rem;
+}
+div#label-info p#label-name {
+    font-size: .7rem;
+    line-height: 1em;
+    margin: 0;
+    margin-bottom: .5rem;
+}
+div#label.plasmid div#label-info p#label-name {
+    font-size: .5rem;
+    margin-top: .5rem;
+}
+div#label-info p:not(#label-name) {
+    font-size: .4rem;
+    line-height: 1em;
+    padding: 0;
+}
+div#label-info p#label-id{
+    font-size: .2rem;
+    line-height: 1em;
+    margin-top: .25rem;
+}

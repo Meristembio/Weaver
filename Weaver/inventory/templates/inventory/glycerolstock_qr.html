@@ -1,0 +1,11 @@
+{% include "./parts/header.html" %}
+{% load general_extras %}
+<div id="header">
+    <h1>Glycerol Stocks / QR</h1>
+</div>
+<form method="post">
+    {% csrf_token %}
+    {{glycerol_qr_nput_form.as_p}}
+    <input type="submit" value="Go">
+</form>
+{% include "./parts/footer.html" %}

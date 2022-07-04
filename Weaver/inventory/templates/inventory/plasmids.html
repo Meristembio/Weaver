@@ -1,0 +1,47 @@
+{% include "./parts/header.html" %}
+{% load general_extras %}
+{% load humanize %}
+{% load mathfilters %}
+<div id="header">
+    <h1>Plasmids</h1>
+    <div id="header-links">
+        <a href="{% url 'plasmids' %}" class="btn btn-secondary" role="button"><i class="bi bi-arrow-clockwise"></i></a>
+        {% if perms.inventory.change_plasmid %}
+        <a href="{% url 'plasmid_create_wizard' %}" class="btn btn-primary" role="button" target="_blank"><i
+                class="bi bi-plus"></i> Create</a>
+        {% endif %}
+    </div>
+</div>
+{% include "./form_results.html" %}
+{% if plasmids %}
+<div id="build-enzymes">
+    <form method="post" class="default-style">
+        {% csrf_token %}
+        {% for enzyme in RESTRICTION_ENZYMES %}
+        <input type="hidden" name="create_from_parts"/>
+        <button class="btn btn-outline-primary" role="button" name="enzyme" value="{{enzyme.name}}">
+            {{enzyme.name}}
+        </button>
+        {% endfor %}
+    </form>
+</div>
+<div id="plasmids-list">
+    <div id="plasmids-tables">
+        <div class="row">
+            <div class="col-8">
+                <div id="plasmids-filter" class="pe-table-filter">
+                    {% include "./parts/table_filters.html" %}
+                </div>
+            </div>
+            <div class="col-4">
+                {% include "./parts/table_search.html" with object_type="plasmids" %}
+            </div>
+        </div>
+        <div id="root-plasmids">
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-warning">No plasmids found.</div>
+{% endif %}
+{% include "./parts/footer.html" %}

@@ -1,0 +1,29 @@
+{% include "inventory/parts/header.html" %}
+<h1>Profile / Welcome, {{ user.get_username }}</h1>
+<div class="alert alert-light border mt-4 mb-4">
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th scope="col">Property</th>
+                <th scope="col">Value</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <th scope="row">Username</th>
+                <td>{{user.get_username}}</td>
+            </tr>
+            <tr>
+                <th scope="row">Name</th>
+                <td>{{user.first_name}}</td>
+            </tr>
+            <tr>
+                <th scope="row">Last name</th>
+                <td>{{user.last_name}}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+<h1>Links</h1>
+{% include "inventory/front-page.html" %}
+{% include "inventory/parts/footer.html" %}

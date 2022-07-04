@@ -1,0 +1,109 @@
+{% if request.GET.form_result_plasmid_edit_success %}
+<div class="alert alert-success" role="alert">
+  Plasmid edited!
+</div>
+{% endif %}
+
+{% if request.GET.form_result_plasmid_create_success %}
+<div class="alert alert-success" role="alert">
+  Plasmid created! {% if perms.inventory.add_glycerolstock %}
+        <a href="{% url 'plasmid_create' %}" class="btn btn-primary" role="button">Create new one</a>
+        {% endif %}
+</div>
+{% endif %}
+
+{% if request.GET.form_result_glycerolstock_edit_success %}
+<div class="alert alert-success" role="alert">
+  Glycerol stock edited!
+</div>
+{% endif %}
+
+{% if request.GET.form_result_glycerolstock_create_success %}
+<div class="alert alert-success" role="alert">
+  Glycerol stock created! {% if perms.inventory.add_glycerolstock %}
+        <a href="{% url 'glycerolstock_create' %}" class="btn btn-primary" role="button">Create new one</a>
+        {% endif %}
+</div>
+{% endif %}
+
+{% if request.GET.form_result_recipe_edit_success %}
+<div class="alert alert-success" role="alert">
+  Recipe edited!
+</div>
+{% endif %}
+
+{% if request.GET.form_result_recipe_create_success %}
+<div class="alert alert-success" role="alert">
+  Recipe created! {% if perms.protocols.add_recipe %}
+        <a href="{% url 'recipe_create' %}" class="btn btn-primary" role="button">Create new one</a>
+        {% endif %}
+</div>
+{% endif %}
+
+{% if request.GET.form_result_restrictionenzyme_edit_success %}
+<div class="alert alert-success" role="alert">
+  Restriction enzyme edited!
+</div>
+{% endif %}
+
+{% if request.GET.form_result_restrictionenzyme_create_success %}
+<div class="alert alert-success" role="alert">
+  Restriction enzyme created! {% if perms.inventory.add_restrictionenzime %}
+        <a href="{% url 'restrictionenzyme_create' %}" class="btn btn-primary" role="button">Create new one</a>
+        {% endif %}
+</div>
+{% endif %}
+
+{% if request.GET.form_result_component_edit_success %}
+<div class="alert alert-success" role="alert">
+  Component edited!
+</div>
+{% endif %}
+
+{% if request.GET.form_result_component_create_success %}
+<div class="alert alert-success" role="alert">
+  Component created! {% if perms.protocols.add_component %}
+        <a href="{% url 'component_create' %}" class="btn btn-primary" role="button">Create new Component</a>
+        {% endif %}
+</div>
+{% endif %}
+
+{% if request.GET.form_result_reactive_create_success %}
+<div class="alert alert-success" role="alert">
+  Reactive created! {% if perms.protocols.add_reactive %}
+        <a href="{% url 'reactive_create' %}" class="btn btn-primary" role="button">Create new Reactive</a>
+        {% endif %}
+</div>
+{% endif %}
+
+{% if request.GET.form_result_reactive_edit_success %}
+<div class="alert alert-success" role="alert">
+  Reactive edited!
+</div>
+{% endif %}
+
+{% if request.GET.form_result_primer_create_success %}
+<div class="alert alert-success" role="alert">
+  Primer created! {% if perms.protocols.add_primer %}
+        <a href="{% url 'primer_create' %}" class="btn btn-primary" role="button">Create new Primer</a>
+        {% endif %}
+</div>
+{% endif %}
+
+{% if request.GET.form_result_primer_edit_success %}
+<div class="alert alert-success" role="alert">
+  Primer edited!
+</div>
+{% endif %}
+
+{% if request.GET.form_result_object_deleted %}
+<div class="alert alert-danger" role="alert">
+  Object deleted!
+</div>
+{% endif %}
+
+{% if request.GET.form_result_plasmidvalidation_edit_success %}
+<div class="alert alert-success" role="alert">
+  Plasmid validation edited!
+</div>
+{% endif %}

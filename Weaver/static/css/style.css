@@ -1,0 +1,226 @@
+/* GENERAL */
+body{
+    font-family: 'Lato', sans-serif;
+}
+a{
+    cursor: pointer;
+}
+a:active, a:focus {
+  outline: 0;
+  border: none;
+  -moz-outline-style: none;
+}
+a.btn:hover{
+text-decoration: none;
+}
+.btn {
+    margin-bottom: .2rem;
+}
+table {
+    font-size: .9em;
+}
+.btn {
+    line-height: 1.3;
+    font-size: 1em;
+}
+.table-help_text{
+    font-weight: 300;
+    color: #666;
+    padding-left: 1rem;
+    font-style: italic;
+}
+.table>:not(:first-child) {
+    border-top: 2px solid currentColor;
+}
+/* results */
+div.result > h2 {
+    font-size: 1.6rem;
+}
+div.result {
+    background: #ffc107;
+    padding: 3rem;
+    margin-bottom: 3rem;
+}
+
+/* filters */
+
+div.pe-table-filter{
+    margin-bottom: 2rem;
+}
+
+div.pe-table-filter-title {
+    line-height: 2em;
+    padding-right: 1rem;
+}
+
+div.pe-table-filter-buttons {
+    display: flex;
+}
+div.pe-table-filter-buttons-group {
+    margin-right: .8rem;
+    border-radius: .5rem;
+}
+div.pe-table-filter-buttons-group-title {
+    border-bottom: solid 1px #ccc;
+    margin-bottom: .5rem;
+    color: #666;
+}
+
+/* index */
+div#index-access {
+    margin-top: 3rem;
+}
+div#index-access img {
+    width: 16rem;
+    display: block;
+    margin: 2rem auto;
+    max-width: 80%;
+}
+.index-access a {
+    color: #000;
+    text-decoration: none;
+    font-size: 1.2rem;
+}
+.index-access a:hover {
+    text-decoration: none;
+}
+.index-access p {
+    background: #fff;
+    padding: 1rem;
+}
+.index-access {
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all .2s;
+    border: solid 4px #20411d;
+    border-radius: 1rem;
+    margin-bottom: 1rem;
+}
+/* forms */
+form:not(.default-style) {
+    border: solid 1px #ccc;
+    border-radius: .2rem;
+    padding: 3rem;
+}
+form label:first-child {
+    display: block;
+    margin-bottom: .25rem;
+}
+form.inline {
+    display: inline-block;
+}
+button, input, optgroup, select, textarea {
+    border: solid 1px #ccc;
+    padding: .25rem .5rem;
+    border-radius: .25rem;
+}
+span.helptext {
+    display: block;
+    color: #666;
+    font-size: .8em;
+}
+/* header */
+div#header,
+div.extra_header {
+    margin-bottom: 2rem;
+    display: flex;
+}
+div.extra_header {
+    margin-top: 2rem;
+}
+div#header > *:not(:first-child),
+div.extra_header > *:not(:first-child) {
+    margin-left: 1rem;
+    align-self: center;
+}
+
+div#header h1,
+div.extra_header h1 {
+    font-size: 2rem;
+    margin: 0;
+}
+div#nav-wrapper {
+    display: flex;
+    justify-content: space-between;
+    padding: 2rem 0;
+}
+div#nav-logo img {
+    width: 11rem;
+}
+div#nav-logo a {
+    text-decoration: none;
+    color: #ccc;
+    font-size: .7rem;
+    font-weight: 300;
+}
+div#nav-session a {
+    margin-left: .5rem;
+    padding: .2rem .5rem;
+}
+div#nav-session {
+    text-align: right;
+    color: #999;
+    font-size: .8em;
+}
+#nav-menu a:hover{
+    text-decoration: none;
+}
+/* footer */
+div#footer {
+    padding: 6rem 0 2rem;
+    font-size: .9em;
+    color: #999;
+}
+
+#admin_site-link a {
+    color: #666;
+    font-size: .8rem;
+}
+/* SCSS */
+.hover-parent {
+  position: absolute;
+  top     : 0;
+  left    : 0;
+  height  : 100%;
+  width   : 100%;
+}
+.perfect-bg-fixed {
+  background: url('') no-repeat center center fixed;
+  -webkit-background-size: cover;
+  -moz-background-size: cover;
+  -o-background-size: cover;
+  background-size: cover;
+}
+.perfect-bg {
+  background: url('') no-repeat center center;
+  -webkit-background-size: cover;
+  -moz-background-size: cover;
+  -o-background-size: cover;
+  background-size: cover;
+}
+
+/* EXTRA CONTAINER WIDTHS */
+@media (min-width: 1500px) {
+  .container {
+    max-width: 1400px;
+  }
+}
+
+/* RESPONSIVE */
+
+// Large devices (desktops, less than 1200px)
+@media (max-width: 1199.98px) {
+}
+
+// Medium devices (tablets, less than 992px)
+@media (max-width: 991.98px) {
+}
+
+// Small devices (landscape phones, less than 768px)
+@media (max-width: 767.98px) {
+}
+
+// Extra small devices (portrait phones, less than 576px)
+@media (max-width: 575.98px) {
+}

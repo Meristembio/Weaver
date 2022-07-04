@@ -1,0 +1,297 @@
+{% include "./parts/header.html" %}
+{% load general_extras %}
+{% load humanize %}
+{% if plasmid %}
+{% include "./parts/plasmid-header.html" %}
+{% if L0SequenceInputForm %}
+<div class="alert alert-warning">Input L0 sequence and select OHs</div>
+<form action="#" method="post">
+    {% csrf_token %}
+    {{ L0SequenceInputForm.as_p }}
+    <input type="submit" value="Submit" class="btn btn-primary">
+</form>
+{% elif L_1SequenceInputForm %}
+<div class="alert alert-warning">Input L-1 sequence and select OHs</div>
+<form action="#" method="post">
+    {% csrf_token %}
+    {{ L_1SequenceInputForm.as_p }}
+    <input type="submit" value="Submit" class="btn btn-primary">
+</form>
+{% else %}
+{% include "./form_results.html" %}
+{% if plasmid_create_result %}
+<div class="alert alert-{{plasmid_create_result.1}}">{{plasmid_create_result.0}}</div>
+{% endif %}
+<div id="build-enzymes">
+    <form method="post" class="default-style">
+        {% csrf_token %}
+        {% for enzyme in RESTRICTION_ENZYMES %}
+        <input type="hidden" name="create_from_parts"/>
+        <button class="btn btn-outline-primary" role="button" name="enzyme" value="{{enzyme.name}}">
+            {{enzyme.name}}
+        </button>
+        {% endfor %}
+    </form>
+</div>
+<table class="table table-hover">
+    <thead>
+    <tr>
+        <th scope="col">Property</th>
+        <th scope="col">Value</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <th scope="row">Name</th>
+        <td>{{plasmid.name}}</td>
+    </tr>
+    <tr>
+        <th scope="row">Resistances</th>
+        <td>
+            {{ resistantes_human }}<br/>
+        </td>
+    </tr>
+    <tr>
+        <th scope="row">Sequence</th>
+        <td>
+            {% if plasmid.sequence %}
+            <div class="download-links">
+                <a href="{% url 'plasmid_download' plasmid_id=plasmid.id %}" class="btn btn-outline-primary"
+                   role="button"
+                   download="{{plasmid.name}}"><i class="bi bi-download"></i> ORIG</a>
+                <a href="{% url 'plasmid_download' plasmid_id=plasmid.id %}?format=gb" class="btn btn-outline-primary"
+                   role="button"
+                   download="{{plasmid.name}}"><i class="bi bi-download"></i> .GB</a>
+                <a href="{% url 'plasmid_download' plasmid_id=plasmid.id %}?format=fasta"
+                   class="btn btn-outline-primary" role="button"
+                   download="{{plasmid.name}}"><i class="bi bi-download"></i> .FASTA</a>
+            </div>
+            <button type="button" class="btn btn-outline-primary download-options" data-bs-toggle="tooltip" data-bs-placement="top" title="Download"><i class="bi bi-download"></i>
+            </button>
+            <a href="{% url 'plasmid_digest' plasmid_id=plasmid.id %}" class="btn btn-outline-secondary"
+               role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Digest"><i class="bi bi-scissors"></i></a>
+            <a href="{% url 'plasmid_view_edit' plasmid_id=plasmid.id %}" class="btn btn-outline-info"
+               role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="View / Edit"><i class="bi bi-eye"></i> / <i class="bi bi-pencil"></i></a>
+            <a href="{% url 'plasmid_pcr' plasmid_id=plasmid.id %}" class="btn btn-outline-success"
+                       role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="PCR"><i class="bi bi-arrow-return-right"></i></a>
+            <a href="{% url 'plasmid_sanger' plasmid_id=plasmid.id %}" class="btn btn-outline-warning"
+               role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Align ab1"><i class="bi bi-list-nested"></i></a>
+            <button class="btn btn-outline-primary enzyme-options" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Build" data-refc="{{plasmid.refc}}"><i class="bi bi-arrow-repeat"></i><i
+                    class="bi bi-hammer"></i></button>
+            {% else %}
+            <form method="post" class="default-style inline"
+                  action="{% url 'plasmid_view_edit' plasmid_id=plasmid.id %}">
+                {% csrf_token %}
+                <button class="btn btn-outline-success" role="button" name="create"><i
+                        class="bi bi-file-earmark-plus"></i></button>
+            </form>
+            <button class="btn btn-outline-primary enzyme-options" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Build" data-refc="{{plasmid.refc}}"><i
+                    class="bi bi-hammer"></i></button>
+            {% endif %}
+        </td>
+    </tr>
+    <tr>
+        <th scope="row">Computed size</th>
+        <td>
+            {% if plasmid.computed_size != None %}
+            {{plasmid.computed_size|intcomma}} bp
+            {% else %}
+            -
+            {% endif %}
+        </td>
+    </tr>
+    <tr>
+        <th scope="row">Insert computed size</th>
+        <td>
+            {% if plasmid.insert_computed_size != None %}
+            {{plasmid.insert_computed_size|intcomma}} bp
+            {% else %}
+            -
+            {% endif %}
+        </td>
+    </tr>
+    <tr>
+        <th scope="row">Backbone</th>
+        <td>
+            {% if plasmid.backbone %}
+            <a href="{% url 'plasmid' plasmid_id=plasmid.backbone.id %}" class="btn btn-outline-secondary"
+               role="button">{{plasmid.backbone}} <i class="bi bi-clipboard copy_clipboard"
+                                                     data-cc="{{plasmid.backbone}}"></i></a>
+            {% else %}
+            -
+            {% endif %}
+        </td>
+    </tr>
+    <tr>
+        <th scope="row">Inserts</th>
+        <td>
+            {% if plasmid.inserts.all %}
+            {% for insert in plasmid.inserts.all %}
+            <a href="{% url 'plasmid' plasmid_id=insert.id %}" class="btn btn-outline-secondary" role="button">{{insert}}
+                <i class="bi bi-clipboard copy_clipboard" data-cc="{{insert}}"></i></a>
+            {% endfor %}
+            {% else %}
+            -
+            {% endif %}
+        </td>
+    </tr>
+    {% if insert_of %}
+    <tr>
+        <th scope="row">Insert of</th>
+        <td>
+            {% for insert in insert_of %}
+            <a href="{% url 'plasmid' plasmid_id=insert.id %}" class="btn btn-outline-secondary" role="button">{{insert.name}}
+                <i class="bi bi-clipboard copy_clipboard" data-cc="{{insert}}"></i></a>
+            {% endfor %}
+        </td>
+    </tr>
+    {% endif %}
+    {% if backbone_of %}
+    <tr>
+        <th scope="row">Backbone of</th>
+        <td>
+            {% for backbone in backbone_of %}
+            <a href="{% url 'plasmid' plasmid_id=backbone.id %}" class="btn btn-outline-secondary" role="button">{{backbone}}</a>
+            {% endfor %}
+        </td>
+    </tr>
+    {% endif %}
+    {% if perms.inventory.change_plasmid %}
+    <tr>
+        <th scope="row">Ligation raw</th>
+        <td>
+            {{ ligation_raw }} <i class="bi bi-clipboard copy_clipboard" data-cc="{{ ligation_raw }}"></i>
+        </td>
+    </tr>
+    {% endif %}
+    <tr>
+        <th scope="row">Intended use</th>
+        <td>{{plasmid.intended_use}}</td>
+    </tr>
+    <tr>
+        <th scope="row">Type</th>
+        <td>
+            {{ plasmid.type }}
+        </td>
+    </tr>
+    <tr>
+        <th scope="row">Level</th>
+        <td>
+            {{plasmid.level}}
+        </td>
+    </tr>
+    <tr>
+        <th scope="row">Author</th>
+        <td>
+            {{plasmid.author}}
+        </td>
+    </tr>
+    <tr>
+        <th scope="row">Description</th>
+        <td>{{plasmid.description | urlize}}</td>
+    </tr>
+    <tr>
+        <th scope="row">Created On</th>
+        <td>{{plasmid.created_on}}</td>
+    </tr>
+    <tr>
+        <th scope="row">Glycerol Stocks</th>
+        <td>
+            {% if plasmid.glycerolstock_set.all %}
+            {% for plasmid_glycerolstock in plasmid.glycerolstock_set.all %}
+            <div>
+                <a href="{% url 'glycerolstock' glycerolstock_id=plasmid_glycerolstock.id %}" role="button" class="btn btn-outline-secondary">
+                    <strong>{{plasmid_glycerolstock.strain}}</strong> <span className="text-muted small ps-2">{{plasmid_glycerolstock.box_row}}{{plasmid_glycerolstock.box_column}} / {{plasmid_glycerolstock.box}}</span>
+                </a>
+            </div>
+            {% endfor %}
+            <p><a href="{% url 'glycerolstock_create_plasmid_defined' pid=plasmid.id %}">Create a new one</a></p>
+            {% else %}
+            No GStocks found. <a href="{% url 'glycerolstock_create_plasmid_defined' pid=plasmid.id %}">Create a new one</a>.
+            {% endif %}
+        </td>
+    </tr>
+    <tr>
+        <th scope="row">Validation</th>
+        <td>
+            <table class="table table-hover">
+                <thead>
+                <tr>
+                    <th>Property</th>
+                    <th>Value</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>Working colony</td>
+                    <td>{% if plasmid.working_colony %}#{{plasmid.working_colony}}{% else %}None{% endif %}</td>
+                </tr>
+                <tr>
+                    <td>Check state</td>
+                    <td>
+                        {% for check_state in CHECK_STATES %}
+                        {% if check_state.0 == plasmid.check_state %}
+                        <span class="badge bg-{% if check_state.0 == 0 %}secondary{% endif %}{% if check_state.0 == 1 %}danger{% endif %}{% if check_state.0 == 2 %}success{% endif %}">{{check_state.1}}</span>
+                        {% endif %}
+                        {% endfor %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Check method</td>
+                    <td>
+                        {% for check_method in CHECK_METHODS %}
+                        {% if check_method.0 == plasmid.check_method %}
+                        {{check_method.1}}
+                        {% endif %}
+                        {% endfor %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Check date</td>
+                    <td>{{plasmid.check_date|date:"d M, Y"}}</td>
+                </tr>
+                <tr>
+                    <td>Digestion check enzymes</td>
+                    <td>{{plasmid.digestion_check_enzymes}}</td>
+                </tr>
+                <tr>
+                    <td>Check observations</td>
+                    <td>{{plasmid.check_observations}}</td>
+                </tr>
+                <tr>
+                    <td>Sequencing state</td>
+                    <td>
+                        {% for sequencing_state in SEQUENCING_STATES %}
+                        {% if sequencing_state.0 == plasmid.sequencing_state %}
+                        <span class="badge bg-{% if sequencing_state.0 == 0 %}secondary{% endif %}{% if sequencing_state.0 == 1 %}primary{% endif %}{% if sequencing_state.0 == 2 %}success{% endif %}">{{sequencing_state.1}}</span>
+                        {% endif %}
+                        {% endfor %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Sequencing date</td>
+                    <td>{{plasmid.sequencing_date|date:"d M, Y"}}</td>
+                </tr>
+                <tr>
+                    <td>Sequencing observations</td>
+                    <td>{{plasmid.sequencing_observations}}</td>
+                </tr>
+                </tbody>
+            </table>
+            <p>
+                <a class="btn btn-outline-info" role="button"
+                   href="{% url 'plasmid_validation_edit' plasmid_id=plasmid.id %}">Edit validation</a>
+            </p>
+        </td>
+    </tr>
+    </tbody>
+</table>
+{% endif %}
+{% else %}
+{% if wizard_error %}
+<div class="alert alert-danger">{{wizard_error}}</div>
+{% else %}
+<div class="alert alert-warning">No plasmid found.</div>
+{% endif %}
+{% endif %}
+{% include "./parts/footer.html" %}

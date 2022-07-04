@@ -1,0 +1,10 @@
+{% include "./parts/header.html" %}
+{% if plasmid %}
+{% include "./parts/plasmid-header.html" %}
+<div id="form-inventory">
+    {% include "./inventory_delete_form.html" %}
+</div>
+{% else %}
+<div class="alert alert-warning">No plasmid found.</div>
+{% endif %}
+{% include "./parts/footer.html" %}

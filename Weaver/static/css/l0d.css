@@ -1,0 +1,24 @@
+textarea.form-control{
+  min-height: 15rem !important;
+}
+input, textarea, select{
+  margin-bottom: .5rem !important;
+}
+div#seqviz-container {
+    height: 300px;
+}
+.hl{
+    position: relative;
+    background: #fff3cd;
+    line-height: 1em;
+    padding: 0.4em 0.6em;
+    font-size: .9em;
+    margin-right: 0.4rem;
+    cursor: pointer;
+    transition: all .3s ease-in-out;
+    line-height: 2.6em;
+}
+
+.hl:hover {
+    background: #cff4fc;
+}

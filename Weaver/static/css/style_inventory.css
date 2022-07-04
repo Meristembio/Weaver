@@ -1,0 +1,175 @@
+div#label-info p#label-name {
+    font-size: 2rem;
+    line-height: 1em;
+}
+
+div#label-qrcode img {
+    width: 10rem;
+    margin-left: 1rem;
+}
+
+div#label {
+    border: solid 1px;
+    border-radius: 1rem;
+    padding: 2rem;
+    background: #eee;
+}
+
+div#label-info p:not(#label-name) {
+    margin: 0;
+    padding: .15rem 0;
+}
+
+div#label-main {
+    display: flex;
+}
+
+div#label span.label-name {
+    font-weight: 600;
+}
+
+div#label span.label-name:after {
+    content: ": ";
+}
+div#label-instructions {
+    margin-top: 1rem;
+}
+
+span.box-location {
+    margin-left: .5rem;
+}
+
+div#seqviz-search {
+    text-align: right;
+    margin-bottom: 1rem;
+}
+
+#seqviz-query-minlength{
+display:none;
+}
+
+div#seqviz-lzoom span {
+    color: #666;
+    margin-right: 1rem;
+}
+
+div#seqviz-lzoom {
+    display: flex;
+    font-size: .8em;
+    justify-content: flex-end;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+div#seqviz-options {
+    display: flex;
+    justify-content: space-between;
+}
+div#seqviz-enzymes span {
+    color: #666;
+}
+div#seqviz-enzymes button {
+    font-size: .8rem;
+    padding: .25rem .5rem;
+}
+
+span.overhang {
+    text-decoration: underline;
+}
+
+pre.re {
+    line-height: 1em;
+    font-size: 1.1em;
+    overflow: hidden;
+    margin: 0;
+}
+
+span.re_left {
+    background: #ffc107;
+}
+span.re_right {
+    background: #0dcaf0;
+}
+pre.re span {
+    display: inline-block;
+    padding: .1rem .25rem;
+    letter-spacing: 2px;
+    line-height: 1.1em;
+}
+#digest-choose{
+    margin-top: 2rem;
+}
+form#digest{
+    padding:0;
+    margin-top: 2rem;
+    border: none;
+}
+table#digest-fragments,
+table#digest-enzymes-activity{
+    background: #fff;
+    border: solid 1rem #fff;
+}
+
+form#chromatos,
+form#fasta{
+    border:none;
+}
+
+.glycerolstock_box-inner {
+    padding: 2rem;
+    border: solid 2px #20411d;
+    border-radius: 1rem;
+}
+
+table.glycerolstock_box-detail {
+    margin: 2rem auto;
+}
+
+table.glycerolstock_box-detail td,
+table.glycerolstock_box-detail th{
+padding: .2rem;
+line-height: 1;
+width: 2em;
+height: 2em;
+text-align: center;
+cursor: pointer;
+}
+
+table.glycerolstock_box-detail td{
+background: #eee;
+border-radius: 50%;
+}
+
+table.glycerolstock_box-detail td.box-position-used{
+background: #ffc107;
+}
+
+
+table.glycerolstock_box-detail td.selected{
+background: #198754;
+}
+
+.glycerolstock_box-title{
+    text-align: center;
+}
+
+.glycerolstock_box {
+    margin-bottom: 2rem;
+}
+
+div#ove-viewer {
+    height: 100vh;
+}
+
+.filter-hide,
+.table_search-hide{
+display:none;
+}
+
+.download-links,
+#build-enzymes {
+    display:none;
+}
+.copy_clipboard{
+    cursor: pointer;
+}

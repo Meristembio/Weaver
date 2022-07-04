@@ -1,0 +1,12 @@
+{% include "inventory/parts/header.html" %}
+<div id="header">
+    <h1>Create a new Reactive</h1>
+    <div id="header-links">
+        <a href="{% url 'component_create' %}" class="btn btn-outline-danger" role="button"><i class="bi bi-arrow-return-left"></i></a>
+    </div>
+</div>
+{% include "inventory/form_results.html" %}
+<div id="form-recipe">
+    {% include "inventory/inventory_create_form.html" %}
+</div>
+{% include "inventory/parts/footer.html" %}

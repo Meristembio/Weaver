@@ -1,0 +1,89 @@
+{% include "./parts/header.html" %}
+{% load static %}
+<link rel="stylesheet" type="text/css" media="print" href="{% static 'css/style_inventory_print.css' %}"/>
+{% if plasmid %}
+{% include "./parts/plasmid-header.html" %}
+{% if not show_upload_form %}
+<a href="{% url 'plasmid_sanger' plasmid_id=plasmid.id %}" class="btn btn-outline-primary" role="button"><i class="bi bi-plus-circle-dotted"></i> New alignment</a>
+{% endif %}
+<div class="alert alert-warning">Beta version</div>
+{% if error %}
+<div class="alert alert-danger">{{error}}</div>
+<a href="" class="btn btn-primary">Try again</a>
+{% else %}
+    {% if show_upload_form %}
+    <!-- File loading -->
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ upload_form.as_p }}
+        <input class="btn btn-primary" type="submit" value="Submit">
+    </form>
+    <!-- /File loading -->
+    {% else %}
+    <!-- AlignmentView -->
+    <div id="alignmentView"></div>
+    <script type="text/javascript" src="{% static 'js/open-vector-editor.js' %}{{version}}"></script>
+    <script>
+        const createAlignmentViewNode = document.createElement("div");
+        $('#alignmentView').append(createAlignmentViewNode);
+
+        var plasmid_sequence_file_contents = `{{plasmid_sequence_file_contents}}`;
+        var align_data = JSON.parse(`{{align_data|safe}}`);
+
+        async function sequenceToJson() {
+            if(typeof plasmid_sequence_file_contents == 'undefined') {return;}
+            var jsonOutput = await window.bioParsers.anyToJson(plasmid_sequence_file_contents);
+            if(jsonOutput[0]['success']){
+                var alignmentTracks = [];
+                alignmentTracks.push(
+                {
+                    sequenceData: jsonOutput[0]['parsedSequence'],
+                    alignmentData: {
+                      name: align_data[0][0],
+                      sequence:align_data[2][0]
+                    },
+                }
+                );
+                for(var r = 1; r < align_data[0].length; r++) {
+                    alignmentTracks.push(
+                    {
+                        sequenceData: {
+                            name: align_data[0][r],
+                            sequence: align_data[1][r],
+                        },
+                        alignmentData: {
+                            name: align_data[0][r],
+                            sequence: align_data[2][r]
+                        },
+                        chromatogramData: align_data[3][r],
+                    }
+                    );
+                }
+
+                const alignment = window.createAlignmentView(createAlignmentViewNode, {
+                    id: 'sanger',
+                    alignmentName: "{{plasmid.name}}",
+                    alignmentType: 'Sanger',
+                    alignmentAnnotationLabelVisibility: {
+                        "features": true,
+                        "parts": true,
+                        "chromatogram": true,
+                        "reverseSequence": false,
+                        "dnaColors": true,
+                        "cutsites": false
+                    },
+                    alignmentTracks: alignmentTracks
+                });
+            } else {
+                window.toastr.success("Error parsing plasmid sequence file.");
+            }
+        }
+        sequenceToJson();
+    </script>
+    <!-- /AlignmentView -->
+    {% endif %}
+{% endif %}
+{% else %}
+<div class="alert alert-warning">No plasmid found.</div>
+{% endif %}
+{% include "./parts/footer.html" %}

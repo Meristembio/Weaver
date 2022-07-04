@@ -1,0 +1,11 @@
+{% include "./parts/header.html" %}
+<div id="header">
+    <h1>GS Boxes</h1>
+    <div id="header-links">
+        <a href="{% url 'glycerolstocks' %}" class="btn btn-outline-danger" role="button"><i class="bi bi-arrow-return-left"></i></a>
+    </div>
+</div>
+{% for location in collection.locations %}
+    {% include "./glycerolstock_render_boxes.html" %}
+{% endfor %}
+{% include "./parts/footer.html" %}

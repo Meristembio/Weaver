@@ -1,0 +1,137 @@
+{% include "./parts/header.html" %}
+{% load primer_extras %}
+{% load humanize %}
+{% load static %}
+<link rel="stylesheet" type="text/css" media="print" href="{% static 'css/style_inventory_print.css' %}"/>
+{% if plasmid %}
+    {% include "./parts/plasmid-header.html" %}
+    {% if show_new_PCR %}
+    <a href="{% url 'plasmid_pcr' plasmid_id=plasmid.id %}" class="btn btn-outline-primary" role="button"><i class="bi bi-plus-circle-dotted"></i> New PCR</a>
+    {% endif %}
+    {% if pcr_form %}
+        <div id="digest-emnzymes-header">Choose primers to design PCR with:</div>
+        <form id="pcr" action="" method="post">
+            {% csrf_token %}
+            {{pcr_form.as_p}}
+            <input type="submit" value="PCR" class="btn btn-dark">
+        </form>
+    {% else %}
+        {% if error %}
+        <div id="digest-error" class="alert alert-warning">{{error}}</div>
+        {% else %}
+            <div class="alert alert-light border">
+                <h4>Amplicon size <i class="bi bi-clipboard copy_clipboard" data-cc="{{plasmid.name}} / {{primer_f.name}} + {{primer_r.name}} / {{size}} bp"></i></h4>
+                <p>{{size}} bp</p>
+            </div>
+            <div class="alert alert-light border">
+            <h4>Sequence</h4>
+            <p class="text-break"><span class="overhang">{{primer_f.sequence_5}}</span>{{primer_f.sequence_3}}{{amplicon}}{{primer_r_3_rc}}<span class="overhang">{{primer_r_5_rc}}</span></p>
+            </div>
+            <div class="alert alert-light border">
+            <h4>Primer FWD</h4>
+            {% with primer_f.sequence_5|add:primer_f.sequence_3 as complete_sequence %}
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th scope="col">Property</th>
+                        <th scope="col">Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <th scope="row">Primer</th>
+                        <td>{{primer_f.name}}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Sequence (5' → 3') (5' overhang undelined</th>
+                        <td><span class="overhang">{{primer_f.sequence_5}}</span>{{primer_f.sequence_3}}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Length</th>
+                        <td>
+                            {{complete_sequence|length}}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">GC content</th>
+                        <td>{{complete_sequence|gc_content|floatformat:"1"|intcomma}} %</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Tm<span class="table-help_text">According to <a target="_blank"
+                                                                                        href="http://biotools.nubic.northwestern.edu/OligoCalc.html#helpbasic">OligoCalc</a></span>
+                        </th>
+                        <td>{{complete_sequence|tm_value|floatformat:"1"|intcomma}} °C</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Tm 3'</th>
+                        <td>{{primer_f.sequence_3|tm_value|floatformat:"1"|intcomma}} °C</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">FWD or REV</th>
+                        <td>{% if primer_f.fwd_or_rev == 'r' %}REV{% else %}FWD{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Intended use</th>
+                        <td>{{primer_f.intended_use}}</td>
+                    </tr>
+                </tbody>
+            </table>
+            {% endwith %}
+            </div>
+            <div class="alert alert-light border">
+            <h4>Primer REV</h4>
+            {% with primer_r.sequence_5|add:primer_r.sequence_3 as complete_sequence %}
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th scope="col">Property</th>
+                        <th scope="col">Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <th scope="row">Primer</th>
+                        <td>{{primer_r.name}}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Sequence (5' → 3') (5' overhang undelined</th>
+                        <td><span class="overhang">{{primer_r.sequence_5}}</span>{{primer_r.sequence_3}}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Length</th>
+                        <td>
+                            {{complete_sequence|length}}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">GC content</th>
+                        <td>{{complete_sequence|gc_content|floatformat:"1"|intcomma}} %</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Tm<span class="table-help_text">According to <a target="_blank"
+                                                                                        href="http://biotools.nubic.northwestern.edu/OligoCalc.html#helpbasic">OligoCalc</a></span>
+                        </th>
+                        <td>{{complete_sequence|tm_value|floatformat:"1"|intcomma}} °C</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Tm 3'</th>
+                        <td>{{primer_r.sequence_3|tm_value|floatformat:"1"|intcomma}} °C</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">FWD or REV</th>
+                        <td>{% if primer_r.fwd_or_rev == 'r' %}REV{% else %}FWD{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Intended use</th>
+                        <td>{{primer_r.intended_use}}</td>
+                    </tr>
+                </tbody>
+            </table>
+            {% endwith %}
+            </div>
+        {% endif %}
+    {% endif %}
+{% else %}
+<div class="alert alert-warning">No plasmid found.</div>
+{% endif %}
+{% include "./parts/footer.html" %}

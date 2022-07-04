@@ -1,0 +1,52 @@
+{% include "inventory/parts/header.html" %}
+<div id="header">
+    <h1>Recipes</h1>
+    <div id="header-links">
+        {% if perms.protocols.add_recipe %}
+        <a href="{% url 'recipe_create' %}" class="btn btn-primary" role="button"><i class="bi bi-plus"></i></a>
+        {% endif %}
+    </div>
+    {% include "inventory/parts/table_search.html"  with object_type="recipe" %}
+</div>
+{% include "inventory/form_results.html" %}
+{% if recipes %}
+
+<div id="recipes-filter" class="pe-table-filter">
+    {% include "inventory/parts/table_filters.html" %}
+</div>
+
+<table class="table table-striped table-hover sortable table-search-target">
+    <thead>
+    <tr>
+        <th scope="col">Recipe</th>
+        <th scope="col" data-defaultsort='disabled'>Components</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for recipe in recipes %}
+    <tr class="filter-item {% if recipe.category %}filter-{{recipe.category}}{% endif %}">
+        <td>
+            <a class="btn btn-success table-search-search_on" role="button" href="{% url 'recipe' recipe_id=recipe.id %}">
+                {{recipe}}
+            </a>
+            <a href="{% url 'recipe_label' recipe_id=recipe.id %}" class="btn btn-outline-dark" role="button"><i class="bi bi-tag"></i></a>
+        {% if perms.protocols.change_recipe %}
+            <a href="{% url 'recipe_edit' pk=recipe.id %}" class="btn btn-outline-secondary" role="button"><i class="bi bi-pencil"></i></a>
+        {% endif %}
+        </td>
+        <td>
+            {% for component in recipe.components.all %}
+            {% if forloop.counter != 1 %}
+            +
+            {% endif %}
+            {{component.reactive}}
+            {% endfor %}
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="alert alert-warning">No recipes found.</div>
+{% endif %}
+{% include "inventory/parts/footer.html" %}

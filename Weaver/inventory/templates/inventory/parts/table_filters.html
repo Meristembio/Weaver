@@ -1,0 +1,18 @@
+<div class="pe-table-filter-buttons">
+    {% for table_filter in table_filters %}
+    <div class="pe-table-filter-buttons-group">
+        <div class="pe-table-filter-buttons-group-title">
+            {{table_filter.1}}
+        </div>
+        <div class="pe-table-filter-buttons-group-ops">
+            {% for table_filter_op in table_filter.2 %}
+            <button class="pe-table-filter-button btn btn-{{ table_filter_op.2 }}"
+                    type="button"
+                    data-target="{{ table_filter_op.1 }}">
+                {{ table_filter_op.0 }}
+            </button>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+</div>

@@ -1,0 +1,18 @@
+{% include "inventory/parts/header.html" %}
+{% if recipe %}
+<div id="header">
+    <h1>Recipe / {{recipe}}</h1>
+    <div id="header-links">
+        <a href="{% url 'recipe' recipe_id=recipe.id %}" class="btn btn-outline-danger" role="button"><i class="bi bi-arrow-return-left"></i></a>
+        {% if perms.protocols.add_component %}
+        <a href="{% url 'component_create' %}" class="btn btn-primary" role="button"><i class="bi bi-plus"></i> Component</a>
+        {% endif %}
+    </div>
+</div>
+<div id="form-inventory">
+    {% include "inventory/inventory_update_form.html" %}
+</div>
+{% else %}
+<div class="alert alert-warning">No recipe found.</div>
+{% endif %}
+{% include "inventory/parts/footer.html" %}

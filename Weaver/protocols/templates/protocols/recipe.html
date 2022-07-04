@@ -1,0 +1,152 @@
+{% include "inventory/parts/header.html" %}
+{% load humanize %}
+<div id="header">
+    <h1>Recipe / {{recipe}}</h1>
+    <div id="header-links">
+        <a href="{% url 'recipes' %}" class="btn btn-outline-danger" role="button"><i class="bi bi-arrow-return-left"></i></a>
+        {% if perms.protocols.change_recipe %}
+        <a href="{% url 'recipe_edit' pk=recipe.id %}" class="btn btn-outline-secondary" role="button"><i class="bi bi-pencil"></i></a>
+        {% endif %}
+        <a href="{% url 'recipe_label' recipe_id=recipe.id %}" class="btn btn-outline-info"
+           role="button"><i class="bi bi-tag"></i></a>
+    </div>
+</div>
+{% include "inventory/form_results.html" %}
+
+{% if recipe %}
+<div id="recipe-prepare" class="result">
+    <h2 id="recipe-prepare-title">
+        Prepare recipe
+    </h2>
+    {% if result %}
+    {% if error %}
+    <div id="recipe-result-error">
+        <div class="alert alert-danger" role="alert">Error: {{error}}</div>
+    </div>
+    {% else %}
+    {% if warnings %}
+    <div id="recipe-result-warnings">
+        {% for warning in warnings %}
+        <div class="alert alert-warning" role="alert">Warning: {{warning}}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    <div id="recipe-result-making">
+        Recipe to prepare {{quantity}} [{{quantity_unit}}] of <strong>{{recipe}}</strong>{% if concentration != 1 %}
+        at {{concentration}}X
+        {% endif %}:
+    </div>
+    <div id="recipe-result">
+        <table class="table sortable">
+            <thead>
+            <th scope="col">Reactive</th>
+            <th scope="col">Mass/Volume</th>
+            <th scope="col">Unit</th>
+            </thead>
+            <tbody>
+            {% for component in result %}
+            <tr>
+                <td>{{component.0}}</td>
+                <td>{{component.1|floatformat:"2"|intcomma}}</td>
+                <td>{{component.2}}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div id="recipe-prepare_new">
+        Choose a new volume
+    </div>
+    {% endif %}
+    {% endif %}
+    <form id="prepare" action="" method="post">
+        {% csrf_token %}
+        {{ recipe_form.non_field_errors }}
+        {% for field, errors in recipe_form.errors.items %}
+        {% for error in errors %}
+        {{error}}
+        {% endfor %}
+        {% endfor %}
+        {{ recipe_form.quantity }}
+        {{ recipe_form.unit }}
+        <button class="btn btn-outline-secondary active" data-bs-toggle="button" autocomplete="off" aria-pressed="true"
+                type="button" data-value="ml">ml
+        </button>
+        <button class="btn btn-outline-secondary" autocomplete="off" type="button" data-value="lt">lt</button>
+        <span> at </span>
+        {{ recipe_form.concentration }}
+        <span class="times"> X </span>
+        <input type="submit" value="Calculate" class="btn btn-dark">
+    </form>
+</div>
+<table class="table table-hover">
+    <thead>
+    <tr>
+        <th scope="col">Property</th>
+        <th scope="col">Value</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <th scope="row">Name</th>
+        <td>{{recipe}}</td>
+    </tr>
+    <tr>
+        <th scope="row">Components</th>
+        <td>
+            <table class="table mb-0 sortable">
+                <thead>
+                <th scope="col">Reactive</th>
+                {% if perms.protocols.change_reactive %}
+                <th scope="col" data-defaultsort='disabled'>Reactive edit</th>
+                {% endif %}
+                <th scope="col">Concentration</th>
+                <th scope="col">Unit</th>
+                {% if perms.protocols.change_component %}
+                <th scope="col" data-defaultsort='disabled'>Component edit</th>
+                {% endif %}
+                </thead>
+                <tbody>
+                {% for component in recipe.components.all %}
+                <tr>
+                    <td>{{component.reactive}}</td>
+                    {% if perms.protocols.change_reactive %}
+                    <td>
+                        <a href="{% url 'reactive_edit' pk=component.reactive.id %}?recipe_id={{recipe.id}}"
+                           class="btn btn-outline-secondary" role="button"><i class="bi bi-pencil"></i></a>
+                    </td>
+                    {% endif %}
+                    <td>{{component.concentration}}</td>
+                    <td>
+                        {% for concentration_unit in CONCENTRATION_UNITS %}
+                        {% if concentration_unit.0 == component.concentration_unit %}
+                        {{concentration_unit.1}}
+                        {% endif %}
+                        {% endfor %}
+                    </td>
+                    {% if perms.protocols.change_component %}
+                    <td>
+                        <a href="{% url 'component_edit' pk=component.id %}?recipe_id={{recipe.id}}"
+                           class="btn btn-outline-dark" role="button"><i class="bi bi-pencil"></i></a>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <th scope="row">pH</th>
+        <td>{{recipe.ph}}</td>
+    </tr>
+    <tr>
+        <th scope="row">Description</th>
+        <td>{{recipe.description}}</td>
+    </tr>
+    </tbody>
+</table>
+{% else %}
+<p>No recipe found.</p>
+{% endif %}
+{% include "inventory/parts/footer.html" %}

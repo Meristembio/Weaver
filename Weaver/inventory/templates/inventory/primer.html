@@ -1,0 +1,58 @@
+{% include "./parts/header.html" %}
+{% load primer_extras %}
+{% load humanize %}
+{% if primer %}
+{% include "./parts/primer-header.html" %}
+{% include "./form_results.html" %}
+{% with primer.sequence_5|add:primer.sequence_3 as complete_sequence %}
+<table class="table table-hover">
+    <thead>
+    <tr>
+        <th scope="col">Name</th>
+        <th scope="col">Value</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <th scope="row">Primer</th>
+        <td>{{primer.name}}</td>
+    </tr>
+    <tr>
+        <th scope="row">Sequence (5' → 3') (5' overhang undelined)</th>
+        <td><span class="overhang">{{primer.sequence_5}}</span>{{primer.sequence_3}}</td>
+    </tr>
+    <tr>
+        <th scope="row">Length</th>
+        <td>
+            {{complete_sequence|length}}
+        </td>
+    </tr>
+    <tr>
+        <th scope="row">GC content</th>
+        <td>{{complete_sequence|gc_content|floatformat:"1"|intcomma}} %</td>
+    </tr>
+    <tr>
+        <th scope="row">Tm<span class="table-help_text">According to <a target="_blank"
+                                                                        href="http://biotools.nubic.northwestern.edu/OligoCalc.html#helpbasic">OligoCalc</a></span>
+        </th>
+        <td>{{complete_sequence|tm_value|floatformat:"1"|intcomma}} °C</td>
+    </tr>
+    <tr>
+        <th scope="row">Tm 3'</th>
+        <td>{{primer.sequence_3|tm_value|floatformat:"1"|intcomma}} °C</td>
+    </tr>
+    <tr>
+        <th scope="row">FWD or REV</th>
+        <td>{% if primer.fwd_or_rev == 'r' %}REV{% else %}FWD{% endif %}</td>
+    </tr>
+    <tr>
+        <th scope="row">Intended use</th>
+        <td>{{primer.intended_use}}</td>
+    </tr>
+    </tbody>
+</table>
+{% endwith %}
+{% else %}
+<div class="alert alert-warning">No primer found.</div>
+{% endif %}
+{% include "./parts/footer.html" %}

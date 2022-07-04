@@ -1,0 +1,57 @@
+{% include "./parts/header.html" %}
+{% load primer_extras %}
+{% load humanize %}
+<div id="header">
+    <h1>Primers</h1>
+    <div id="header-links">
+        {% if perms.inventory.add_primer %}
+        <a href="{% url 'primer_create' %}" class="btn btn-primary" role="button"><i class="bi bi-plus"></i></a>
+        {% endif %}
+    </div>
+</div>
+{% include "./form_results.html" %}
+{% if primers %}
+<table class="table table-striped table-hover">
+    <thead>
+    <tr>
+        <th scope="col">Name</th>
+        <th scope="col">Sequence (5' → 3') (5' overhang undelined)</th>
+        <th scope="col" data-defaultsort='disabled'>Intended use</th>
+        <th scope="col">Length</th>
+        <th scope="col">Length 3'</th>
+        <th scope="col">Tm</th>
+        <th scope="col">Tm 3'</th>
+        {% if perms.inventory.change_primer %}
+        <th scope="col" data-defaultsort='disabled'><i class="bi bi-pencil-fill"></i></th>
+        {% endif %}
+    </tr>
+    </thead>
+    <tbody>
+    {% for primer in primers %}
+    {% with primer.sequence_5|add:primer.sequence_3 as complete_sequence %}
+    <tr>
+        <td>
+            <a class="btn btn-success" role="button" href="{% url 'primer' primer_id=primer.id %}">
+                {{primer}}
+            </a>
+        </td>
+        <td><span class="overhang">{{primer.sequence_5}}</span>{{primer.sequence_3}}</td>
+        <td>{{primer.intended_use}}</td>
+        <td>{{complete_sequence|length}}</td>
+        <td>{{primer.sequence_3|length}}</td>
+        <td>{{complete_sequence|tm_value|floatformat:"1"|intcomma}} °C</td>
+        <td>{{primer.sequence_3|tm_value|floatformat:"1"|intcomma}} °C</td>
+        {% if perms.inventory.change_primer %}
+        <td>
+            <a href="{% url 'primer_edit' pk=primer.id %}" class="btn btn-outline-secondary" role="button"><i class="bi bi-pencil"></i></a>
+        </td>
+        {% endif %}
+    </tr>
+    {% endwith %}
+    {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="alert alert-warning">No primers found.</div>
+{% endif %}
+{% include "./parts/footer.html" %}

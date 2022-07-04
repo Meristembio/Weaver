@@ -1,0 +1,37 @@
+{% include "./parts/header.html" %}
+{% load general_extras %}
+<div id="header">
+    <h1>Glycerol Stocks</h1>
+    <div id="header-links">
+        {% if perms.inventory.add_glycerolstock %}
+        <a target="_blank" href="{% url 'glycerolstock_create' %}" class="btn btn-primary" role="button"><i
+                class="bi bi-plus"></i></a>
+        {% endif %}
+        <a target="_blank" href="{% url 'glycerolstock_boxes' %}" class="btn btn-warning" role="button"><i
+                class="bi bi-archive"></i></a>
+        <a target="_blank" href="{% url 'glycerolstock_qr' %}" class="btn btn-info" role="button"><i
+                class="bi bi-upc-scan"></i></a>
+    </div>
+</div>
+{% include "./form_results.html" %}
+{% if glycerolstocks %}
+<div id="glycerolstocks-list">
+    <div id="glycerolstocks-tables">
+        <div class="row">
+            <div class="col-8">
+                <div id="glycerolstocks-filter" class="pe-table-filter">
+                    {% include "./parts/table_filters.html" %}
+                </div>
+            </div>
+            <div class="col-4">
+                {% include "./parts/table_search.html" with object_type="GS" %}
+            </div>
+        </div>
+        <div id="root-glycerolstocks">
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-warning">No GStocks found.</div>
+{% endif %}
+{% include "./parts/footer.html" %}

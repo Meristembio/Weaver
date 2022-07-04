@@ -1,0 +1,27 @@
+{% include "inventory/parts/header.html" %}
+{% if component %}
+<div id="header">
+    <h1>Component / {{component.reactive.name}} / {{component.concentration}} / {% for concentration_unit in CONCENTRATION_UNITS %}
+        {% if concentration_unit.0 == component.concentration_unit %}
+        {{concentration_unit.1}}
+        {% endif %}
+        {% endfor %}</h1>
+    <div id="header-links">
+        <a href="{% url 'recipe' recipe_id=recipe_id %}" class="btn btn-outline-danger" role="button"><i class="bi bi-arrow-return-left"></i></a>
+        {% if perms.inventory.add_reactive %}
+        <a href="{% url 'reactive_create' %}" class="btn btn-primary" role="button"><i class="bi bi-plus"></i> Reactive</a>
+        {% endif %}
+    </div>
+</div>
+{% include "inventory/form_results.html" %}
+<div id="form-inventory">
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <input type="submit" value="Update" class="btn btn-primary">
+    </form>
+</div>
+{% else %}
+<div class="alert alert-warning">No component found.</div>
+{% endif %}
+{% include "inventory/parts/footer.html" %}

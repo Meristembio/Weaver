@@ -1,0 +1,47 @@
+{% include "inventory/parts/header.html" %}
+{% load static %}
+<link rel="stylesheet" type="text/css" media="print" href="{% static 'css/style_inventory_print.css' %}"/>
+{% if recipe %}
+<div id="header">
+    <h1>Recipe / {{recipe}}</h1>
+    <div id="header-links">
+        <a href="{% url 'recipe' recipe_id=recipe.id %}" class="btn btn-outline-danger" role="button"><i class="bi bi-arrow-return-left"></i></a>
+    </div>
+</div>
+<div id="label">
+    <div id="label-main">
+        <div id="label-info">
+            <p id="label-name" data-initval="{{recipe}}">
+                {{recipe}}
+            </p>
+            <p id="label-created">
+                <span class="label-name">Date</span>
+                <span class="label-value">{{date}}</span>
+            </p>
+            <p id="label-components">
+                <span class="label-name">Components</span>
+                {% for component in recipe.components.all %}
+                <span class="label-value"><span class="recipe-component-value" data-initval="{{component.concentration}}">{{component.concentration}}</span>{% for concentration_unit in CONCENTRATION_UNITS %}
+                        {% if concentration_unit.0 == component.concentration_unit %}
+                        {{concentration_unit.1}}
+                        {% endif %}
+                        {% endfor %} {{component.reactive}}</span>
+                {% endfor %}
+            </p>
+        </div>
+    </div>
+</div>
+<p id="recipe-concentration-wrapper"><span>Select recipe concentration (X): </span><input type="number" id="recipe-concentration" value="1" /></p>
+<button id="label-print-button" type="button" class="btn btn-info" onclick="window.print();return false;">Print label</button>
+<div id="label-instructions">
+    <pre>Impresora: Brother QL 810W</pre>
+    <pre>Papel: 29 mm  ancho</pre>
+    <pre>Layout: Landscape</pre>
+    <pre>Paper size: 29x90 mm</pre>
+    <pre>Margins: None</pre>
+    <pre>Scale: Default</pre>
+</div>
+{% else %}
+<div class="alert alert-warning">No recipe found.</div>
+{% endif %}
+{% include "inventory/parts/footer.html" %}

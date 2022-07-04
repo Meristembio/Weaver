@@ -1,0 +1,42 @@
+{% include "../../parts/header.html" %}
+<h1>Stats</h1>
+<form method="post" class="default-style mb-4">
+    {% csrf_token %}
+    <button type="submit" name="refresh_stats"><i class="bi bi-arrow-counterclockwise"></i> stats</button> Last update: {{ last_update }}
+</form>
+{% if error %}
+<div class="alert alert-danger">{{error}}</div>
+{% else %}
+{% load humanize %}
+<div id="dashboard">
+    <h1 class="text-center"><span class="me-4"># {{plasmid_count|intcomma}}</span><small class="text-muted">Plasmids on the collection</small></h1>
+    {% if fig_plasmid_month_count %}
+        {{ fig_plasmid_month_count|safe }}
+    {% endif %}
+    <div class="row">
+        <div class="col-6">
+            {% if fig_plasmids_with_sequence %}
+                {{ fig_plasmids_with_sequence|safe }}
+            {% endif %}
+        </div>
+        <div class="col-6">
+            {% if fig_plasmids_with_gs %}
+                {{ fig_plasmids_with_gs|safe }}
+            {% endif %}
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-6">
+            {% if fig_plasmids_by_type %}
+                {{ fig_plasmids_by_type|safe }}
+            {% endif %}
+        </div>
+        <div class="col-6">
+            {% if fig_plasmids_by_level %}
+                {{ fig_plasmids_by_level|safe }}
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+{% include "../../parts/footer.html" %}

@@ -1,0 +1,179 @@
+{% include "./parts/header.html" %}
+<div id="header">
+    <h1>Plasmid Validations</h1>
+</div>
+
+<h3>Plasmids to check <i class="bi bi-clipboard copy_clipboard" data-cc="{% for plasmid in plasmidsToCheck %}{{plasmid}}
+{% endfor %}"></i></h3>
+<p><i><small>Plasmid w/o GS && Check state == Pending</small></i></p>
+{% if plasmidsToCheck %}
+<table class="table table-hover sortable">
+    <thead>
+    <tr>
+        <th>Plasmid</th>
+        <th>Check method</th>
+        <th>Check observations</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for plasmid in plasmidsToCheck %}
+    <tr>
+        <td>
+            <a href="{% url 'plasmid' plasmid_id=plasmid.id %}" class="btn btn-success table-search-search_on"
+               role="button">{{plasmid.name}} <i class="bi bi-clipboard copy_clipboard" data-cc="{{plasmid.name}}"></i></a>
+            <a href="{% url 'plasmid_validation_edit' plasmid_id=plasmid.id %}" class="btn btn-outline-info"
+               role="button">
+                <i class="bi bi-check2-square"></i>
+            </a>
+        </td>
+        <td>
+            {% for check_method in CHECK_METHODS %}
+            {% if check_method.0 == plasmid.check_method %}
+            {{check_method.1}}
+            {% endif %}
+            {% endfor %}
+        </td>
+        <td>{{plasmid.sequencing_observations}}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="alert alert-warning">No plasmids to sequence.</div>
+{% endif %}
+
+<h3>Plasmids to sequence <i class="bi bi-clipboard copy_clipboard" data-cc="{% for plasmid in plasmidsToSequence %}{{plasmid}}
+{% endfor %}"></i></h3>
+<p><i><small>Sequencing state = Required</small></i></p>
+{% if plasmidsToSequence %}
+<table class="table table-hover sortable">
+    <thead>
+    <tr>
+        <th>Plasmid</th>
+        <th>Working colony</th>
+        <th>Sequencing observations</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for plasmid in plasmidsToSequence %}
+    <tr>
+        <td>
+            <a href="{% url 'plasmid' plasmid_id=plasmid.id %}" class="btn btn-success table-search-search_on"
+               role="button">{{plasmid.name}} <i class="bi bi-clipboard copy_clipboard" data-cc="{{plasmid.name}}"></i></a>
+            <a href="{% url 'plasmid_validation_edit' plasmid_id=plasmid.id %}" class="btn btn-outline-info"
+               role="button">
+                <i class="bi bi-check2-square"></i>
+            </a>
+        </td>
+        <td>{% if plasmid.working_colony %}#{{plasmid.working_colony}}{% else %}None{% endif %}</td>
+        <td>{{plasmid.sequencing_observations}}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="alert alert-warning">No plasmids to sequence.</div>
+{% endif %}
+
+<h3>Plasmids to stock <i class="bi bi-clipboard copy_clipboard" data-cc="{% for plasmid in plasmidsToStock %}{{plasmid}}
+{% endfor %}"></i></h3>
+<p><i><small>Plasmid w/o GS && Check state != Pending && Sequencing state != Required</small></i></p>
+{% if plasmidsToStock %}
+<table class="table table-hover sortable">
+    <thead>
+    <tr>
+        <th>Plasmid</th>
+        <th>Working colony</th>
+        <th>Check method</th>
+        <th>Check date</th>
+        <th>Digestion check enzymes</th>
+        <th>Check observations</th>
+        <th>Sequencing date</th>
+        <th>Sequencing observations</th>
+        <th>Create GS</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for plasmid in plasmidsToStock %}
+    <tr>
+        <td>
+            <a href="{% url 'plasmid' plasmid_id=plasmid.id %}" class="btn btn-success table-search-search_on"
+               role="button">{{plasmid.name}} <i class="bi bi-clipboard copy_clipboard" data-cc="{{plasmid.name}}"></i></a>
+            <a href="{% url 'plasmid_validation_edit' plasmid_id=plasmid.id %}" class="btn btn-outline-info"
+               role="button">
+                <i class="bi bi-check2-square"></i>
+            </a>
+        </td>
+        <td>{% if plasmid.working_colony %}#{{plasmid.working_colony}}{% else %}None{% endif %}</td>
+        <td>
+            {% for check_method in CHECK_METHODS %}
+            {% if check_method.0 == plasmid.check_method %}
+            {{check_method.1}}
+            {% endif %}
+            {% endfor %}
+        </td>
+        <td>{{plasmid.check_date|date:"d M, Y"}}</td>
+        <td>{{plasmid.digestion_check_enzymes}}</td>
+        <td>{{plasmid.check_observations}}</td>
+        <td>{{plasmid.sequencing_date|date:"d M, Y"}}</td>
+        <td>{{plasmid.sequencing_observations}}</td>
+        <td><a href="{% url 'glycerolstock_create_plasmid_defined' pid=plasmid.id %}" class="btn btn-outline-secondary"
+               role="button" target="_blank">Create</a></td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="alert alert-warning">No plasmids to stock.</div>
+{% endif %}
+
+
+<h3>Plasmids with stock and without check (Old samples?) <i class="bi bi-clipboard copy_clipboard" data-cc="{% for plasmid in plasmidsWithStockWoCheck %}{{plasmid}}
+{% endfor %}"></i></h3>
+<p><i><small>Plasmid w/ GS && Check state == Pending && Sequencing state != Required</small></i></p>
+{% if plasmidsWithStockWoCheck %}
+<table class="table table-hover sortable">
+    <thead>
+    <tr>
+        <th>Plasmid</th>
+        <th>Working colony</th>
+        <th>Check method</th>
+        <th>Check date</th>
+        <th>Digestion check enzymes</th>
+        <th>Check observations</th>
+        <th>Sequencing date</th>
+        <th>Sequencing observations</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for plasmid in plasmidsWithStockWoCheck %}
+    <tr>
+        <td>
+            <a href="{% url 'plasmid' plasmid_id=plasmid.id %}" class="btn btn-success table-search-search_on"
+               role="button">{{plasmid.name}} <i class="bi bi-clipboard copy_clipboard" data-cc="{{plasmid.name}}"></i></a>
+            <a href="{% url 'plasmid_validation_edit' plasmid_id=plasmid.id %}" class="btn btn-outline-info"
+               role="button">
+                <i class="bi bi-check2-square"></i>
+            </a>
+        </td>
+        <td>{% if plasmid.working_colony %}#{{plasmid.working_colony}}{% else %}None{% endif %}</td>
+        <td>
+            {% for check_method in CHECK_METHODS %}
+            {% if check_method.0 == plasmid.check_method %}
+            {{check_method.1}}
+            {% endif %}
+            {% endfor %}
+        </td>
+        <td>{{plasmid.check_date|date:"d M, Y"}}</td>
+        <td>{{plasmid.digestion_check_enzymes}}</td>
+        <td>{{plasmid.check_observations}}</td>
+        <td>{{plasmid.sequencing_date|date:"d M, Y"}}</td>
+        <td>{{plasmid.sequencing_observations}}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="alert alert-warning">No plasmids to stock.</div>
+{% endif %}
+{% include "./parts/footer.html" %}

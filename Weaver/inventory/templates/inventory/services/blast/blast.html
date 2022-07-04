@@ -1,0 +1,68 @@
+{% include "../../parts/header.html" %}
+
+<div id="blast-createdb">
+    <p>
+    <form method="post" class="default-style">
+        {% csrf_token %}
+        <button type="submit" name="makeblastdb"><i class="bi bi-arrow-counterclockwise"></i> makeblastdb</button> Last update: {{ last_update }}
+    </form>
+    </p>
+</div>
+<div id="blast-messages">
+    {% if error %}
+    <div class="alert alert-danger">{{error}}</div>
+    {% endif %}
+    {% if database_creation_result %}
+    <div class="alert alert-success">{{database_creation_result}}</div>
+    {% endif %}
+</div>
+{% if alignment_output %}
+<div id="blast-results">
+    <div id="header">
+        <h1>Blast results</h1>
+        <div id="header-links">
+            <a href="#blast-search" class="btn btn-outline-primary" role="button"><i class="bi bi-plus-circle"></i></a>
+        </div>
+    </div>
+    {% if alignments %}
+        <script src="http://cdn.bio.sh.s3.eu-central-1.amazonaws.com/msa/latest/msa.min.gz.js"></script>
+        {% for alignment in alignments %}
+            <div class="blast-alignment">
+                {% with alignment.plasmid as plasmid %}
+                <div class="blast-alignment-title">
+                     <a href="{% url 'plasmid' plasmid_id=plasmid.id %}" class="btn btn-success table-search-search_on"
+                       role="button" target="_blank">{{plasmid.name}} <i class="bi bi-clipboard copy_clipboard" data-cc="{{plasmid.name}}"></i></a>
+                    {% if plasmid.sequence %}
+                    <a href="{% url 'plasmid_view_edit' plasmid_id=plasmid.id %}" class="btn btn-outline-info"
+                           role="button" target="_blank"><i class="bi bi-eye"></i> / <i class="bi bi-pencil"></i></a>
+                    {% endif %}
+                </div>
+                {% endwith %}
+                <div class="blast-alignment-evalue"><strong>E-value: </strong>{{ alignment.hsp.expect|stringformat:".2e" }}</div>
+                <div class="blast-alignment-alignment">
+                    <pre>
+                        {% for chunk in alignment.chunk %}
+                            {{ chunk.0 }}
+                            {{ chunk.1 }}
+                            {{ chunk.2 }}
+                        {% endfor %}
+                    </pre>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>No significant alignments found (hsp.expect < 0.01)</p>
+    {% endif %}
+</div>
+{% endif %}
+{% if form %}
+<div id="blast-search">
+    <h1>Blast search</h1>
+    <form method="POST" action="#blast-results">
+        {% csrf_token %}
+        {{form.as_p}}
+        <input class="btn btn-primary" type="submit" name="doblast" value="Do Blast">
+    </form>
+</div>
+{% endif %}
+{% include "../../parts/footer.html" %}

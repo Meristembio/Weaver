@@ -1,0 +1,50 @@
+form#prepare label{
+ padding-right: 1rem;
+}
+
+div#recipe-ressult-error {
+    padding: 1rem 0;
+    font-style: italic;
+}
+div#recipe-result-making {
+    padding: 1rem 0 2rem;
+    font-style: italic;
+}
+div#recipe-prepare_new {
+    padding: 3rem 0 1rem;
+    font-weight: 600;
+}
+form#prepare {
+    display: flex;
+    border: none;
+    padding: 0;
+}
+form#prepare #id_unit,
+form#prepare label {
+    display: none;
+}
+form#prepare > * {
+    margin-right: .5rem;
+}
+form#prepare > input[type="submit"] {
+    margin-left: 1rem;
+}
+form#prepare > span {
+    line-height: 2rem;
+}
+form#prepare > span.times {
+    line-height: 2rem;
+    font-weight:600;
+    font-size: 1.2em;
+}
+form#prepare #id_concentration {
+    width: 5rem;
+}
+
+#label{
+margin-bottom: 1rem;
+}
+
+#label-components span.label-value{
+    display:block;
+}

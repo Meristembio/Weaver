@@ -1,0 +1,62 @@
+{% include "./parts/header.html" %}
+{% load static %}
+<link rel="stylesheet" type="text/css" media="print" href="{% static 'css/style_inventory_print.css' %}"/>
+{% if glycerolstock %}
+{% include "./parts/glycerolstock-header.html" %}
+<div id="label">
+    <div id="label-main">
+        <div id="label-info">
+            <p id="label-name">
+                {{glycerolstock.strain}}<br/>{% if glycerolstock.plasmid %}{{glycerolstock.plasmid}}{% endif %}
+            </p>
+            <p id="label-resistance">
+                    {% if glycerolstock.strain.resistances %}
+                        <span class="label-name">Strain</span>
+                        <span class="label-value">{{ resistantes_strain_human }}</span><br/>
+                    {% endif %}
+                    {% if glycerolstock.plasmid.resistances  %}
+                        <span class="label-name">Plasmid</span>
+                        <span class="label-value">{{ resistantes_human }}</span><br/>
+                    {% endif %}
+                    {% if glycerolstock.plasmid.resistances_plant %}
+                        <span class="label-name">Plasmid (plant)</span>
+                        <span class="label-value">{{ resistantes_plant_human }}</span><br/>
+                    {% endif %}
+            </p>
+            <p id="label-box">
+                <span class="label-name">Box</span>
+                <span class="label-value">{% if glycerolstock.box_column and glycerolstock.box_row %}{{glycerolstock.box_row}}{{glycerolstock.box_column}}/{% endif %}{{glycerolstock.box.name}}</span>
+            </p>
+            <p id="label-location">
+                <span class="label-name">Location</span>
+                <span class="label-value">{{glycerolstock.box.location}}</span>
+            </p>
+            <p id="label-created">
+                <span class="label-name">Date</span>
+                <span class="label-value">{{glycerolstock.created_on}}</span>
+            </p>
+            <p id="label-id">
+                {{glycerolstock.qr_id}}
+            </p>
+        </div>
+        <div id="label-qrcode"></div>
+    </div>
+</div>
+<button id="label-print-button" type="button" class="btn btn-info" onclick="window.print();return false;">Print label
+</button>
+<div id="label-instructions">
+    <pre>Impresora: Brother QL 810W</pre>
+    <pre>Papel: 29 mm  ancho</pre>
+    <pre>Layout: Landscape</pre>
+    <pre>Paper size: 29x90 mm</pre>
+    <pre>Margins: None</pre>
+    <pre>Scale: Default</pre>
+</div>
+
+<script type="text/javascript">
+new QRCode(document.getElementById("label-qrcode"), "qrm.cl/g/{{glycerolstock.qr_id}}");
+</script>
+{% else %}
+<div class="alert alert-warning">No glycerolstock found.</div>
+{% endif %}
+{% include "./parts/footer.html" %}

@@ -1,0 +1,17 @@
+{% include "./parts/header.html" %}
+<div id="header">
+    <h1>GS / Create</h1>
+</div>
+<div id="form-glycerolstock">
+    {% include "./inventory_create_form.html" %}
+</div>
+<div class="extra_header">
+    <h1>GS Boxes</h1>
+</div>
+{% for location in collection.locations %}
+    {% include "./glycerolstock_render_boxes.html" %}
+{% endfor %}
+<script>
+    var createglycerolstockPID="{{pid}}";
+</script>
+{% include "./parts/footer.html" %}

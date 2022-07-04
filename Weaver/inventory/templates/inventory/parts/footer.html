@@ -1,0 +1,12 @@
+<div id="footer">
+    {% if user.is_authenticated and user.is_staff %}
+    <p id="admin_site-link">
+        <a href="/admin">Admin site</a>
+    </p>
+    {% endif %}
+    <p>Code by <a href="https://meristem.bio" target="_blank">Meristem</a> [<a
+            href="https://github.com/meristem-group/Weaver-CE" target="_blank">GitHub</a>]</p>
+</div>
+</div>
+</body>
+</html>

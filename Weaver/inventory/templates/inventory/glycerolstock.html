@@ -1,0 +1,98 @@
+{% include "./parts/header.html" %}
+{% load general_extras %}
+{% if glycerolstock %}
+{% include "./parts/glycerolstock-header.html" %}
+{% include "./form_results.html" %}
+<table class="table table-hover">
+    <thead>
+    <tr>
+        <th scope="col">Property</th>
+        <th scope="col">Value</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <th scope="row">Strain</th>
+        <td>{{glycerolstock.strain.name}}</td>
+    </tr>
+    <tr>
+        <th scope="row">Strain description</th>
+        <td>{{glycerolstock.strain.description}}</td>
+    </tr>
+    <tr>
+        <th scope="row">Plasmid</th>
+        <td>
+        {% if glycerolstock.plasmid %}
+            <a href="{% url 'plasmid' plasmid_id=glycerolstock.plasmid.id %}" class="btn btn-outline-secondary" role="button">
+                {{glycerolstock.plasmid}}
+            </a>
+        {% else %}
+            No plasmid
+        {% endif %}
+        </td>
+    </tr>
+    <tr>
+        <th scope="row">Parent</th>
+        <td>
+        {% if glycerolstock.parent %}
+            <a href="{% url 'glycerolstock' glycerolstock_id=glycerolstock.parent.id %}" class="btn btn-outline-secondary" role="button">
+                {{glycerolstock.parent}}
+            </a>
+        {% else %}
+            No parent
+        {% endif %}
+        </td>
+    </tr>
+    <tr>
+        <th scope="row">Resistances</th>
+        <td>
+            {% if glycerolstock.strain.resistances %}<strong>Strain</strong>:
+            {{ resistantes_strain_human }}
+            <br/>{% endif %}
+            {% if glycerolstock.plasmid.resistances %}<strong>Plasmid</strong>:
+            {{ resistantes_human }}
+            <br/>{% endif %}
+            {% if glycerolstock.plasmid.resistances_plant %}<strong>Plasmid (plant)</strong>:
+            {{ resistantes_plant_human }}
+            <br/>{% endif %}
+        </td>
+    </tr>
+    <tr>
+        <th scope="row">Created on</th>
+        <td>{{glycerolstock.created_on}}</td>
+    </tr>
+    <tr>
+        <th scope="row">Location</th>
+        <td><table class="table table-hover">
+               <thead>
+                    <tr>
+                        <th scope="col">Property</th>
+                        <th scope="col">Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td scope="row">Position</td>
+                        <td>{{glycerolstock.box_row}}{{glycerolstock.box_column}}</td>
+                    </tr>
+                    <tr>
+                        <td scope="row">Box</td>
+                        <td>{{glycerolstock.box.name}}</td>
+                    </tr>
+                    <tr>
+                        <td scope="row">Location</td>
+                        <td>{{glycerolstock.box.location}}</td>
+                    </tr>
+                </tbody>
+        </table></td>
+    </tr>
+    <tr>
+        <th scope="row">Details</th>
+        <td>{{glycerolstock.details}}</td>
+    </tr>
+    </tbody>
+</table>
+{% else %}
+<div class="alert alert-warning">No glycerolstock found.</div>
+{% endif %}
+{% include "./parts/footer.html" %}

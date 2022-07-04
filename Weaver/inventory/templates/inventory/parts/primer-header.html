@@ -1,0 +1,9 @@
+<div id="header">
+    <h1>Primer / {{primer}}</h1>
+    <div id="header-links">
+        <a href="{% url 'primers' %}" class="btn btn-outline-danger" role="button"><i class="bi bi-arrow-return-left"></i></a>
+        {% if perms.inventory.change_primer %}
+        <a href="{% url 'primer_edit' pk=primer.id %}" class="btn btn-outline-secondary" role="button"><i class="bi bi-pencil-fill"></i></a>
+        {% endif %}
+    </div>
+</div>

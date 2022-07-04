@@ -1,0 +1,50 @@
+{% include "./parts/header.html" %}
+{% load static %}
+{% load humanize %}
+{% if plasmid %}
+{% include "./parts/plasmid-header.html" %}
+<div id="label" class="plasmid">
+    <div id="label-main">
+        <div id="label-info">
+            <p id="label-name">
+                {{plasmid.name}}
+            </p>
+            <p id="label-length-created">
+                <span class="label-value">{{plasmid.computed_size|intcomma}} bp / {{today|date:'M d, Y'}}</span>
+            </p>
+            <p id="label-conc-espectro">
+                 <span class="label-name">E</span>
+                <span class="label-value">[&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;]</span>
+            </p>
+            <p id="label-conc-quantus">
+                 <span class="label-name">Q</span>
+                <span class="label-value">[&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;]</span>
+            </p>
+            <p id="label-260_280">
+                 <span class="label-name">260/280</span>
+                <span class="label-value">__________</span>
+            </p>
+            <p id="label-260_230">
+                 <span class="label-name">260/230</span>
+                <span class="label-value">__________</span>
+            </p>
+            <p id="label-id">
+                 <span class="label-name">ID</span>
+                <span class="label-value">{{plasmid.qr_id}}</span>
+            </p>
+        </div>
+    </div>
+</div>
+<button id="label-print-button" type="button" class="btn btn-info" onclick="window.print();return false;">Print label</button>
+<div id="label-instructions">
+    <pre>Impresora: Brother QL 810W</pre>
+    <pre>Papel: 29 mm  ancho</pre>
+    <pre>Layout: Landscape</pre>
+    <pre>Paper size: 29x90 mm</pre>
+    <pre>Margins: None</pre>
+    <pre>Scale: Default</pre>
+</div>
+{% else %}
+<div class="alert alert-warning">No plasmid found.</div>
+{% endif %}
+{% include "./parts/footer.html" %}

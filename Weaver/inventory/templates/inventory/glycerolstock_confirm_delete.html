@@ -1,0 +1,10 @@
+{% include "./parts/header.html" %}
+{% if glycerolstock %}
+{% include "./parts/glycerolstock-header.html" %}
+<div id="form-inventory">
+    {% include "./inventory_delete_form.html" %}
+</div>
+{% else %}
+<div class="alert alert-warning">No Glycerol stock found.</div>
+{% endif %}
+{% include "./parts/footer.html" %}

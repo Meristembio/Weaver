@@ -1,0 +1,9 @@
+{% include "inventory/parts/header.html" %}
+<h1>Login</h1>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Login</button>
+    <input type="hidden" name="next" value="{{ request.GET.next }}" />
+</form>
+{% include "inventory/parts/footer.html" %}
