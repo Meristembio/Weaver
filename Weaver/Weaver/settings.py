@@ -30,6 +30,7 @@ ALLOWED_HOSTS = ['192.168.1.64', '192.168.1.93', '127.0.0.1']
 # Application definition
 
 INSTALLED_APPS = [
+    'organization.apps.OrganizationConfig',
     'protocols.apps.ProtocolsConfig',
     'inventory.apps.InvetoryConfig',
     'django.contrib.humanize',
@@ -41,11 +42,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'mathfilters',
     "corsheaders",
-    # 'debug_toolbar', #delete
 ]
 
 MIDDLEWARE = [
-    # 'debug_toolbar.middleware.DebugToolbarMiddleware', # delete
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     "corsheaders.middleware.CorsMiddleware",

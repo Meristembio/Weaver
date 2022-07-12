@@ -1,4 +1,12 @@
 /* GENERAL */
+@font-face {
+  font-family: ManjariRegular;
+  src: url(fonts/Manjari-Regular.ttf);
+}
+@font-face {
+  font-family: LatoLight;
+  src: url(fonts/Lato-Light.ttf);
+}
 body{
     font-family: 'Lato', sans-serif;
 }
@@ -32,6 +40,36 @@ table {
 .table>:not(:first-child) {
     border-top: 2px solid currentColor;
 }
+
+/* intro */
+
+.intro-item .container{
+ 	padding: 5rem 0;
+}
+
+.diagonal-box {
+ 	position: relative;
+ 	background-image: linear-gradient(45deg, #654ea3, #eaafc8);
+}
+
+.diagonal-box:before {
+    content: "";
+    display: block;
+    position: relative;
+    height: 4rem;
+    background:#fff;
+    background: linear-gradient(to right bottom, #fff 49%, transparent 50%);
+}
+
+.diagonal-box:after {
+    content: "";
+    display: block;
+    position: relative;
+    height: 4rem;
+    background:#fff;
+    background: linear-gradient(to right bottom, transparent 49%,  #fff 50%);
+}
+
 /* results */
 div.result > h2 {
     font-size: 1.6rem;
@@ -140,19 +178,21 @@ div.extra_header h1 {
     font-size: 2rem;
     margin: 0;
 }
-div#nav-wrapper {
-    display: flex;
-    justify-content: space-between;
-    padding: 2rem 0;
-}
-div#nav-logo img {
-    width: 11rem;
-}
 div#nav-logo a {
+    color: #333;
+}
+div#nav-logo a:hover {
     text-decoration: none;
-    color: #ccc;
-    font-size: .7rem;
-    font-weight: 300;
+}
+.logo-main {
+    font-family: ManjariRegular;
+    font-size: 3.5rem;
+    line-height: .5em;
+}
+.logo-desc {
+    font-family: LatoLight;
+    font-size: 1.2rem;
+    letter-spacing: 2.4px;
 }
 div#nav-session a {
     margin-left: .5rem;

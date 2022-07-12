@@ -1,0 +1,12 @@
+{% include "inventory/parts/header.html" %}
+<div id="header">
+    <h1>Projects</h1>
+    <div id="header-links">
+        <a href="{% url 'project_create' %}" class="btn btn-primary" role="button"><i class="bi bi-plus"></i> Create</a>
+    </div>
+</div>
+{% include "inventory/form_results.html" %}
+{% with user.project_members.all as projects %}
+{% include "./parts/list_projects.html" %}
+{% endwith %}
+{% include "inventory/parts/footer.html" %}

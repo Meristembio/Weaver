@@ -122,3 +122,16 @@ function saveOVE(sequenceDataToSave) {
         window.toastr.success(msg.result);
     });
 }
+
+function expandName(){
+    if($('#table_search-expand').is(":checked")){
+        $('#plasmids-table td a:first-child span').each(function(){
+            $(this).attr('data-short', $(this).html())
+            $(this).html($(this).parent().attr('data-search'))
+        })
+    } else {
+        $('#plasmids-table td > a:first-child span').each(function(){
+            $(this).html($(this).attr('data-short'))
+        })
+    }
+}

@@ -108,10 +108,6 @@ def json_serial(obj):
     raise TypeError("Type %s not serializable" % type(obj))
 
 
-def index(request):
-    return render(request, 'inventory/index.html')
-
-
 def restrictionenzyme(request, restrictionenzyme_id):
     try:
         restrictionenzyme_to_detail = RestrictionEnzyme.objects.get(id=restrictionenzyme_id)
@@ -463,6 +459,8 @@ def plasmid_create_from_inserts(plasmid_to_build, context, insert=None, oh_5=Non
         the_re = RestrictionEnzyme.objects.get(name=recommended_enzyme_for_create(plasmid_to_build.level))
     plasmid_record = plasmid_record_from_inserts(plasmid_to_build, insert, oh_5, oh_3, the_re)
     if plasmid_record[0]:
+        plasmid_record_final = plasmid_record[1]
+        plasmid_record_final.name = plasmid_record_final.name.replace(" ", "_")
         plasmid_to_build.sequence.save(plasmid_to_build.name + ".gb", ContentFile(plasmid_record[1].format("gb")))
         context['plasmid_create_result'] = ("Plasmid sequence built from backbone / insert data", "success")
     else:
@@ -660,13 +658,15 @@ def plasmid_create_wizard_end(request):
             if len(values.split('+')) > 1:
                 values = values.split('+')
             params[name] = values
-        name = params['n']
-        if name:
+        if 'n' in params and 'b' in params and 'i' in params and params['n'] and params['b'] and len(params['i']):
             backbone = Plasmid.objects.get(id=params['b'])
             if backbone:
+                description = ""
+                if 'd' in params:
+                    description = params['d']
                 plasmid_created = Plasmid.objects.create(
                     name=params['n'],
-                    description=params['d'],
+                    description=description,
                     backbone=backbone,
                     type=PlasmidType.objects.get(id=0),
                     level=backbone.level,
@@ -680,7 +680,7 @@ def plasmid_create_wizard_end(request):
             else:
                 context['wizard_error'] = 'Backbone not found.'
         else:
-            context['wizard_error'] = 'Name is a required field.'
+            context['wizard_error'] = 'Name & backbone & inserts are required fields.'
     else:
         context['wizard_error'] = "Plasmid can\'t be created. No parameters set."
     return render(request, 'inventory/plasmid.html', context)
@@ -695,7 +695,7 @@ def plasmid_view_edit(request, plasmid_id):
 
     warnings = []
 
-    if request.user.has_perm('inventory.plasmid.change_plasmid'):
+    if request.user.has_perm('inventory.change_plasmid'):
         if request.method == 'POST' and 'saveOve' in request.POST:
             if 'gbContent' in request.POST:
                 # saving from OVE
@@ -709,7 +709,7 @@ def plasmid_view_edit(request, plasmid_id):
 
         if request.method == 'POST' and 'create' in request.POST:
             if not plasmid_to_detail.sequence:
-                plasmid_to_detail.sequence.save(plasmid_to_detail.name + ".gb", ContentFile('''LOCUS       SampleGB                   0 bp    DNA     circular  31-AUG-2021
+                plasmid_to_detail.sequence.save(plasmid_to_detail.name + ".gb", ContentFile('''LOCUS       ''' + plasmid_to_detail.name.replace(" ", "_") + '''                   0 bp    DNA     circular  31-AUG-2021
     ORIGIN      
     //'''))
             else:

@@ -1,0 +1,23 @@
+{% if project %}
+<ol>
+{% for member in project.members.all %}
+    {% with project.membership_set.all as mss %}
+    {% for ms in mss %}
+    {% if ms.member == member %}
+    <li>{{member}}{% if member == user %} (you){% endif %} /
+        <small class="text-secondary">
+            {% if ms.access_policies %}
+                {% for ap in apo %}
+                {% if ap.0 == ms.access_policies %}
+                    Can {{ap.1}} (<a href="{% url 'membership_edit' pk=ms.id %}" role="button">Edit</a>)
+                {% endif %}
+                {% endfor %}
+            {% endif %}
+        </small>
+    </li>
+    {% endif %}
+    {% endfor %}
+    {% endwith %}
+{% endfor %}
+</ol>
+{% endif %}

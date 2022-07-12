@@ -28,13 +28,13 @@
 <div id="plasmids-list">
     <div id="plasmids-tables">
         <div class="row">
-            <div class="col-8">
+            <div class="col-4">
+                {% include "./parts/table_search.html" with object_type="plasmids" %}
+            </div>
+            <div class="col-8 d-flex flex-row-reverse">
                 <div id="plasmids-filter" class="pe-table-filter">
                     {% include "./parts/table_filters.html" %}
                 </div>
-            </div>
-            <div class="col-4">
-                {% include "./parts/table_search.html" with object_type="plasmids" %}
             </div>
         </div>
         <div id="root-plasmids">

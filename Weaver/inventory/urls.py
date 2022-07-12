@@ -32,8 +32,6 @@ from django.contrib.auth.decorators import login_required
 from django.urls import path
 
 urlpatterns = [
-    path('', views.index, name='index'),
-
     path('plasmids/', login_required(views.plasmids, redirect_field_name='next'), name='plasmids'),
     path('plasmids/validations/', login_required(PlasmidValidations, redirect_field_name='next'), name='plasmid_validations'),
     path('plasmid/<uuid:plasmid_id>/', login_required(views.plasmid, redirect_field_name='next'), name='plasmid'),

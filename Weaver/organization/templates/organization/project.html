@@ -1,0 +1,41 @@
+{% include "inventory/parts/header.html" %}
+{% include "./parts/project-header.html" %}
+{% if edit_error %}
+<div class="alert alert-danger">{{edit_error}}</div>
+{% endif %}
+<div class="row">
+    <div class="col-6">
+        <table class="table table-hover">
+            <thead>
+            <tr>
+                <th scope="col">Name</th>
+                <th scope="col">Value</th>
+            </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <th scope="row">Name</th>
+                    <td>{{project}}</td>
+                </tr>
+                <tr>
+                    <th scope="row">Members</th>
+                    <td>
+                        {% include './parts/list_project_members.html' %}
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">Visibility</th>
+                    <td>{% if project.public %}Public{% else %}Private{% endif %}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="col-6">
+        Elements
+        ToDo
+    </div>
+</div>
+<p>
+    <a href="{% url 'projects' %}" class="btn btn-warning" role="button"><i class="bi bi-arrow-return-left"></i> All projects</a>
+</p>
+{% include "inventory/parts/footer.html" %}

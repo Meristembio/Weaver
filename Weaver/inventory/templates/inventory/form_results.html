@@ -1,3 +1,27 @@
+{% if request.GET.form_result_membership_edit_success %}
+<div class="alert alert-success" role="alert">
+  Membership edited!
+</div>
+{% endif %}
+
+{% if request.GET.form_result_membership_create_success %}
+<div class="alert alert-success" role="alert">
+  Membership created!
+</div>
+{% endif %}
+
+{% if request.GET.form_result_project_edit_success %}
+<div class="alert alert-success" role="alert">
+  Project edited!
+</div>
+{% endif %}
+
+{% if request.GET.form_result_project_create_success %}
+<div class="alert alert-success" role="alert">
+  Project created! <a href="{% url 'project_create' %}" class="btn btn-primary" role="button">Create new one</a>
+</div>
+{% endif %}
+
 {% if request.GET.form_result_plasmid_edit_success %}
 <div class="alert alert-success" role="alert">
   Plasmid edited!

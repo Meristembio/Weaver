@@ -1,4 +1,9 @@
-<div class="table_search d-flex flex-row-reverse">
-    <button id="table_search-clear" type="button" class="btn btn-outline-secondary ms-2">Clear</button>
+<div class="table_search">
+    <h4>Search</h4>
     <input id="table_search-input" type="text" placeholder="Search {{object_type}} ...">
+    <button id="table_search-clear" type="button" class="btn btn-outline-secondary ms-2">Clear</button>
+    <br>
+    {% if object_type == "plasmids" %}
+    <small class="text-secondary"><input id="table_search-expand" type="checkbox" onclick="expandName()"> Expand names</small>
+    {% endif %}
 </div>

@@ -43,7 +43,7 @@ class GstockEditForm(forms.ModelForm):
 class PlasmidValidationForm(forms.ModelForm):
     class Meta:
         model = Plasmid
-        fields = ['working_colony', 'check_state', 'check_method', 'check_date', 'digestion_check_enzymes', 'check_observations', 'sequencing_state', 'sequencing_date', 'sequencing_observations', 'sequencing_ab1_file_1', 'sequencing_ab1_file_2', 'sequencing_observations']
+        fields = ['working_colony', 'check_state', 'check_method', 'check_date', 'digestion_check_enzymes', 'check_observations', 'sequencing_state', 'sequencing_date', 'sequencing_observations', 'sequencing_observations']
         widgets = {
             'check_date': DateInput(),
             'sequencing_date': DateInput()

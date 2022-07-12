@@ -1,5 +1,5 @@
 {% include "inventory/parts/header.html" %}
-<h1>Profile / Welcome, {{ user.get_username }}</h1>
+<h1>Profile / {{ user.get_username }}</h1>
 <div class="alert alert-light border mt-4 mb-4">
     <table class="table table-hover">
         <thead>
@@ -21,9 +21,22 @@
                 <th scope="row">Last name</th>
                 <td>{{user.last_name}}</td>
             </tr>
+            <tr>
+                <th scope="row">Email</th>
+                <td>
+                    <a href="mailto:{{user.email}}">{{user.email}}</a>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">Projects</th>
+                <td>
+                    {% with user.project_members.all as projects %}
+                    {% include "organization/parts/list_projects.html" %}
+                    {% endwith %}
+                    <a href="{% url 'project_create' %}" class="btn btn-primary" role="button"><i class="bi bi-plus"></i> Create new project</a>
+                </td>
+            </tr>
         </tbody>
     </table>
 </div>
-<h1>Links</h1>
-{% include "inventory/front-page.html" %}
 {% include "inventory/parts/footer.html" %}

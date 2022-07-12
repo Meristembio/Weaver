@@ -18,13 +18,13 @@
 <div id="glycerolstocks-list">
     <div id="glycerolstocks-tables">
         <div class="row">
-            <div class="col-8">
+            <div class="col-4">
+                {% include "./parts/table_search.html" with object_type="GS" %}
+            </div>
+            <div class="col-8 d-flex flex-row-reverse">
                 <div id="glycerolstocks-filter" class="pe-table-filter">
                     {% include "./parts/table_filters.html" %}
                 </div>
-            </div>
-            <div class="col-4">
-                {% include "./parts/table_search.html" with object_type="GS" %}
             </div>
         </div>
         <div id="root-glycerolstocks">

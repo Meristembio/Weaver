@@ -17,22 +17,21 @@ from django.contrib import admin
 from django.urls import include, path
 from django.views.generic.base import RedirectView
 from django.contrib.staticfiles.storage import staticfiles_storage
-from . import views
 from django.contrib.auth import views as auth_views
+from . import views
 
 urlpatterns = [
-    path('', RedirectView.as_view(url='/inventory'), name='index'),
+    path('', views.index, name='index'),
+    path('organization/', include('organization.urls')),
     path('protocols/', include('protocols.urls')),
     path('inventory/', include('inventory.urls')),
     path('admin/', admin.site.urls),
-    path('accounts/profile/', auth_views.LoginView.as_view(
-        template_name='registration/profile.html'
-    ), name='profile'),
     path('accounts/login/', auth_views.LoginView.as_view(
-        template_name='registration/login.html'
+        template_name='registration/login.html',
+        next_page='profile'
     ), name='login_view'),
     path('accounts/logout/', auth_views.LogoutView.as_view(
-        template_name='inventory/index.html',
+        template_name='common/index.html',
         next_page=None
     ), name='logout_view'),
     path('favicon.ico', RedirectView.as_view(url=staticfiles_storage.url('img/favicon.png'))),

@@ -147,6 +147,7 @@ class Box(models.Model):
 class Plasmid(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=200)
+    # marker
     resistances = models.ManyToManyField(Resistance, blank=True, symmetrical=False, related_name='+', help_text='Use CTRL for multiple select')
     sequence = models.FileField(upload_to='uploads/plasmids/', blank=True)
     backbone = models.ForeignKey('self', on_delete=models.CASCADE, blank=True, null=True)
@@ -172,9 +173,6 @@ class Plasmid(models.Model):
     check_observations = models.CharField(max_length=1000, blank=True, null=True)
     sequencing_state = models.IntegerField(choices=SEQUENCING_STATES, blank=True, default=0)
     sequencing_date = models.DateField(blank=True, null=True)
-    sequencing_observations = models.CharField(max_length=1000, blank=True, null=True)
-    sequencing_ab1_file_1 = models.FileField(upload_to='uploads/sequencing/', blank=True, null=True)
-    sequencing_ab1_file_2 = models.FileField(upload_to='uploads/sequencing/', blank=True, null=True)
     sequencing_observations = models.CharField(max_length=1000, blank=True, null=True)
 
     def __str__(self):

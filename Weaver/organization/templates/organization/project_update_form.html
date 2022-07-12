@@ -1,0 +1,10 @@
+{% include "inventory/parts/header.html" %}
+{% if project %}
+{% include "./parts/project-header.html" %}
+<div id="form-inventory">
+    {% include "inventory/inventory_update_form.html" %}
+</div>
+{% else %}
+<div class="alert alert-warning">No project found.</div>
+{% endif %}
+{% include "inventory/parts/footer.html" %}
