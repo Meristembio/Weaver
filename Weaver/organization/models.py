@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 class Project(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=128, help_text="Project name")
+    description = models.CharField(max_length=500, help_text="Project description", null=True, blank=True)
     members = models.ManyToManyField(User, through='Membership', related_name='project_members',
                                      help_text="User Ctrl to select more than one member")
     public = models.BooleanField(help_text='Is it publicly viewable?')

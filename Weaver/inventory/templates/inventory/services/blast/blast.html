@@ -1,25 +1,8 @@
 {% include "../../parts/header.html" %}
-
-<div id="blast-createdb">
-    <p>
-    <form method="post" class="default-style">
-        {% csrf_token %}
-        <button type="submit" name="makeblastdb"><i class="bi bi-arrow-counterclockwise"></i> makeblastdb</button> Last update: {{ last_update }}
-    </form>
-    </p>
-</div>
-<div id="blast-messages">
-    {% if error %}
-    <div class="alert alert-danger">{{error}}</div>
-    {% endif %}
-    {% if database_creation_result %}
-    <div class="alert alert-success">{{database_creation_result}}</div>
-    {% endif %}
-</div>
 {% if alignment_output %}
 <div id="blast-results">
     <div id="header">
-        <h1>Blast results</h1>
+        <h1>Blast / results</h1>
         <div id="header-links">
             <a href="#blast-search" class="btn btn-outline-primary" role="button"><i class="bi bi-plus-circle"></i></a>
         </div>
@@ -57,7 +40,8 @@
 {% endif %}
 {% if form %}
 <div id="blast-search">
-    <h1>Blast search</h1>
+    <h1>Blast</h1>
+    {% include "inventory/parts/page-info.html" with text="Run blast against all your visible plasmids" %}
     <form method="POST" action="#blast-results">
         {% csrf_token %}
         {{form.as_p}}
@@ -65,4 +49,18 @@
     </form>
 </div>
 {% endif %}
+<div id="blast-createdb" class="mt-2">
+    <form method="post" class="default-style">
+        {% csrf_token %}
+        <button type="submit" name="makeblastdb"><i class="bi bi-arrow-counterclockwise"></i> makeblastdb</button> Last update: {{ last_update }}
+    </form>
+</div>
+<div id="blast-messages">
+    {% if error %}
+    <div class="alert alert-danger">{{error}}</div>
+    {% endif %}
+    {% if database_creation_result %}
+    <div class="alert alert-success">{{database_creation_result}}</div>
+    {% endif %}
+</div>
 {% include "../../parts/footer.html" %}

@@ -1,10 +1,12 @@
 {% include "inventory/parts/header.html" %}
 {% include "./parts/project-header.html" %}
+{% load humanize %}
 {% if edit_error %}
 <div class="alert alert-danger">{{edit_error}}</div>
 {% endif %}
 <div class="row">
     <div class="col-6">
+        <h3>Project details</h3>
         <table class="table table-hover">
             <thead>
             <tr>
@@ -18,21 +20,74 @@
                     <td>{{project}}</td>
                 </tr>
                 <tr>
-                    <th scope="row">Members</th>
+                    <th scope="row">Description</th>
                     <td>
+                        {{project.description | urlize}}
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">Memberships</th>
+                    <td>
+                        {% for user_membership in user.membership_set.all %}
+                        {% if user_membership.project == project %}
                         {% include './parts/list_project_members.html' %}
+                        {% endif %}
+                        {% endfor %}
                     </td>
                 </tr>
                 <tr>
                     <th scope="row">Visibility</th>
                     <td>{% if project.public %}Public{% else %}Private{% endif %}</td>
                 </tr>
+                <tr>
+                    <th scope="row">Currently active?</th>
+                    <td>
+                        {% if project.id|slugify == request.COOKIES.current_project_id %}
+                        Yes
+                        {% else %}
+                        No. <a href="{% url 'project_set_current' pk=project.id %}?next={{request.get_full_path}}">Set current</a>
+                        {% endif %}
+                    </td>
+                </tr>
             </tbody>
         </table>
     </div>
     <div class="col-6">
-        Elements
-        ToDo
+        <h3>Elements</h3>
+        <table class="table table-hover">
+            <thead>
+            <tr>
+                <th scope="col">Item</th>
+                <th scope="col">Elements count</th>
+            </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <th scope="row">
+                        <a class="btn btn-sm btn-success" href="{% url 'plasmids' %}">Plasmids</a>
+                    </th>
+                    <td>{{project.plasmid_set.all|length}}</td>
+                </tr>
+                <tr>
+                    <th scope="row">
+                        <a class="btn btn-sm btn-success" href="{% url 'primers' %}">Primers</a>
+                    </th>
+                    <td>{{project.primers_set.all|length}}</td>
+                </tr>
+                <tr>
+                    <th scope="row">
+                        <a class="btn btn-sm btn-success" href="{% url 'glycerolstocks' %}">Glycerol stocks</a>
+                    </th>
+                    <td>{{project.glycerolstock_set.all|length}}</td>
+                </tr>
+                <tr>
+                    <th scope="row">
+                        <a class="btn btn-sm btn-success" href="{% url 'recipes' %}">Recipes</a>
+                    </th>
+                    <td>{{project.recipe_set.all|length}}</td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 </div>
 <p>

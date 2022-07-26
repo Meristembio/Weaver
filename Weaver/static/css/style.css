@@ -40,6 +40,9 @@ table {
 .table>:not(:first-child) {
     border-top: 2px solid currentColor;
 }
+video {
+    object-fit: fill;
+}
 
 /* intro */
 
@@ -161,7 +164,7 @@ span.helptext {
 /* header */
 div#header,
 div.extra_header {
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
     display: flex;
 }
 div.extra_header {
@@ -193,15 +196,6 @@ div#nav-logo a:hover {
     font-family: LatoLight;
     font-size: 1.2rem;
     letter-spacing: 2.4px;
-}
-div#nav-session a {
-    margin-left: .5rem;
-    padding: .2rem .5rem;
-}
-div#nav-session {
-    text-align: right;
-    color: #999;
-    font-size: .8em;
 }
 #nav-menu a:hover{
     text-decoration: none;

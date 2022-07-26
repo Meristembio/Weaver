@@ -26,13 +26,8 @@ urlpatterns = [
     path('protocols/', include('protocols.urls')),
     path('inventory/', include('inventory.urls')),
     path('admin/', admin.site.urls),
-    path('accounts/login/', auth_views.LoginView.as_view(
-        template_name='registration/login.html',
-        next_page='profile'
-    ), name='login_view'),
-    path('accounts/logout/', auth_views.LogoutView.as_view(
-        template_name='common/index.html',
-        next_page=None
-    ), name='logout_view'),
+    path('accounts/login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login_view'),
+    path('accounts/logout/', auth_views.LogoutView.as_view(template_name='common/index.html'),
+         name='logout_view'),
     path('favicon.ico', RedirectView.as_view(url=staticfiles_storage.url('img/favicon.png'))),
 ]

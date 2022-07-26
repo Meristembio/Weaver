@@ -5,7 +5,13 @@
         <a href="{% url 'glycerolstocks' %}" class="btn btn-outline-danger" role="button"><i class="bi bi-arrow-return-left"></i></a>
     </div>
 </div>
+{% include "./parts/page-info.html" with text="Showing all Glycerol stocks visible to you, from any project" %}
+{% if collection.locations %}
 {% for location in collection.locations %}
     {% include "./glycerolstock_render_boxes.html" %}
 {% endfor %}
+{% include "./parts/footer.html" %}
+{% else %}
+<div class="alert alert-warning">No locations found.</div>
+{% endif %}
 {% include "./parts/footer.html" %}

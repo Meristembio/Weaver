@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 {% load static %}
+{% load general_extras %}
 <html lang="en">
 <head>
-{% with version="?version=3" %}
+{% with version="?version=5" %}
     <meta charset="UTF-8">
     <link href="{% static 'css/googleapis-css2.css' %}{{version}}" rel="stylesheet">
     <title>Weaver</title>
@@ -27,12 +28,6 @@
     <script type="text/javascript" src="{% static 'js/table_search.js' %}{{version}}"></script>
     {% if request.get_full_path == "/inventory/plasmid/create/wizard" %}
     <script defer type="text/javascript" src="{% static 'js/wizard.js' %}{{version}}"></script>
-    {% endif %}
-    {% if request.get_full_path == "/inventory/plasmids/" %}
-    <script defer type="text/javascript" src="{% static 'js/plasmids_table.js' %}{{version}}"></script>
-    {% endif %}
-    {% if request.get_full_path == "/inventory/glycerolstocks/" %}
-    <script defer type="text/javascript" src="{% static 'js/glycerolstocks_table.js' %}{{version}}"></script>
     {% endif %}
     {% if request.get_full_path == "/inventory/services/gtr/" %}
     <script defer type="text/javascript" src="{% static 'js/gtr.js' %}{{version}}"></script>
@@ -65,25 +60,43 @@
 </head>
 <body>
 <nav>
-    <div class="container pt-4 pb-4 mb-2">
+    <div class="container pt-4 pb-4">
         <div id="nav-wrapper" class="row">
-            <div id="nav-logo" class="mt-4 col-4">
+            <div id="nav-logo" class="mt-4 col-4 pt-1">
                 <a href="/">
                     <span class="logo-main">weaver</span><br/>
-                    <span class="logo-desc">open biotech soft</span>
                 </a>
             </div>
             <div id="nav-right" class="col-8">
-                <div id="nav-session">
+                <div id="nav-session" class="nav justify-content-end">
                     {% if user.is_authenticated %}
-                    <span>Welcome, {{ user.get_username }}</span>
-                    <a href="{% url 'projects' %}" class="btn btn-primary" role="button">Projects</a>
-                    <a href="{% url 'profile' %}" class="btn btn-outline-secondary" role="button">Profile</a>
-                    <a href="{% url 'logout_view' %}" class="btn btn-outline-secondary" role="button">Logout</a>
+                    <div class="btn-group me-2 dropdown-center">
+                      <button role="button" class="btn btn-primary opacity-50">{% with request.COOKIES.current_project_id as cpi %}
+                          {% if cpi %}
+                          <a class="text-light" href="{% url 'project' project_id=request.COOKIES.current_project_id %}">{{cpi|get_project_name}}</a>
+                          {% else %}
+                          No project set
+                          {% endif %}
+                          {% endwith %}</button>
+                      <button type="button" class="btn btn-primary opacity-75 dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                        <span class="visually-hidden">Toggle Dropdown</span>
+                      </button>
+                      <ul class="dropdown-menu">
+                          {% for m in user.membership_set.all %}
+                          <li><a class="dropdown-item text-center small" href="{% url 'project_set_current' pk=m.project.id %}?next={{request.get_full_path}}">{{m.project}}</a></li>
+                          {% endfor %}
+                          <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-center small" href="{% url 'project_create' %}">+ Create</a></li>
+                      </ul>
+                    </div>
+                    <a href="{% url 'projects' %}" class="btn btn-primary me-2 btn-sm" role="button">All Projects</a>
+                    <a href="{% url 'profile' %}" class="btn btn-outline-secondary me-2 btn-sm" role="button">Profile / {{ user.get_username }}</a>
+                    <a href="{% url 'logout_view' %}" class="btn btn-outline-secondary btn-sm" role="button">Logout</a>
                     {% else %}
-                    <a href="{% url 'login_view' %}" class="btn btn-primary" role="button">Login</a>
+                    <a href="{% url 'login_view' %}" class="btn btn-primary mt-4" role="button">Login</a>
                     {% endif %}
                 </div>
+                {% if user.is_authenticated %}
                 <div id="nav-menu" class="nav justify-content-end mt-2">
                     <div class="btn-group me-2 dropdown-center">
                       <a role="button" class="btn btn-light border" href="{% url 'plasmids' %}">Plasmids</a>
@@ -123,16 +136,16 @@
                           <li><a class="dropdown-item text-center small" href="{% url 'restrictionenzymes' %}">Restriction Enzymes</a></li>
                       </ul>
                     </div>
-                    <div class="btn-group me-2 dropdown-center">
+                    <div class="btn-group dropdown-center">
                       <button class="btn btn-light border dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Services</button>
                       <ul class="dropdown-menu">
                           <li><a class="dropdown-item text-center small" href="{% url 'services-l0d' %}">L0 Designer</a></li>
                           <li><a class="dropdown-item text-center small" href="{% url 'services-blast' %}">Blast</a></li>
-                          <!--<li><a class="dropdown-item text-center small" href="{% url 'services-gtr' %}">GTR</a></li>-->
                           <li><a class="dropdown-item text-center small" href="{% url 'services-stats' %}">Stats</a></li>
                       </ul>
                     </div>
                 </div>
+                {% endif %}
             </div>
         </div>
     </div>

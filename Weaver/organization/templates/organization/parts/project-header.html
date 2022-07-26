@@ -1,10 +1,12 @@
 <div id="header">
     <h1>Project / {{project}}</h1>
     <div id="header-links">
+        {% if user_can_admin %}
         <a href="{% url 'project_edit' pk=project.id %}" class="btn btn-outline-secondary" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit"><i
                 class="bi bi-pencil-fill"></i></a>
         <a href="{% url 'project_delete' pk=project.id %}" class="btn btn-outline-danger" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Trash"><i
                 class="bi bi-trash"></i></a>
+        {% endif %}
         <a href="{% url 'project' project_id=project.id %}" class="btn btn-outline-warning" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Return to project"><i
                 class="bi bi-arrow-return-left"></i></a>
     </div>

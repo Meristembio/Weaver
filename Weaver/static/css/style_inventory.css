@@ -125,6 +125,7 @@ table.glycerolstock_box-detail {
     margin: 2rem auto;
 }
 
+.box-position-sample,
 table.glycerolstock_box-detail td,
 table.glycerolstock_box-detail th{
 padding: .2rem;
@@ -135,11 +136,14 @@ text-align: center;
 cursor: pointer;
 }
 
+.box-position-sample,
+.box-position-used-sample,
 table.glycerolstock_box-detail td{
-background: #eee;
+background: #ddd;
 border-radius: 50%;
 }
 
+.box-position-used-sample,
 table.glycerolstock_box-detail td.box-position-used{
 background: #ffc107;
 }

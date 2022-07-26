@@ -1,5 +1,5 @@
 {% include "../../parts/header.html" %}
-<h1>Stats</h1>
+<h1>Organization / Stats</h1>
 <form method="post" class="default-style mb-4">
     {% csrf_token %}
     <button type="submit" name="refresh_stats"><i class="bi bi-arrow-counterclockwise"></i> stats</button> Last update: {{ last_update }}

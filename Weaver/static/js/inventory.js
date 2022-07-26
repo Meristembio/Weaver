@@ -33,9 +33,15 @@ function onReady(){
         });
     });
     /* copy_clipboard */
+    $('.copy_clipboard-child').click(function(e){
+        e.preventDefault();
+        copy_clipboard($(this).children('.copy_clipboard').first());
+    });
     $('.copy_clipboard').click(function(e){
         e.preventDefault();
-        var element = $(this);
+        copy_clipboard($(this));
+    });
+    function copy_clipboard(element){
         var $temp = $("<textarea>");
         $("body").append($temp);
         $temp.val(element.attr('data-cc')).select();
@@ -45,12 +51,12 @@ function onReady(){
         setTimeout(function(){
             element.removeClass('bi-clipboard-check').addClass('bi-clipboard');
         }, 1000);
-    });
+    }
     /* create/edit glycerolstock */
     if(typeof createglycerolstockPID !== 'undefined'){
     $('#id_plasmid').val(createglycerolstockPID);
     }
-    $('.box-position:not(.box-position-used)').click(function(){
+    $('.box-position-empty').click(function(){
         $('.box-position').removeClass('selected');
         $(this).addClass('selected');
         $('#id_box').val($(this).attr('data-box_id'));

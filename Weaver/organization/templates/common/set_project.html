@@ -1,0 +1,6 @@
+{% include "inventory/parts/header.html" %}
+<div class="alert alert-danger">Set current project to continue</div>
+{% with user.project_members.all as projects %}
+{% include "organization/parts/list_projects.html" %}
+{% endwith %}
+{% include "inventory/parts/footer.html" %}

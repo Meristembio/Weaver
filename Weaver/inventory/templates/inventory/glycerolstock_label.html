@@ -10,15 +10,15 @@
                 {{glycerolstock.strain}}<br/>{% if glycerolstock.plasmid %}{{glycerolstock.plasmid}}{% endif %}
             </p>
             <p id="label-resistance">
-                    {% if glycerolstock.strain.resistances %}
+                    {% if glycerolstock.strain.selectable_markers %}
                         <span class="label-name">Strain</span>
                         <span class="label-value">{{ resistantes_strain_human }}</span><br/>
                     {% endif %}
-                    {% if glycerolstock.plasmid.resistances  %}
+                    {% if glycerolstock.plasmid.selectable_markers  %}
                         <span class="label-name">Plasmid</span>
                         <span class="label-value">{{ resistantes_human }}</span><br/>
                     {% endif %}
-                    {% if glycerolstock.plasmid.resistances_plant %}
+                    {% if glycerolstock.plasmid.selectable_markers_plant %}
                         <span class="label-name">Plasmid (plant)</span>
                         <span class="label-value">{{ resistantes_plant_human }}</span><br/>
                     {% endif %}

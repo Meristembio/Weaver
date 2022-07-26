@@ -1,55 +1,54 @@
 {% load general_extras %}
-{% if location %}
 <div class="row">
-    <h3>Location: {{location.name}}</h3>
-    {% for box in location.boxes %}
-    <div class="glycerolstock_box col-4">
-        <div class="glycerolstock_box-inner">
-            <h3 class="glycerolstock_box-title">{{box.name}}</h3>
-            <table class="glycerolstock_box-detail">
-                <tr>
-                    <th></th>
-                    {% for box_column in collection.BOX_COLUMNS %}
-                    <th>{{box_column.1}}</th>
-                    {% endfor %}
-                </tr>
-                {% for box_row in collection.BOX_ROWS %}
-                <tr>
-                    <th>{{box_row.1}}</th>
-                    {% for box_column in collection.BOX_COLUMNS %}
+    <h3 class="bg-light p-2 mb-2">Location: {{location.name}}</h3>
+    {% if location.boxes %}
+        {% for box in location.boxes %}
+        <div class="glycerolstock_box col-4">
+            <div class="glycerolstock_box-inner">
+                <h3 class="glycerolstock_box-title">{{box.name}}</h3>
+                <table class="glycerolstock_box-detail">
+                    <tr>
+                        <th></th>
+                        {% for box_column in collection.BOX_COLUMNS %}
+                        <th>{{box_column.1}}</th>
+                        {% endfor %}
+                    </tr>
+                    {% for box_row in collection.BOX_ROWS %}
+                    <tr>
+                        <th>{{box_row.1}}</th>
+                        {% for box_column in collection.BOX_COLUMNS %}
 
-                    {% with box_row.1|add:box_column.1 as current_pos %}
-                    {% if current_pos in box %}
-                    <td class="box-position box-position-used" data-bs-toggle="tooltip" data-bs-placement="top"
-                        title="{{box|get_element_by_key:current_pos}}"
-                    >
-                        {% if render_mod == "n"  %}
-                        <a href="{% url 'glycerolstock' glycerolstock_id=box|get_element_id_by_key:current_pos %}"
-                           data-bs-toggle="tooltip" data-bs-placement="top"
-                           title="{{box|get_element_by_key:current_pos}}">{{box_row.1}}{{box_column.1}}</a>
+                        {% with box_row.1|add:box_column.1 as current_pos %}
+                        {% if current_pos in box %}
+                        <td class="box-position box-position-used" data-bs-toggle="tooltip" data-bs-placement="top"
+                            title="{% if render_mod == 'n'  %}{{box|get_element_by_key:current_pos}}{% else %}Not available{% endif %}"
+                        >
+                            {% if render_mod == "n"  %}
+                            <a href="{% url 'glycerolstock' glycerolstock_id=box|get_element_id_by_key:current_pos %}"
+                               data-bs-toggle="tooltip" data-bs-placement="top"
+                               title="{{box|get_element_by_key:current_pos}}" class="text-dark">{{box_row.1}}{{box_column.1}}</a>
+                            {% else %}
+                            {{box_row.1}}{{box_column.1}}
+                            {% endif %}
+                        </td>
                         {% else %}
-                        {{box_row.1}}{{box_column.1}}
+                        <td class="box-position box-position-empty text-light" data-bs-toggle="tooltip" data-bs-placement="top"
+                            title="Available"
+                            data-box_id="{{box.id}}"
+                            data-box_row="{{box_row.1}}"
+                            data-box_column="{{box_column.1}}"
+                        >{{box_row.1}}{{box_column.1}}</td>
                         {% endif %}
-                    </td>
-                    {% else %}
-                    <td class="box-position box-position-empty" data-bs-toggle="tooltip" data-bs-placement="top"
-                        title="Empty"
-                        data-box_id="{{box.id}}"
-                        data-box_row="{{box_row.1}}"
-                        data-box_column="{{box_column.1}}"
-                    >{{box_row.1}}{{box_column.1}}
-                    </td>
-                    {% endif %}
-                    {% endwith %}
+                        {% endwith %}
 
+                        {% endfor %}
+                    </tr>
                     {% endfor %}
-                </tr>
-                {% endfor %}
-            </table>
+                </table>
+            </div>
         </div>
-    </div>
-    {% endfor %}
+        {% endfor %}
+    {% else %}
+    <div class="alert alert-info">No boxes in this location</div>
+    {% endif %}
 </div>
-{% else %}
-<div class="alert alert-warning">No Boxes found.</div>
-{% endif %}

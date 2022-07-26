@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 
 from .models import Plasmid
 from .models import GlycerolStock
@@ -15,8 +16,23 @@ from .models import PlasmidType
 from .models import TableFilter
 from .custom.standards import CURRENT_ASSEMBLY_STANDARD
 from .custom.standards import recommended_enzyme_for_create
+from organization.decorators import require_current_project_set
+from organization.decorators import require_member_can_write_or_admin_current_project
+from organization.decorators import require_member_can_read_project_of_plasmid
+from organization.decorators import require_member_can_read_project_of_gs
+from organization.decorators import require_member_can_write_or_admin_project_of_plasmid
+from organization.decorators import require_member_can_write_or_admin_project_of_gs
+from organization.views import has_current_project
+from organization.views import get_current_project_id
+from organization.views import get_current_project
+from organization.views import on_project_member_can_write_or_admin
+from organization.views import get_projects_where_member_can_any
+from organization.views import member_can_write_or_admin_plasmid
+from organization.views import member_can_write_or_admin_gs
 
 from .forms import PlasmidValidationForm
+from .forms import PlasmidCreateForm
+from .forms import PlasmidEditForm
 
 from django.http import HttpResponseRedirect
 
@@ -30,6 +46,7 @@ from django.views.generic.edit import UpdateView
 from django.views.generic.edit import CreateView
 from django.views.generic.edit import DeleteView
 from django.urls import reverse
+from django.core.exceptions import PermissionDenied
 
 from Bio import SeqIO
 from Bio import pairwise2
@@ -49,8 +66,10 @@ import json
 from .forms import SangerForms
 from .forms import L0SequenceInput
 from .forms import BlastSequenceInput
+from .forms import GstockCreateForm
 from .forms import GstockEditForm
 from .forms import GlycerolQRInput
+from .forms import PlasmidNameInput
 
 import os
 import tempfile
@@ -150,12 +169,15 @@ def restrictionenzymes(request):
     return render(request, 'inventory/restrictionenzymes.html', context)
 
 
+@require_current_project_set
 def glycerolstocks(request):
-    glycerolstocks = GlycerolStock.objects.all()
+    glycerolstocks = GlycerolStock.objects.filter(project_id=get_current_project_id(request))
 
     level_from_table_filters = 0
     level_to_table_filters = 0
+    hasGlycerolStocks = False
     for glycerolstock in glycerolstocks:
+        hasGlycerolStocks = True
         if glycerolstock.plasmid:
             if glycerolstock.plasmid.level:
                 if glycerolstock.plasmid.level > level_to_table_filters:
@@ -163,12 +185,15 @@ def glycerolstocks(request):
                 if glycerolstock.plasmid.level < level_from_table_filters:
                     level_from_table_filters = glycerolstock.plasmid.level
     context = {
-        'glycerolstocks': glycerolstocks,
+        'on_project_member_can_write_or_admin': on_project_member_can_write_or_admin(get_current_project(request),
+                                                                                     request.user),
+        'has_glycerolstocks': hasGlycerolStocks,
         'table_filters': get_table_filters(level_from_table_filters, level_to_table_filters),
     }
     return render(request, 'inventory/glycerolstocks.html', context)
 
 
+@require_member_can_read_project_of_gs
 def glycerolstock(request, glycerolstock_id):
     try:
         glycerolstock_to_detail = GlycerolStock.objects.get(id=glycerolstock_id)
@@ -177,12 +202,13 @@ def glycerolstock(request, glycerolstock_id):
 
     resistantes_human_context = "None"
     if glycerolstock_to_detail.plasmid:
-        resistantes_human_context = resistantes_human(glycerolstock_to_detail.plasmid.resistances)
+        resistantes_human_context = resistantes_human(glycerolstock_to_detail.plasmid.selectable_markers)
 
     context = {
         'glycerolstock': glycerolstock_to_detail,
         'resistantes_human': resistantes_human_context,
-        'resistantes_strain_human': resistantes_human(glycerolstock_to_detail.strain.resistances),
+        'user_can_edit_gs': member_can_write_or_admin_gs(glycerolstock_to_detail, request.user),
+        'resistantes_strain_human': resistantes_human(glycerolstock_to_detail.strain.selectable_markers),
     }
     return render(request, 'inventory/glycerolstock.html', context)
 
@@ -199,6 +225,7 @@ def glycerolstock_qr(request):
     return render(request, 'inventory/glycerolstock_qr.html', context)
 
 
+@require_member_can_read_project_of_gs
 def glycerolstock_from_qr(request, glycerolstock_id):
     try:
         glycerolstock_to_detail = GlycerolStock.objects.filter(qr_id=glycerolstock_id)[0]
@@ -210,14 +237,63 @@ def glycerolstock_from_qr(request, glycerolstock_id):
     return render(request, 'inventory/glycerolstock.html', context)
 
 
+def gstock_check_pos(the_class, the_self, the_form):
+    try:
+        obj_curr_pos = GlycerolStock.objects.get(box_row=the_form.cleaned_data['box_row'],
+                                                    box_column=the_form.cleaned_data['box_column'],
+                                                    box=the_form.cleaned_data['box'])
+        if obj_curr_pos:
+            if obj_curr_pos != the_form.instance:
+                the_form.add_error(None, 'Box position not available')
+                return super(the_class, the_self).form_invalid(the_form)
+        return super(the_class, the_self).form_valid(the_form)
+    except GlycerolStock.DoesNotExist:
+        return super(the_class, the_self).form_valid(the_form)
+
+
+def build_boxes(mode):
+    output = {
+        'BOX_ROWS': BOX_ROWS,
+        'BOX_COLUMNS': BOX_COLUMNS,
+        'locations': []
+    }
+    for location in Location.objects.all():
+        boxes = []
+        for box in Box.objects.filter(location=location).order_by('name'):
+            box_output = {
+                'name': box.name,
+                'id': box.id
+            }
+            anyGs = False
+            for glycerolstock in box.glycerolstock_set.all():
+                box_output[str(glycerolstock.box_row) + str(glycerolstock.box_column)] = glycerolstock
+                anyGs = True
+
+            if anyGs or mode == 'p':
+                boxes.append(box_output)
+        if boxes or mode == 'p':
+            output['locations'].append({
+                'name': location.name,
+                'boxes': boxes
+            })
+    return output
+
+
 class GstockEdit(UpdateView):
     model = GlycerolStock
     template_name_suffix = '_update_form'
     form_class = GstockEditForm
 
+    @method_decorator(require_member_can_write_or_admin_project_of_gs)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
+    def form_valid(self, form):
+        return gstock_check_pos(GstockEdit, self, form)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["collection"] = build_boxes()
+        context["collection"] = build_boxes('p')
         context["render_mod"] = 'p'
         return context
 
@@ -225,43 +301,22 @@ class GstockEdit(UpdateView):
         return reverse('glycerolstock', args=(self.object.id,)) + '?form_result_glycerolstock_edit_success=true'
 
 
-def build_boxes():
-    output = {
-        'BOX_ROWS': BOX_ROWS,
-        'BOX_COLUMNS': BOX_COLUMNS,
-        'locations': []
-    }
-    glycerolstocks = GlycerolStock.objects.all()
-    for location in Location.objects.all():
-        boxes = []
-        boxes_at_location = Box.objects.filter(location=location).order_by('name')
-
-        for box in boxes_at_location:
-            box_output = {
-                'name': box.name,
-                'id': box.id
-            }
-            for glycerolstock in glycerolstocks:
-                if glycerolstock.box and glycerolstock.box == box and glycerolstock.box_row and glycerolstock.box_column:
-                    box_output[str(glycerolstock.box_row) + str(glycerolstock.box_column)] = glycerolstock
-
-            boxes.append(box_output)
-
-        output['locations'].append({
-            'name': location.name,
-            'boxes': boxes
-        })
-    return output
-
-
 class GstockCreate(CreateView):
     model = GlycerolStock
     template_name_suffix = '_create_form'
-    form_class = GstockEditForm
+    form_class = GstockCreateForm
+
+    @method_decorator(require_member_can_write_or_admin_current_project)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
+    def form_valid(self, form):
+        form.instance.project = get_current_project(self.request)
+        return gstock_check_pos(GstockCreate, self, form)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["collection"] = build_boxes()
+        context["collection"] = build_boxes('p')
         context["render_mod"] = 'p'
         return context
 
@@ -274,10 +329,18 @@ class GstockCreatePlasmidDefined(CreateView):
     form_class = GstockEditForm
     template_name_suffix = '_create_form'
 
+    @method_decorator(require_member_can_write_or_admin_current_project)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
+    def form_valid(self, form):
+        form.instance.project = get_current_project(self.request)
+        return gstock_check_pos(GstockCreatePlasmidDefined, self, form)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["collection"] = build_boxes()
-        context["pid"] = self.kwargs['pid']
+        context["collection"] = build_boxes('p')
+        context["plasmid_id"] = self.kwargs['pid']
         context["render_mod"] = 'p'
         return context
 
@@ -285,6 +348,7 @@ class GstockCreatePlasmidDefined(CreateView):
         return reverse('glycerolstock', args=(self.object.id,)) + '?form_result_glycerolstock_create_success=true'
 
 
+@require_member_can_read_project_of_gs
 def glycerolstock_label(request, glycerolstock_id):
     try:
         glycerolstock_to_label = GlycerolStock.objects.get(id=glycerolstock_id)
@@ -293,29 +357,32 @@ def glycerolstock_label(request, glycerolstock_id):
 
     resistantes_human_context = "None"
     if glycerolstock_to_label.plasmid:
-        resistantes_human_context = resistantes_human(glycerolstock_to_label.plasmid.resistances, True)
+        resistantes_human_context = resistantes_human(glycerolstock_to_label.plasmid.selectable_markers, True)
 
     context = {
         'glycerolstock': glycerolstock_to_label,
         'resistantes_human': resistantes_human_context,
-        'resistantes_strain_human': resistantes_human(glycerolstock_to_label.strain.resistances, True),
+        'resistantes_strain_human': resistantes_human(glycerolstock_to_label.strain.selectable_markers, True),
     }
     return render(request, 'inventory/glycerolstock_label.html', context)
 
 
 def glycerolstock_boxes(request):
     context = {
-        'collection': build_boxes(),
+        'collection': build_boxes('n'),
         'render_mod': 'n'
     }
     return render(request, 'inventory/glycerolstock_boxes.html', context)
 
 
+@require_current_project_set
 def plasmids(request):
-    plasmids = Plasmid.objects.all()
+    plasmids = Plasmid.objects.filter(project_id=get_current_project_id(request))
     level_from_table_filters = 0
     level_to_table_filters = 0
+    hasPlasmids = False
     for plasmid in plasmids:
+        hasPlasmids = True
         plasmid.refc = recommended_enzyme_for_create(plasmid.level)
         if plasmid.level:
             if plasmid.level > level_to_table_filters:
@@ -323,8 +390,10 @@ def plasmids(request):
             if plasmid.level < level_from_table_filters:
                 level_from_table_filters = plasmid.level
     context = {
+        'on_project_member_can_write_or_admin': on_project_member_can_write_or_admin(get_current_project(request),
+                                                                                     request.user),
         'table_filters': get_table_filters(level_from_table_filters, level_to_table_filters),
-        'plasmids': plasmids,
+        'has_plasmids': hasPlasmids,
         'RESTRICTION_ENZYMES': RestrictionEnzyme.objects.all,
     }
     return render(request, 'inventory/plasmids.html', context)
@@ -334,7 +403,7 @@ def getPlasmidResistanceForLigation(plasmid):
     if plasmid.level:
         if plasmid.level % 2 == 0:
             is_spe = False
-            for resistance in plasmid.resistances.all():
+            for resistance in plasmid.selectable_markers.all():
                 if resistance.three_letter_code == 'SPE':
                     is_spe = True
                     break
@@ -344,7 +413,7 @@ def getPlasmidResistanceForLigation(plasmid):
                 return 'Error: SPE not in resistance list'
         else:
             is_kan = False
-            for resistance in plasmid.resistances.all():
+            for resistance in plasmid.selectable_markers.all():
                 if resistance.three_letter_code == 'KAN':
                     is_kan = True
                     break
@@ -352,16 +421,16 @@ def getPlasmidResistanceForLigation(plasmid):
                 return 'KAN'
             else:
                 return 'Error: KAN not in resistance list'
-    if len(plasmid.resistances):
-        return plasmid.resistances[0]
+    if len(plasmid.selectable_markers):
+        return plasmid.selectable_markers[0]
     else:
         return 'More than one'
 
 
-def resistantes_human(resistances, short=False):
+def resistantes_human(selectable_markers, short=False):
     resistantes_human_return = []
-    if resistances:
-        for resistance in resistances.all():
+    if selectable_markers:
+        for resistance in selectable_markers.all():
             if short:
                 resistantes_human_return.append(str(resistance.three_letter_code))
             else:
@@ -372,6 +441,7 @@ def resistantes_human(resistances, short=False):
         return "None"
 
 
+@require_member_can_read_project_of_plasmid
 def plasmid(request, plasmid_id):
     try:
         plasmid_to_detail = Plasmid.objects.get(id=plasmid_id)
@@ -408,14 +478,15 @@ def plasmid(request, plasmid_id):
 
     context = {
         'plasmid': plasmid_to_detail,
-        'resistantes_human': resistantes_human(plasmid_to_detail.resistances),
+        'resistantes_human': resistantes_human(plasmid_to_detail.selectable_markers),
         'insert_of': insert_of,
         'backbone_of': backbone_of,
         'ligation_raw': ligation_raw,
         'SEQUENCING_STATES': SEQUENCING_STATES,
         'CHECK_STATES': CHECK_STATES,
         'CHECK_METHODS': CHECK_METHODS,
-        'RESTRICTION_ENZYMES': RestrictionEnzyme.objects.all()
+        'RESTRICTION_ENZYMES': RestrictionEnzyme.objects.all(),
+        'user_can_edit_plasmid': member_can_write_or_admin_plasmid(plasmid_to_detail, request.user)
     }
 
     if request.method == 'POST' and 'l0_sequence_input' in request.POST:
@@ -600,6 +671,43 @@ def plasmid_record_from_inserts(plasmid_to_build, insert, oh_5, oh_3, the_re):
         return False, "Error reading backbone sequence file"
 
 
+@require_member_can_write_or_admin_current_project
+def plasmid_duplicate(request, plasmid_id):
+    try:
+        plasmid_to_duplicate = Plasmid.objects.get(id=plasmid_id)
+    except ObjectDoesNotExist:
+        raise Http404
+    context = {
+        'plasmid': plasmid_to_duplicate
+    }
+    if 'plasmid_name' in request.POST:
+        form = PlasmidNameInput(request.POST)
+        context['form'] = form
+        if form.is_valid():
+            selectable_markers = plasmid_to_duplicate.selectable_markers.all()
+            inserts = plasmid_to_duplicate.inserts.all()
+            plasmid_to_duplicate.pk = None
+            plasmid_to_duplicate.created_on = datetime.now().date()
+            plasmid_to_duplicate.working_colony = None
+            plasmid_to_duplicate.check_state = 1
+            plasmid_to_duplicate.check_method = None
+            plasmid_to_duplicate.check_date = None
+            plasmid_to_duplicate.digestion_check_enzymes = None
+            plasmid_to_duplicate.check_observations = None
+            plasmid_to_duplicate.sequencing_state = 0
+            plasmid_to_duplicate.sequencing_date = None
+            plasmid_to_duplicate.sequencing_observations = None
+            plasmid_to_duplicate.name = form.cleaned_data['plasmid_name']
+            plasmid_to_duplicate.save()
+            plasmid_to_duplicate.selectable_markers.add(*selectable_markers)
+            plasmid_to_duplicate.inserts.add(*inserts)
+            return plasmid(request, plasmid_to_duplicate.id)
+        return render(request, 'inventory/plasmid_duplicate.html', context)
+    else:
+        context['form'] = PlasmidNameInput()
+        return render(request, 'inventory/plasmid_duplicate.html', context)
+
+@require_member_can_read_project_of_plasmid
 def plasmid_from_qr(request, plasmid_id):
     try:
         plasmid_to_detail = Plasmid.objects.filter(qr_id=plasmid_id)[0]
@@ -613,9 +721,17 @@ def plasmid_from_qr(request, plasmid_id):
 
 class PlasmidEdit(UpdateView):
     model = Plasmid
-    fields = ['name', 'resistances', 'sequence', 'backbone', 'inserts', 'intended_use', 'type', 'level', 'author',
-              'description', 'created_on']
+    form_class = PlasmidEditForm
     template_name_suffix = '_update_form'
+
+    @method_decorator(require_member_can_write_or_admin_project_of_plasmid)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super(PlasmidEdit, self).get_form_kwargs()
+        kwargs.update({'user': self.request.user})
+        return kwargs
 
     def get_success_url(self, **kwargs):
         return reverse('plasmid', args=(self.object.id,)) + '?form_result_plasmid_edit_success=true'
@@ -623,8 +739,21 @@ class PlasmidEdit(UpdateView):
 
 class PlasmidCreate(CreateView):
     model = Plasmid
-    fields = '__all__'
+    form_class = PlasmidCreateForm
     template_name_suffix = '_create_form'
+
+    @method_decorator(require_member_can_write_or_admin_current_project)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super(PlasmidCreate, self).get_form_kwargs()
+        kwargs.update({'user': self.request.user})
+        return kwargs
+
+    def form_valid(self, form):
+        form.instance.project = get_current_project(self.request)
+        return super().form_valid(form)
 
     def get_success_url(self, **kwargs):
         auto_create = ""
@@ -639,16 +768,25 @@ class PlasmidCreateWizard(CreateView):
     fields = '__all__'
     template_name_suffix = '_create_form_wizard'
 
+    @method_decorator(require_member_can_write_or_admin_current_project)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["create_url"] = reverse('plasmid_create')
         context["next_url"] = reverse('plasmid_create_wizard_end')
         return context
 
+    def form_valid(self, form):
+        form.instance.project = get_current_project(self.request)
+        return super().form_valid(form)
+
     def get_success_url(self, **kwargs):
         return reverse('plasmid', args=(self.object.id,))
 
 
+@require_member_can_write_or_admin_current_project
 def plasmid_create_wizard_end(request):
     context = {}
     if request.method == 'POST' and 'params' in request.POST:
@@ -670,11 +808,12 @@ def plasmid_create_wizard_end(request):
                     backbone=backbone,
                     type=PlasmidType.objects.get(id=0),
                     level=backbone.level,
+                    project=get_current_project(request),
                 )
                 for i in params['i']:
                     plasmid_created.inserts.add(i)
-                for r in backbone.resistances.all():
-                    plasmid_created.resistances.add(r.id)
+                for r in backbone.selectable_markers.all():
+                    plasmid_created.selectable_markers.add(r.id)
                 plasmid_create_from_inserts(plasmid_created, context)
                 return plasmid(request, plasmid_created.id)
             else:
@@ -686,6 +825,7 @@ def plasmid_create_wizard_end(request):
     return render(request, 'inventory/plasmid.html', context)
 
 
+@require_member_can_read_project_of_plasmid
 @csrf_exempt
 def plasmid_view_edit(request, plasmid_id):
     try:
@@ -695,7 +835,7 @@ def plasmid_view_edit(request, plasmid_id):
 
     warnings = []
 
-    if request.user.has_perm('inventory.change_plasmid'):
+    if member_can_write_or_admin_plasmid(plasmid_to_detail, request.user):
         if request.method == 'POST' and 'saveOve' in request.POST:
             if 'gbContent' in request.POST:
                 # saving from OVE
@@ -709,7 +849,8 @@ def plasmid_view_edit(request, plasmid_id):
 
         if request.method == 'POST' and 'create' in request.POST:
             if not plasmid_to_detail.sequence:
-                plasmid_to_detail.sequence.save(plasmid_to_detail.name + ".gb", ContentFile('''LOCUS       ''' + plasmid_to_detail.name.replace(" ", "_") + '''                   0 bp    DNA     circular  31-AUG-2021
+                plasmid_to_detail.sequence.save(plasmid_to_detail.name + ".gb", ContentFile(
+                    '''LOCUS       ''' + plasmid_to_detail.name.replace(" ", "_") + '''                   0 bp    DNA     circular  31-AUG-2021
     ORIGIN      
     //'''))
             else:
@@ -733,6 +874,7 @@ def plasmid_sequence_file_contents(plasmid):
     return re.sub(r'[\'"]', '', sequence_file_contents)
 
 
+@require_member_can_read_project_of_plasmid
 def plasmid_download(request, plasmid_id):
     try:
         plasmid_to_download = Plasmid.objects.get(id=plasmid_id)
@@ -758,6 +900,7 @@ def plasmid_download(request, plasmid_id):
     raise Http404
 
 
+@require_member_can_read_project_of_plasmid
 def plasmid_label(request, plasmid_id):
     try:
         plasmid_to_label = Plasmid.objects.get(id=plasmid_id)
@@ -771,6 +914,7 @@ def plasmid_label(request, plasmid_id):
     return render(request, 'inventory/plasmid_label.html', context)
 
 
+@require_member_can_read_project_of_plasmid
 def plasmid_digest(request, plasmid_id):
     try:
         plasmid_to_digest = Plasmid.objects.get(id=plasmid_id)
@@ -806,6 +950,7 @@ def plasmid_digest(request, plasmid_id):
     return render(request, 'inventory/plasmid_digest.html', context)
 
 
+@require_member_can_read_project_of_plasmid
 def plasmid_pcr(request, plasmid_id):
     try:
         plasmid_to_pcr = Plasmid.objects.get(id=plasmid_id)
@@ -882,6 +1027,7 @@ def plasmid_pcr(request, plasmid_id):
     return render(request, 'inventory/plasmid_pcr.html', context)
 
 
+@require_member_can_read_project_of_plasmid
 def plasmid_sanger(request, plasmid_id):
     try:
         plasmid_to_align = Plasmid.objects.get(id=plasmid_id)
@@ -1169,6 +1315,12 @@ def primer_label(request, primer_id):
 class PlasmidDelete(DeleteView):
     model = Plasmid
 
+    def get_object(self, *args, **kwargs):
+        obj = super(PlasmidDelete, self).get_object(*args, **kwargs)
+        if not member_can_write_or_admin_plasmid(obj, self.request.user):
+            raise PermissionDenied()
+        return obj
+
     def get_success_url(self, **kwargs):
         return reverse('plasmids') + '?form_result_object_deleted=true'
 
@@ -1194,6 +1346,7 @@ class PrimerDelete(DeleteView):
         return reverse('primers') + '?form_result_object_deleted=true'
 
 
+@require_current_project_set
 def PlasmidValidationEdit(request, plasmid_id):
     try:
         plasmid_to_validate = Plasmid.objects.get(id=plasmid_id)
@@ -1210,12 +1363,13 @@ def PlasmidValidationEdit(request, plasmid_id):
                   {'form': form, 'plasmid': plasmid_to_validate})
 
 
+@require_current_project_set
 def PlasmidValidations(request):
     plasmidsToCheck = []
     plasmidsToStock = []
-    plasmidsWithStockWoCheck = []
+    # plasmidsWithStockWoCheck = []
 
-    all_plasmids = Plasmid.objects
+    all_plasmids = Plasmid.objects.filter(project_id=get_current_project_id(request))
 
     # Plasmid w/o GS && Check state == Pending
     for plasmid in all_plasmids.filter(check_state=1):
@@ -1228,16 +1382,16 @@ def PlasmidValidations(request):
             plasmidsToStock.append(plasmid)
 
     # Plasmid w/ GS && Check state == Pending && Sequencing state != Required
-    for plasmid in all_plasmids.filter(check_state=1).exclude(sequencing_state=1):
-        if plasmid.glycerolstock_set.all().count() != 0:
-            plasmidsWithStockWoCheck.append(plasmid)
+    # for plasmid in all_plasmids.filter(check_state=1).exclude(sequencing_state=1):
+    #    if plasmid.glycerolstock_set.all().count() != 0:
+    #        plasmidsWithStockWoCheck.append(plasmid)
 
     context = {
         'plasmidsToCheck': plasmidsToCheck,
         # Sequencing state = Required
         'plasmidsToSequence': all_plasmids.filter(sequencing_state=1),
         'plasmidsToStock': plasmidsToStock,
-        'plasmidsWithStockWoCheck': plasmidsWithStockWoCheck,
+        # 'plasmidsWithStockWoCheck': plasmidsWithStockWoCheck,
         'CHECK_METHODS': CHECK_METHODS
     }
     return render(request, 'inventory/plasmidvalidations.html', context)
@@ -1356,7 +1510,7 @@ def ServicesBlast(request):
     # collect fastas
 
     records = []
-    for plasmid in Plasmid.objects.all():
+    for plasmid in Plasmid.objects.filter(project__in=get_projects_where_member_can_any(request.user)).order_by('name'):
         record_output = seqio_get(plasmid)
         if record_output[0]:
             record_output[1].id = str(len(records) + 1) + "-" + plasmid.name.replace(" ", "_")
@@ -1435,72 +1589,74 @@ def get_plasmid_type_id(plasmid):
 
 
 def api_plasmid_getfasta_byid(request, name):
-    plasmids = Plasmid.objects.all()
-    for plasmid in plasmids:
-        if plasmid.name == name:
-            sequence = ""
-            result = grab_seq(plasmid)
-            if result[0]:
-                sequence = result[1]
-            return JsonResponse({
-                'name': plasmid.name,
-                'id': plasmid.id,
-                'seq': str(sequence)
-            })
+    plasmid = Plasmid.objects.get(name=name)
+    if plasmid:
+        sequence = ""
+        result = grab_seq(plasmid)
+        if result[0]:
+            sequence = result[1]
+        return JsonResponse({
+            'name': plasmid.name,
+            'id': plasmid.id,
+            'seq': str(sequence)
+        })
     return JsonResponse({
         'error': 'Plasmid not found'
     })
 
 
 def api_plasmids(request):
-    output = []
-    level_from_table_filters = 0
-    level_to_table_filters = 0
-    for plasmid in Plasmid.objects.all():
-        plasmid_grab_seq = grab_seq(plasmid)
-        gs_out = []
-        for gs in plasmid.glycerolstock_set.all():
-            gs_out.append({
-                'i': str(gs.id),
-                's': str(gs.strain),
-                'bc': gs.box_column,
-                'br': gs.box_row,
-                'b': str(gs.box),
-            })
+    if has_current_project(request):
+        output = []
+        level_from_table_filters = 0
+        level_to_table_filters = 0
+        for plasmid in Plasmid.objects.filter(project_id=get_current_project_id(request)).order_by('name'):
+            plasmid_grab_seq = grab_seq(plasmid)
+            gs_out = []
+            for gs in plasmid.glycerolstock_set.all():
+                gs_out.append({
+                    'i': str(gs.id),
+                    's': str(gs.strain),
+                    'bc': gs.box_column,
+                    'br': gs.box_row,
+                    'b': str(gs.box),
+                })
 
-        output.append({
-            'n': plasmid.name,
-            'l': plasmid.level,
-            't': get_plasmid_type_id(plasmid),
-            'i': plasmid.id,
-            'hs': plasmid_grab_seq[0],
-            'c': plasmid.computed_size,
-            'ic': plasmid.insert_computed_size,
-            'cs': plasmid.check_state,
-            'ss': plasmid.sequencing_state,
-            'r': recommended_enzyme_for_create(plasmid.level),
-            'g': gs_out,
-            'rh': " / ".join(list(plasmid.resistances.all().values_list('three_letter_code', flat=True)))
-        })
-        if plasmid.level:
-            if plasmid.level > level_to_table_filters:
-                level_to_table_filters = plasmid.level
-            if plasmid.level < level_from_table_filters:
-                level_from_table_filters = plasmid.level
-    context = {
-        'table_filters': get_table_filters(level_from_table_filters, level_to_table_filters),
-        'plasmids': output,
-        'has_perm_to_edit': request.user.has_perm('inventory.change_plasmid'),
-        'csrf_token': django.middleware.csrf.get_token(request)
-    }
-    return JsonResponse(context, safe=False)
+            output.append({
+                'n': plasmid.name,
+                'l': plasmid.level,
+                't': get_plasmid_type_id(plasmid),
+                'i': plasmid.id,
+                'hs': plasmid_grab_seq[0],
+                'c': plasmid.computed_size,
+                'ic': plasmid.insert_computed_size,
+                'cs': plasmid.check_state,
+                'ss': plasmid.sequencing_state,
+                'r': recommended_enzyme_for_create(plasmid.level),
+                'g': gs_out,
+                'sm': " + ".join(list(plasmid.selectable_markers.all().values_list('three_letter_code', flat=True))),
+                'p': member_can_write_or_admin_plasmid(plasmid, request.user)
+            })
+            if plasmid.level:
+                if plasmid.level > level_to_table_filters:
+                    level_to_table_filters = plasmid.level
+                if plasmid.level < level_from_table_filters:
+                    level_from_table_filters = plasmid.level
+        context = {
+            'current_project': True,
+            'table_filters': get_table_filters(level_from_table_filters, level_to_table_filters),
+            'plasmids': output,
+            'csrf_token': django.middleware.csrf.get_token(request)
+        }
+        return JsonResponse(context, safe=False)
+    return JsonResponse({})
 
 
 def api_glycerolstocks(request):
     output = []
     level_from_table_filters = 0
     level_to_table_filters = 0
-    for glycerolstock in GlycerolStock.objects.all():
+    for glycerolstock in GlycerolStock.objects.filter(project_id=get_current_project_id(request)):
         pi = ""
         pn = ""
         pt = ""
@@ -1532,12 +1688,12 @@ def api_glycerolstocks(request):
             'bc': glycerolstock.box_column,
             'br': glycerolstock.box_row,
             'bn': bn,
-            'bl': bl
+            'bl': bl,
+            'p': member_can_write_or_admin_gs(glycerolstock, request.user)
         })
     context = {
         'table_filters': get_table_filters(level_from_table_filters, level_to_table_filters),
         'glycerolstocks': output,
-        'has_perm_to_edit': request.user.has_perm('inventory.change_glycerolstock'),
     }
     return JsonResponse(context, safe=False)
 
@@ -1556,7 +1712,8 @@ def api_parts(request, enzyme_name, assembly_standard):
     if not the_re:
         api_error = 'API Error / Restriction enzyme not found (' + enzyme_name + ')'
     else:
-        for plasmid in Plasmid.objects.order_by('name'):
+        for plasmid in Plasmid.objects.filter(project__in=get_projects_where_member_can_any(request.user)).order_by(
+                'name'):
             if plasmid.level is not None and plasmid.type is not None and plasmid.type.id == 1 and assembly_standard == 'loop' and (
                     (enzyme_name == 'BsaI' and plasmid.level % 2 == 0) or (
                     enzyme_name == 'SapI' and plasmid.level % 2 == 1)):

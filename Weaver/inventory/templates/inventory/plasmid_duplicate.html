@@ -1,0 +1,15 @@
+{% include "./parts/header.html" %}
+{% load static %}
+{% load humanize %}
+{% if plasmid %}
+{% include "./parts/plasmid-header.html" %}
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <p class="mb-4">Define new plasmid name (duplicate of {{plasmid}}):</p>
+    {{ form.as_p }}
+    <input type="submit" value="Duplicate" class="btn btn-primary">
+</form>
+{% else %}
+<div class="alert alert-warning">No plasmid found.</div>
+{% endif %}
+{% include "./parts/footer.html" %}

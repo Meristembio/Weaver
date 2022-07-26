@@ -44,15 +44,15 @@
         </td>
     </tr>
     <tr>
-        <th scope="row">Resistances</th>
+        <th scope="row">Selectable markers</th>
         <td>
-            {% if glycerolstock.strain.resistances %}<strong>Strain</strong>:
+            {% if glycerolstock.strain.selectable_markers %}<strong>Strain</strong>:
             {{ resistantes_strain_human }}
             <br/>{% endif %}
-            {% if glycerolstock.plasmid.resistances %}<strong>Plasmid</strong>:
+            {% if glycerolstock.plasmid.selectable_markers %}<strong>Plasmid</strong>:
             {{ resistantes_human }}
             <br/>{% endif %}
-            {% if glycerolstock.plasmid.resistances_plant %}<strong>Plasmid (plant)</strong>:
+            {% if glycerolstock.plasmid.selectable_markers_plant %}<strong>Plasmid (plant)</strong>:
             {{ resistantes_plant_human }}
             <br/>{% endif %}
         </td>
@@ -60,6 +60,10 @@
     <tr>
         <th scope="row">Created on</th>
         <td>{{glycerolstock.created_on}}</td>
+    </tr>
+    <tr>
+        <th scope="row">Project</th>
+        <td>{{glycerolstock.project}}</td>
     </tr>
     <tr>
         <th scope="row">Location</th>

@@ -48,6 +48,7 @@ urlpatterns = [
     path('plasmid/digest/<uuid:plasmid_id>', login_required(views.plasmid_digest, redirect_field_name='next'), name='plasmid_digest'),
     path('plasmid/pcr/<uuid:plasmid_id>', login_required(views.plasmid_pcr, redirect_field_name='next'), name='plasmid_pcr'),
     path('plasmid/validation/edit/<uuid:plasmid_id>/', login_required(PlasmidValidationEdit, redirect_field_name='next'), name='plasmid_validation_edit'),
+    path('plasmid/duplicate/<uuid:plasmid_id>', login_required(views.plasmid_duplicate, redirect_field_name='next'), name='plasmid_duplicate'),
 
     path('glycerolstocks/', login_required(views.glycerolstocks, redirect_field_name='next'), name='glycerolstocks'),
     path('glycerolstock/<uuid:glycerolstock_id>/', login_required(views.glycerolstock, redirect_field_name='next'), name='glycerolstock'),

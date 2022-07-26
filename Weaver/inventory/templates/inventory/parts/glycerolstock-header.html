@@ -1,7 +1,7 @@
 <div id="header">
     <h1>GS / {{glycerolstock}}</h1>
     <div id="header-links">
-        {% if perms.inventory.change_glycerolstock %}
+        {% if user_can_edit_gs %}
         <a href="{% url 'glycerolstock_edit' pk=glycerolstock.id %}" class="btn btn-outline-secondary" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit"><i class="bi bi-pencil"></i></a>
         <a href="{% url 'glycerolstock_delete' pk=glycerolstock.id %}" class="btn btn-outline-danger" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Trash"><i class="bi bi-trash"></i></a>
         {% endif %}

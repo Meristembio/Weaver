@@ -7,9 +7,16 @@
 <div class="extra_header">
     <h1>GS Boxes</h1>
 </div>
+{% if collection.locations %}
+<div class="alert alert-info">
+    <p>Click box position to autocomplete form</p>
+</div>
 {% for location in collection.locations %}
     {% include "./glycerolstock_render_boxes.html" %}
 {% endfor %}
+{% else %}
+<div class="alert alert-warning">No locations found.</div>
+{% endif %}
 {% else %}
 <div class="alert alert-warning">No Glycerol stock found.</div>
 {% endif %}

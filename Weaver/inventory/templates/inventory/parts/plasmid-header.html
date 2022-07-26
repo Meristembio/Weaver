@@ -2,7 +2,7 @@
     <h1>Plasmid / {{plasmid.name}}</h1>
     <i class="bi bi-clipboard copy_clipboard" data-cc="{{plasmid.name}}"></i>
     <div id="header-links">
-        {% if perms.inventory.change_plasmid %}
+        {% if user_can_edit_plasmid %}
         <a href="{% url 'plasmid_edit' pk=plasmid.id %}" class="btn btn-outline-secondary" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit"><i
                 class="bi bi-pencil-fill"></i></a>
         <a href="{% url 'plasmid_delete' pk=plasmid.id %}" class="btn btn-outline-danger" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Trash"><i
@@ -10,6 +10,7 @@
         <a href="{% url 'plasmid_validation_edit' plasmid_id=plasmid.id %}" class="btn btn-outline-primary" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Validation">
             <i class="bi bi-check2-square"></i></a>
         {% endif %}
+        <a href="{% url 'plasmid_duplicate' plasmid_id=plasmid.id %}" class="expand-hover btn btn-outline-success" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Duplicate"><i class="bi bi-node-plus-fill"></i></a>
         <a href="{% url 'plasmid_label' plasmid_id=plasmid.id %}" class="expand-hover btn btn-outline-info" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Label"><i class="bi bi-tag-fill"></i></a>
         <a href="{% url 'plasmid' plasmid_id=plasmid.id %}" class="btn btn-outline-warning" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Return to plasmid"><i
                 class="bi bi-arrow-return-left"></i></a>

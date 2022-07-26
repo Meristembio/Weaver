@@ -25,7 +25,7 @@ SECRET_KEY = 'lc6nz_@8jblx!n@v8ig7@m#ylt+vlll^-k2ttb1%k(fs=i!x$@'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['192.168.1.64', '192.168.1.93', '127.0.0.1']
+ALLOWED_HOSTS = ['192.168.1.64', '127.0.0.1', 'pe.meristem.cl']
 
 # Application definition
 
@@ -41,24 +41,19 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'mathfilters',
-    "corsheaders",
+    # "corsheaders",
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    "corsheaders.middleware.CorsMiddleware",
+    # "corsheaders.middleware.CorsMiddleware",
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-
-#delete INTERNAL_IPS
-# INTERNAL_IPS = [
-#     '192.168.1.64',
-# ]
 
 ROOT_URLCONF = 'Weaver.urls'
 

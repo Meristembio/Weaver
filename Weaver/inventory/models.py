@@ -11,6 +11,7 @@ from .custom.general import CHECK_METHODS
 from .custom.general import SEQUENCING_STATES
 from .custom.general import COLORS
 from Bio.Restriction.Restriction_Dictionary import rest_dict, suppliers
+from organization.models import Project
 
 RE_Choices = []
 for key in rest_dict:
@@ -32,14 +33,6 @@ class TableFilter(models.Model):
     name = models.CharField(max_length=20, blank=True)
     color = models.CharField(choices=COLORS, max_length=10, blank=True, null=True)
     options = models.CharField(max_length=200, blank=True, help_text="Format: \'x|X,y|Y\'. Left side is the name of the filter and right side is the start-with text")
-
-    def __str__(self):
-        return self.name
-
-
-class PlasmidAuthor(models.Model):
-    id = models.IntegerField(primary_key=True)
-    name = models.CharField(max_length=20, blank=True)
 
     def __str__(self):
         return self.name
@@ -146,20 +139,18 @@ class Box(models.Model):
 
 class Plasmid(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name = models.CharField(max_length=200)
-    # marker
-    resistances = models.ManyToManyField(Resistance, blank=True, symmetrical=False, related_name='+', help_text='Use CTRL for multiple select')
+    name = models.CharField(max_length=50)
+    selectable_markers = models.ManyToManyField(Resistance, blank=True, symmetrical=False, related_name='+', help_text='Use CTRL for multiple select')
     sequence = models.FileField(upload_to='uploads/plasmids/', blank=True)
-    backbone = models.ForeignKey('self', on_delete=models.CASCADE, blank=True, null=True)
+    backbone = models.ForeignKey('self', models.SET_NULL, blank=True, null=True)
     computed_size = models.IntegerField(blank=True, null=True, editable=False)
     insert_computed_size = models.IntegerField(blank=True, null=True, editable=False)
-    # symmetrical=False hace la relación unidireccional
     inserts = models.ManyToManyField('self', blank=True, symmetrical=False, related_name='+')
     intended_use = models.CharField(max_length=200)
-    type = models.ForeignKey(PlasmidType, on_delete=models.CASCADE, blank=True, null=True)
+    type = models.ForeignKey(PlasmidType, models.SET_NULL, blank=True, null=True)
     level = models.IntegerField(blank=True, null=True)
-    author = models.ForeignKey(PlasmidAuthor, on_delete=models.CASCADE, blank=True, null=True)
     description = models.CharField(max_length=1000, blank=True)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
     created_on = models.DateField(auto_now_add=False, default=datetime.date.today)
     qr_id = ShortUUIDField(default=shortuuid.uuid(), editable=False)
 
@@ -185,7 +176,7 @@ class Plasmid(models.Model):
 class Strain(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=200, blank=True)
-    resistances = models.ManyToManyField(Resistance, blank=True, symmetrical=False, related_name='+', help_text='Use CTRL for multiple select')
+    selectable_markers = models.ManyToManyField(Resistance, blank=True, symmetrical=False, related_name='+', help_text='Use CTRL for multiple select')
     description = models.CharField(max_length=1000, blank=True)
 
     def __str__(self):
@@ -201,11 +192,12 @@ class GlycerolStock(models.Model):
     parent = models.ForeignKey("self", on_delete=models.CASCADE, blank=True, null=True)
     plasmid = models.ForeignKey(Plasmid, on_delete=models.CASCADE, blank=True, null=True)
     created_on = models.DateField(auto_now_add=False, default=datetime.date.today)
-    box_row = models.CharField(max_length=1, blank=True, null=True, choices=BOX_ROWS)
-    box_column = models.IntegerField(null=True, blank=True, choices=BOX_COLUMNS)
-    box = models.ForeignKey(Box, on_delete=models.CASCADE, blank=True)
+    box_row = models.CharField(max_length=1, choices=BOX_ROWS, help_text="Click box position (below) to autocomplete")
+    box_column = models.IntegerField(choices=BOX_COLUMNS, help_text="Click box position (below) to autocomplete")
+    box = models.ForeignKey(Box, on_delete=models.CASCADE, help_text="Click box position (below) to autocomplete")
     qr_id = ShortUUIDField(default=shortuuid.uuid(), editable=False)
     details = models.CharField(max_length=1000, blank=True)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
 
     def __str__(self):
         if self.plasmid is None:

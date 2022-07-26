@@ -4,7 +4,6 @@ from .models import GlycerolStock
 from .models import Strain
 from .models import Plasmid
 from .models import PlasmidType
-from .models import PlasmidAuthor
 from .models import TableFilter
 from .models import Resistance
 from .models import Location
@@ -16,7 +15,6 @@ admin.site.register(GlycerolStock)
 admin.site.register(Strain)
 # admin.site.register(Plasmid)
 admin.site.register(PlasmidType)
-admin.site.register(PlasmidAuthor)
 admin.site.register(TableFilter)
 admin.site.register(Resistance)
 admin.site.register(Location)

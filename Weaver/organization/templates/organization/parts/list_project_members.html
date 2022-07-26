@@ -1,23 +1,23 @@
-{% if project %}
-<ol>
+<div>
 {% for member in project.members.all %}
     {% with project.membership_set.all as mss %}
     {% for ms in mss %}
     {% if ms.member == member %}
-    <li>{{member}}{% if member == user %} (you){% endif %} /
-        <small class="text-secondary">
+    <p>
+        <span>{{member}}{% if member == user %} (you){% endif %}</span>
+        <span class="text-secondary"> /
             {% if ms.access_policies %}
                 {% for ap in apo %}
                 {% if ap.0 == ms.access_policies %}
-                    Can {{ap.1}} (<a href="{% url 'membership_edit' pk=ms.id %}" role="button">Edit</a>)
+                    Can {{ap.1}}
                 {% endif %}
                 {% endfor %}
             {% endif %}
-        </small>
-    </li>
+        </span>
+        {% if user_membership.access_policies == 'a' %} <a href="{% url 'membership_edit' pk=ms.id %}" class="badge bg-secondary ms-1" role="button">Edit</a>{% endif %}
+    </p>
     {% endif %}
     {% endfor %}
     {% endwith %}
 {% endfor %}
-</ol>
-{% endif %}
+</div>

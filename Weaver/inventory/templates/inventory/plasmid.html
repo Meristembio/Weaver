@@ -46,7 +46,7 @@
         <td>{{plasmid.name}}</td>
     </tr>
     <tr>
-        <th scope="row">Resistances</th>
+        <th scope="row">Selectable markers</th>
         <td>
             {{ resistantes_human }}<br/>
         </td>
@@ -55,6 +55,8 @@
         <th scope="row">Sequence</th>
         <td>
             {% if plasmid.sequence %}
+            <a href="{% url 'plasmid_view_edit' plasmid_id=plasmid.id %}" class="btn btn-outline-info"
+               role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="View / Edit"><i class="bi bi-eye"></i> / <i class="bi bi-pencil"></i></a>
             <div class="download-links">
                 <a href="{% url 'plasmid_download' plasmid_id=plasmid.id %}" class="btn btn-outline-primary"
                    role="button"
@@ -70,15 +72,16 @@
             </button>
             <a href="{% url 'plasmid_digest' plasmid_id=plasmid.id %}" class="btn btn-outline-secondary"
                role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Digest"><i class="bi bi-scissors"></i></a>
-            <a href="{% url 'plasmid_view_edit' plasmid_id=plasmid.id %}" class="btn btn-outline-info"
-               role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="View / Edit"><i class="bi bi-eye"></i> / <i class="bi bi-pencil"></i></a>
             <a href="{% url 'plasmid_pcr' plasmid_id=plasmid.id %}" class="btn btn-outline-success"
                        role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="PCR"><i class="bi bi-arrow-return-right"></i></a>
             <a href="{% url 'plasmid_sanger' plasmid_id=plasmid.id %}" class="btn btn-outline-warning"
                role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Align ab1"><i class="bi bi-list-nested"></i></a>
+            {% if user_can_edit_plasmid %}
             <button class="btn btn-outline-primary enzyme-options" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Build" data-refc="{{plasmid.refc}}"><i class="bi bi-arrow-repeat"></i><i
                     class="bi bi-hammer"></i></button>
+            {% endif %}
             {% else %}
+            {% if user_can_edit_plasmid %}
             <form method="post" class="default-style inline"
                   action="{% url 'plasmid_view_edit' plasmid_id=plasmid.id %}">
                 {% csrf_token %}
@@ -87,6 +90,9 @@
             </form>
             <button class="btn btn-outline-primary enzyme-options" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Build" data-refc="{{plasmid.refc}}"><i
                     class="bi bi-hammer"></i></button>
+            {% else %}
+            You don't have perms to create plasmid sequence
+            {% endif %}
             {% endif %}
         </td>
     </tr>
@@ -156,14 +162,12 @@
         </td>
     </tr>
     {% endif %}
-    {% if perms.inventory.change_plasmid %}
     <tr>
         <th scope="row">Ligation raw</th>
         <td>
             {{ ligation_raw }} <i class="bi bi-clipboard copy_clipboard" data-cc="{{ ligation_raw }}"></i>
         </td>
     </tr>
-    {% endif %}
     <tr>
         <th scope="row">Intended use</th>
         <td>{{plasmid.intended_use}}</td>
@@ -181,14 +185,14 @@
         </td>
     </tr>
     <tr>
-        <th scope="row">Author</th>
-        <td>
-            {{plasmid.author}}
-        </td>
-    </tr>
-    <tr>
         <th scope="row">Description</th>
         <td>{{plasmid.description | urlize}}</td>
+    </tr>
+    <tr>
+        <th scope="row">Project</th>
+        <td>
+            <a href="{% url 'project' project_id=plasmid.project.id %}" class="btn btn-outline-secondary" role="button">{{plasmid.project}}</a>
+        </td>
     </tr>
     <tr>
         <th scope="row">Created On</th>
@@ -279,8 +283,10 @@
                 </tbody>
             </table>
             <p>
+                {% if user_can_edit_plasmid %}
                 <a class="btn btn-outline-info" role="button"
                    href="{% url 'plasmid_validation_edit' plasmid_id=plasmid.id %}">Edit validation</a>
+                {% endif %}
             </p>
         </td>
     </tr>

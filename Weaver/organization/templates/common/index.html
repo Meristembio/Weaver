@@ -17,27 +17,10 @@
                 <div class="col-1">
                 </div>
                 <div class="col-7 shadow p-3 mb-5 bg-body rounded">
-                    <div id="carouselIntro" class="carousel slide" data-bs-ride="carousel">
-                      <div class="carousel-inner">
-                        <div class="carousel-item active">
-                          <img src="/static/img/intro/intro-1.jpg" class="d-block w-100" alt="Plasmids / Intro">
-                        </div>
-                        <div class="carousel-item">
-                          <img src="/static/img/intro/intro-2.jpg" class="d-block w-100" alt="Editor / Intro">
-                        </div>
-                        <div class="carousel-item">
-                          <img src="/static/img/intro/intro-3.jpg" class="d-block w-100" alt="L0D / Intro">
-                        </div>
-                      </div>
-                      <button class="carousel-control-prev" type="button" data-bs-target="#carouselIntro" data-bs-slide="prev">
-                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                        <span class="visually-hidden">Previous</span>
-                      </button>
-                      <button class="carousel-control-next" type="button" data-bs-target="#carouselIntro" data-bs-slide="next">
-                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                        <span class="visually-hidden">Next</span>
-                      </button>
-                    </div>
+                    <video id="intro-video" style="width: 100%; height: auto; pointer-events: none;" autoplay muted loop>
+                      <source src="/static/video/intro.mp4" type="video/mp4">
+                      Your browser does not support the video tag.
+                    </video>
                 </div>
             </div>
         </div>
@@ -127,4 +110,4 @@
     </div>
 </div>
 <div class="container">
-    {% include "inventory/parts/footer.html" %}
+{% include "inventory/parts/footer.html" %}
