@@ -30,9 +30,7 @@
 
 {% if request.GET.form_result_plasmid_create_success %}
 <div class="alert alert-success" role="alert">
-  Plasmid created! {% if perms.inventory.add_glycerolstock %}
-        <a href="{% url 'plasmid_create' %}" class="btn btn-primary" role="button">Create new one</a>
-        {% endif %}
+  Plasmid created! <a href="{% url 'plasmid_create' %}" class="btn btn-primary" role="button">Create new one</a>
 </div>
 {% endif %}
 
@@ -44,9 +42,7 @@
 
 {% if request.GET.form_result_glycerolstock_create_success %}
 <div class="alert alert-success" role="alert">
-  Glycerol stock created! {% if perms.inventory.add_glycerolstock %}
-        <a href="{% url 'glycerolstock_create' %}" class="btn btn-primary" role="button">Create new one</a>
-        {% endif %}
+  Glycerol stock created! <a href="{% url 'glycerolstock_create' %}" class="btn btn-primary" role="button">Create new one</a>
 </div>
 {% endif %}
 
@@ -58,9 +54,7 @@
 
 {% if request.GET.form_result_recipe_create_success %}
 <div class="alert alert-success" role="alert">
-  Recipe created! {% if perms.protocols.add_recipe %}
-        <a href="{% url 'recipe_create' %}" class="btn btn-primary" role="button">Create new one</a>
-        {% endif %}
+  Recipe created! <a href="{% url 'recipe_create' %}" class="btn btn-primary" role="button">Create new one</a>
 </div>
 {% endif %}
 
@@ -72,9 +66,7 @@
 
 {% if request.GET.form_result_restrictionenzyme_create_success %}
 <div class="alert alert-success" role="alert">
-  Restriction enzyme created! {% if perms.inventory.add_restrictionenzime %}
-        <a href="{% url 'restrictionenzyme_create' %}" class="btn btn-primary" role="button">Create new one</a>
-        {% endif %}
+  Restriction enzyme created! <a href="{% url 'restrictionenzyme_create' %}" class="btn btn-primary" role="button">Create new one</a>
 </div>
 {% endif %}
 
@@ -86,17 +78,13 @@
 
 {% if request.GET.form_result_component_create_success %}
 <div class="alert alert-success" role="alert">
-  Component created! {% if perms.protocols.add_component %}
-        <a href="{% url 'component_create' %}" class="btn btn-primary" role="button">Create new Component</a>
-        {% endif %}
+  Component created!
 </div>
 {% endif %}
 
 {% if request.GET.form_result_reactive_create_success %}
 <div class="alert alert-success" role="alert">
-  Reactive created! {% if perms.protocols.add_reactive %}
-        <a href="{% url 'reactive_create' %}" class="btn btn-primary" role="button">Create new Reactive</a>
-        {% endif %}
+  Reactive created!
 </div>
 {% endif %}
 
@@ -108,9 +96,7 @@
 
 {% if request.GET.form_result_primer_create_success %}
 <div class="alert alert-success" role="alert">
-  Primer created! {% if perms.protocols.add_primer %}
-        <a href="{% url 'primer_create' %}" class="btn btn-primary" role="button">Create new Primer</a>
-        {% endif %}
+  Primer created! <a href="{% url 'primer_create' %}" class="btn btn-primary" role="button">Create new Primer</a>
 </div>
 {% endif %}
 

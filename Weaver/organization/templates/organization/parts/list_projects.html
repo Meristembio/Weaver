@@ -23,7 +23,7 @@
             <td>
                 {{project.description | urlize}}
             </td>
-            <td>{% if project.public %}Public{% else %}Private{% endif %}</td>
+            <td>{% if project.public %}Public{% else %}Private{% endif %} (Not implemented)</td>
             {% for user_membership in user.membership_set.all %}
             {% if user_membership.project == project %}
             <td>

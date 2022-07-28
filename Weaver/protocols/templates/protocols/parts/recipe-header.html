@@ -1,0 +1,16 @@
+<div id="header">
+    <h1><span class="text-secondary opacity-50 me-2 fs-3">Recipe</span><span>{{recipe}}</span></h1>
+    <div id="header-links">
+        {% if user_can_edit_recipe %}
+        <a href="{% url 'recipe_edit' pk=recipe.id %}" class="btn btn-outline-secondary" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit"><i class="bi bi-pencil"></i></a>
+        <a href="{% url 'recipe_delete' pk=recipe.id %}" class="btn btn-outline-danger" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Trash"><i
+                class="bi bi-trash"></i></a>
+        {% endif %}
+        <a href="{% url 'recipe_label' recipe_id=recipe.id %}" class="btn btn-outline-info"
+           role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Label"><i class="bi bi-tag-fill"></i></a>
+        <a href="{% url 'recipe' recipe_id=recipe.id %}" class="btn btn-outline-warning" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Return"><i class="bi bi-arrow-return-left"></i></a>
+        {% if show_create_component_button %}
+        {% include './create_component_reactive_button.html' %}
+        {% endif %}
+    </div>
+</div>

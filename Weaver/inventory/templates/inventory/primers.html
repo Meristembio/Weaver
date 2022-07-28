@@ -4,10 +4,10 @@
 <div id="header">
     <h1>Primers</h1>
     <div id="header-links">
-        {% if perms.inventory.add_primer %}
-        <a href="{% url 'primer_create' %}" class="btn btn-primary" role="button"><i class="bi bi-plus"></i></a>
-        {% endif %}
+        <a href="{% url 'primer_create' %}" class="btn btn-primary{% if not on_current_project_member_can_write_or_admin %} disabled{% endif %}" role="button" target="_blank"><i
+                class="bi bi-plus"></i></a>
     </div>
+    {% include "./parts/show_from_all_projects.html" %}
 </div>
 {% include "./form_results.html" %}
 {% if primers %}
@@ -21,9 +21,6 @@
         <th scope="col">Length 3'</th>
         <th scope="col">Tm</th>
         <th scope="col">Tm 3'</th>
-        {% if perms.inventory.change_primer %}
-        <th scope="col" data-defaultsort='disabled'><i class="bi bi-pencil-fill"></i></th>
-        {% endif %}
     </tr>
     </thead>
     <tbody>
@@ -34,6 +31,7 @@
             <a class="btn btn-success" role="button" href="{% url 'primer' primer_id=primer.id %}">
                 {{primer}}
             </a>
+            <a href="{% url 'primer_edit' pk=primer.id %}" class="btn btn-outline-secondary{% if not primer.can_edit %} disabled{% endif %}" role="button"><i class="bi bi-pencil"></i></a>
         </td>
         <td><span class="overhang">{{primer.sequence_5}}</span>{{primer.sequence_3}}</td>
         <td>{{primer.intended_use}}</td>
@@ -41,11 +39,6 @@
         <td>{{primer.sequence_3|length}}</td>
         <td>{{complete_sequence|tm_value|floatformat:"1"|intcomma}} °C</td>
         <td>{{primer.sequence_3|tm_value|floatformat:"1"|intcomma}} °C</td>
-        {% if perms.inventory.change_primer %}
-        <td>
-            <a href="{% url 'primer_edit' pk=primer.id %}" class="btn btn-outline-secondary" role="button"><i class="bi bi-pencil"></i></a>
-        </td>
-        {% endif %}
     </tr>
     {% endwith %}
     {% endfor %}

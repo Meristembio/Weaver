@@ -1,5 +1,5 @@
 <div id="header">
-    <h1>Project / {{project}}</h1>
+    <h1><span class="text-secondary opacity-50 me-2 fs-3">Project</span><span>{{project}}</span></h1>
     <div id="header-links">
         {% if user_can_admin %}
         <a href="{% url 'project_edit' pk=project.id %}" class="btn btn-outline-secondary" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit"><i

@@ -1,0 +1,4 @@
+<form method="post" action="{{href}}" class="default-style" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+</form>

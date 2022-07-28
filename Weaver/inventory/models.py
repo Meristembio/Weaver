@@ -218,6 +218,7 @@ class Primer(models.Model):
     fwd_or_rev = models.CharField(choices=FWD_OR_REV, max_length=1, blank=True)
     intended_use = models.CharField(max_length=1000, blank=True)
     qr_id = ShortUUIDField(default=shortuuid.uuid(), editable=False)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.name

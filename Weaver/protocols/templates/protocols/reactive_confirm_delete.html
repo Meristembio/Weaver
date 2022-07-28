@@ -1,0 +1,8 @@
+{% include "inventory/parts/header.html" %}
+{% include "./parts/reactive-header.html" %}
+{% include "inventory/form_results.html" %}
+<div class="alert alert-danger">Editing this reactive will affect all components that contain it</div>
+<div id="form-recipe">
+    {% include "inventory/inventory_delete_form.html" %}
+</div>
+{% include "inventory/parts/footer.html" %}

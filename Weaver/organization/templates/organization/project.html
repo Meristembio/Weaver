@@ -37,7 +37,7 @@
                 </tr>
                 <tr>
                     <th scope="row">Visibility</th>
-                    <td>{% if project.public %}Public{% else %}Private{% endif %}</td>
+                    <td>{% if project.public %}Public{% else %}Private{% endif %} (Not implemented)</td>
                 </tr>
                 <tr>
                     <th scope="row">Currently active?</th>
@@ -72,7 +72,7 @@
                     <th scope="row">
                         <a class="btn btn-sm btn-success" href="{% url 'primers' %}">Primers</a>
                     </th>
-                    <td>{{project.primers_set.all|length}}</td>
+                    <td>{{project.primer_set.all|length}}</td>
                 </tr>
                 <tr>
                     <th scope="row">

@@ -108,6 +108,10 @@ function onReady(){
             }
         });
     });
+    /* show_from_all_projects */
+    $('#show_from_all_projects').click(function(){
+        $(this).parent().submit();
+    });
 }
 
 /* OVE save */

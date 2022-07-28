@@ -1,9 +1,11 @@
 <div id="header">
-    <h1>Primer / {{primer}}</h1>
+    <h1><span class="text-secondary opacity-50 me-2 fs-3">Primer</span><span>{{primer}}</span></h1>
     <div id="header-links">
-        <a href="{% url 'primers' %}" class="btn btn-outline-danger" role="button"><i class="bi bi-arrow-return-left"></i></a>
-        {% if perms.inventory.change_primer %}
-        <a href="{% url 'primer_edit' pk=primer.id %}" class="btn btn-outline-secondary" role="button"><i class="bi bi-pencil-fill"></i></a>
+        {% if user_can_edit_primer %}
+        <a href="{% url 'primer_edit' pk=primer.id %}" class="btn btn-outline-secondary" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit"><i class="bi bi-pencil"></i></a>
+        <a href="{% url 'primer_delete' pk=primer.id %}" class="btn btn-outline-danger" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Trash"><i
+                class="bi bi-trash"></i></a>
         {% endif %}
+        <a href="{% url 'primer' primer_id=primer.id %}" class="btn btn-outline-warning" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Return"><i class="bi bi-arrow-return-left"></i></a>
     </div>
 </div>

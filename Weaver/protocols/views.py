@@ -1,27 +1,45 @@
 from django.shortcuts import render
+from django.utils.decorators import method_decorator
 from .models import Recipe
 from .models import Component
 from .models import Reactive
-from .models import RECIPE_CATEGORIES
+from .models import TableFilter
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import Http404
 from .models import CONCENTRATION_UNITS
 from .forms import RecipeForm
+from .forms import RecipeCreateEditForm
+from .forms import ComponentCreateForm
+from .forms import ComponentCreateEditForm
 from django.views.generic.edit import UpdateView
 from django.views.generic.edit import CreateView
+from django.views.generic.edit import DeleteView
 from django.urls import reverse
 import datetime
+from .decorators import require_member_own_recipe
+from .decorators import require_member_own_reactive
+from .decorators import require_member_own_component
+from .decorators import require_member_can_view_recipe
+from organization.views import get_show_from_all_projects
+from organization.views import get_projects_where_member_can_any
+from organization.decorators import require_current_project_set
+from django.db.models import Q
 
 
+def can_member_edit_recipe(recipe, member):
+    return True if recipe.owner == member else False
+
+
+@require_current_project_set
+@require_member_can_view_recipe
 def recipe(request, recipe_id):
     try:
         recipe_to_detail = Recipe.objects.get(id=recipe_id)
     except ObjectDoesNotExist:
         raise Http404
-
     context = {
-        'CONCENTRATION_UNITS': CONCENTRATION_UNITS,
-        'recipe': recipe_to_detail
+        'recipe': recipe_to_detail,
+        'user_can_edit_recipe': can_member_edit_recipe(recipe_to_detail, request.user)
     }
 
     if request.method == 'POST':
@@ -136,39 +154,92 @@ def recipe(request, recipe_id):
 
 
 def recipes(request):
+    options = []
+    for recipe_cat in TableFilter.objects.all():
+        options.append((recipe_cat.name, recipe_cat.name, recipe_cat.color))
     table_filters = [
         ['all', 'All', [
             ('All', 'all', 'primary'),
         ]],
-        ['category', 'Category', []],
+        ['category', 'Category', options],
     ]
-    for recipe_cat in RECIPE_CATEGORIES:
-        table_filters[1][2].append((recipe_cat[1], recipe_cat[0], 'warning'))
+    if get_show_from_all_projects(request):
+        recipes = Recipe.objects.filter(Q(owner=request.user) | Q(shared_to_project__in=get_projects_where_member_can_any(request.user)))
+    else:
+        recipes = Recipe.objects.filter(owner=request.user)
+    
     context = {
-        'recipes': Recipe.objects.all(),
-        'table_filters': table_filters
+        'recipes': recipes,
+        'table_filters': table_filters,
+        'show_from_all_projects': get_show_from_all_projects(request)
     }
     return render(request, 'protocols/recipes.html', context)
 
 
 class RecipeEdit(UpdateView):
     model = Recipe
-    fields = '__all__'
+    form_class = RecipeCreateEditForm
     template_name_suffix = '_update_form'
+
+    @method_decorator(require_member_own_recipe)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['user_can_edit_recipe'] = can_member_edit_recipe(self.object, self.request.user)
+        context['component_form'] = ComponentCreateForm()
+        return context
+
+    def get_form_kwargs(self):
+        kwargs = super(RecipeEdit, self).get_form_kwargs()
+        kwargs.update({'user': self.request.user})
+        return kwargs
 
     def get_success_url(self, **kwargs):
         return reverse('recipe', args=(self.object.id,)) + '?form_result_recipe_edit_success=true'
 
 
+class RecipeDelete(DeleteView):
+    model = Recipe
+
+    @method_decorator(require_member_own_recipe)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['user_can_edit_recipe'] = can_member_edit_recipe(self.object, self.request.user)
+        return context
+
+    def get_form_kwargs(self):
+        kwargs = super(RecipeDelete, self).get_form_kwargs()
+        kwargs.update({'user': self.request.user})
+        return kwargs
+
+    def get_success_url(self, **kwargs):
+        return reverse('recipes') + '?form_result_object_deleted=true'
+
+
 class RecipeCreate(CreateView):
     model = Recipe
-    fields = '__all__'
+    form_class = RecipeCreateEditForm
     template_name_suffix = '_create_form'
+
+    def form_valid(self, form):
+        form.instance.owner = self.request.user
+        return super().form_valid(form)
+
+    def get_form_kwargs(self):
+        kwargs = super(RecipeCreate, self).get_form_kwargs()
+        kwargs.update({'user': self.request.user})
+        return kwargs
 
     def get_success_url(self, **kwargs):
         return reverse('recipes') + '?form_result_recipe_create_success=true'
 
 
+@require_member_can_view_recipe
 def recipe_label(request, recipe_id):
     try:
         recipe_to_label = Recipe.objects.get(id=recipe_id)
@@ -188,23 +259,59 @@ class ComponentEdit(UpdateView):
     fields = '__all__'
     template_name_suffix = '_update_form'
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['CONCENTRATION_UNITS'] = CONCENTRATION_UNITS
-        context['recipe_id'] = self.request.GET['recipe_id']
-        return context
+    @method_decorator(require_member_own_component)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
 
     def get_success_url(self, **kwargs):
-        return reverse('recipe', args=(self.request.GET['recipe_id'],)) + '?form_result_component_edit_success=true'
+        return reverse('recipe', args=(self.kwargs['recipe_id'],)) + '?form_result_component_edit_success=true'
 
 
 class ComponentCreate(CreateView):
     model = Component
-    fields = '__all__'
+    form_class = ComponentCreateEditForm
     template_name_suffix = '_create_form'
+
+    def form_valid(self, form):
+        form.instance.owner = self.request.user
+        return super().form_valid(form)
+
+    def get_form_kwargs(self):
+        kwargs = super(ComponentCreate, self).get_form_kwargs()
+        kwargs.update({'user': self.request.user})
+        return kwargs
 
     def get_success_url(self, **kwargs):
         return reverse('recipe_create') + '?form_result_component_create_success=true'
+
+
+class ComponentCreateReturnToRecipe(CreateView):
+    model = Component
+    form_class = ComponentCreateEditForm
+    template_name_suffix = '_create_form'
+
+    def form_valid(self, form):
+        form.instance.owner = self.request.user
+        return super().form_valid(form)
+
+    def get_form_kwargs(self):
+        kwargs = super(ComponentCreateReturnToRecipe, self).get_form_kwargs()
+        kwargs.update({'user': self.request.user})
+        return kwargs
+
+    def get_success_url(self, **kwargs):
+        return reverse('recipe_edit', args=(self.kwargs['recipe_id'],)) + '?form_result_component_create_success=true'
+
+
+class ComponentDelete(DeleteView):
+    model = Component
+
+    @method_decorator(require_member_own_component)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
+    def get_success_url(self, **kwargs):
+        return reverse('recipe', args=(self.kwargs['recipe_id'],)) + '?form_result_component_edit_success=true'
 
 
 class ReactiveCreate(CreateView):
@@ -212,8 +319,26 @@ class ReactiveCreate(CreateView):
     fields = '__all__'
     template_name_suffix = '_create_form'
 
+    def form_valid(self, form):
+        form.instance.owner = self.request.user
+        return super().form_valid(form)
+
     def get_success_url(self, **kwargs):
         return reverse('component_create') + '?form_result_reactive_create_success=true'
+
+
+class ReactiveCreateReturnToRecipe(CreateView):
+    model = Reactive
+    fields = '__all__'
+    template_name_suffix = '_create_form'
+
+    def form_valid(self, form):
+        print(self.request.user)
+        form.instance.owner = self.request.user
+        return super().form_valid(form)
+
+    def get_success_url(self, **kwargs):
+        return reverse('recipe_edit', args=(self.kwargs['recipe_id'],)) + '?form_result_reactive_create_success=true'
 
 
 class ReactiveEdit(UpdateView):
@@ -221,14 +346,26 @@ class ReactiveEdit(UpdateView):
     fields = '__all__'
     template_name_suffix = '_update_form'
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['recipe_id'] = self.request.GET['recipe_id']
-        return context
+    @method_decorator(require_member_own_reactive)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
 
     def get_success_url(self, **kwargs):
         return reverse('recipe',
-                       args=(self.request.GET['recipe_id'],)) + '?form_result_reactive_edit_success=true'
+                       args=(self.kwargs['recipe_id'],)) + '?form_result_reactive_edit_success=true'
+
+
+class ReactiveDelete(DeleteView):
+    model = Reactive
+
+    @method_decorator(require_member_own_reactive)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
+    def get_success_url(self, **kwargs):
+        return reverse('recipe',
+                       args=(self.kwargs['recipe_id'],)) + '?form_result_reactive_edit_success=true'
+
 
 
 def index(request):

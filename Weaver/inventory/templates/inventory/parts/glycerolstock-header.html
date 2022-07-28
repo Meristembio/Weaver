@@ -1,5 +1,5 @@
 <div id="header">
-    <h1>GS / {{glycerolstock}}</h1>
+    <h1><span class="text-secondary opacity-50 me-2 fs-3">G.S.</span><span>{{glycerolstock}}</span></h1>
     <div id="header-links">
         {% if user_can_edit_gs %}
         <a href="{% url 'glycerolstock_edit' pk=glycerolstock.id %}" class="btn btn-outline-secondary" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit"><i class="bi bi-pencil"></i></a>

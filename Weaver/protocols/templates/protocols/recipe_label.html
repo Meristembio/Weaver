@@ -2,12 +2,7 @@
 {% load static %}
 <link rel="stylesheet" type="text/css" media="print" href="{% static 'css/style_inventory_print.css' %}"/>
 {% if recipe %}
-<div id="header">
-    <h1>Recipe / {{recipe}}</h1>
-    <div id="header-links">
-        <a href="{% url 'recipe' recipe_id=recipe.id %}" class="btn btn-outline-danger" role="button"><i class="bi bi-arrow-return-left"></i></a>
-    </div>
-</div>
+{% include "./parts/recipe-header.html" %}
 <div id="label">
     <div id="label-main">
         <div id="label-info">
@@ -21,11 +16,7 @@
             <p id="label-components">
                 <span class="label-name">Components</span>
                 {% for component in recipe.components.all %}
-                <span class="label-value"><span class="recipe-component-value" data-initval="{{component.concentration}}">{{component.concentration}}</span>{% for concentration_unit in CONCENTRATION_UNITS %}
-                        {% if concentration_unit.0 == component.concentration_unit %}
-                        {{concentration_unit.1}}
-                        {% endif %}
-                        {% endfor %} {{component.reactive}}</span>
+                <span class="label-value">{{component.reactive}} - <span class="recipe-component-value" data-initval="{{component.concentration}}">{{component.concentration}}</span> {{component.concentration_unit}}</span>
                 {% endfor %}
             </p>
         </div>

@@ -6,10 +6,11 @@
 <div id="header">
     <h1>Plasmids</h1>
     <div id="header-links">
-        <a href="{% url 'plasmids' %}" class="btn btn-secondary" role="button"><i class="bi bi-arrow-clockwise"></i></a>
-        <a href="{% url 'plasmid_create_wizard' %}" class="btn btn-primary{% if not on_project_member_can_write_or_admin %} disabled{% endif %}" role="button" target="_blank"><i
+        <a href="{% url 'plasmids' %}" class="btn btn-secondary" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Refresh"><i class="bi bi-arrow-clockwise"></i></a>
+        <a href="{% url 'plasmid_create_wizard' %}" class="btn btn-primary{% if not on_current_project_member_can_write_or_admin %} disabled{% endif %}" role="button" target="_blank"><i
                 class="bi bi-plus"></i> Create</a>
     </div>
+    {% include "./parts/show_from_all_projects.html" %}
 </div>
 {% include "./form_results.html" %}
 {% if has_plasmids %}

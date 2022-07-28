@@ -13,6 +13,7 @@ urlpatterns = [
     path('project/edit/<int:pk>/', login_required(ProjectEdit.as_view(), redirect_field_name='next'), name='project_edit'),
     path('project/delete/<int:pk>/', login_required(ProjectDelete.as_view(), redirect_field_name='next'), name='project_delete'),
     path('project/set_current/<int:pk>/', login_required(views.project_set_current, redirect_field_name='next'), name='project_set_current'),
+    path('show_from_all_projects_toggle/', login_required(views.show_from_all_projects_toggle, redirect_field_name='next'), name='show_from_all_projects_toggle'),
     path('project/membership/edit/<int:pk>/', login_required(ProjectMemberEdit.as_view(), redirect_field_name='next'), name='membership_edit'),
     path('project/create', login_required(ProjectCreate.as_view(), redirect_field_name='next'), name='project_create'),
 

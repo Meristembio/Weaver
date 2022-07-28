@@ -24,16 +24,14 @@
                             title="{% if render_mod == 'n'  %}{{box|get_element_by_key:current_pos}}{% else %}Not available{% endif %}"
                         >
                             {% if render_mod == "n"  %}
-                            <a href="{% url 'glycerolstock' glycerolstock_id=box|get_element_id_by_key:current_pos %}"
-                               data-bs-toggle="tooltip" data-bs-placement="top"
-                               title="{{box|get_element_by_key:current_pos}}" class="text-dark">{{box_row.1}}{{box_column.1}}</a>
+                            <a href="{% url 'glycerolstock' glycerolstock_id=box|get_element_id_by_key:current_pos %}" class="text-dark">{{box_row.1}}{{box_column.1}}</a>
                             {% else %}
                             {{box_row.1}}{{box_column.1}}
                             {% endif %}
                         </td>
                         {% else %}
                         <td class="box-position box-position-empty text-light" data-bs-toggle="tooltip" data-bs-placement="top"
-                            title="Available"
+                            title="{% if render_mod == 'n'  %}-{% else %}Available{% endif %}"
                             data-box_id="{{box.id}}"
                             data-box_row="{{box_row.1}}"
                             data-box_column="{{box_column.1}}"

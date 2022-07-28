@@ -1,0 +1,10 @@
+{% if view.kwargs.pk %}
+{% url 'reactive_create_return_to_recipe' recipe_id=view.kwargs.pk as reactive_create_url %}
+{% elif view.kwargs.recipe_id %}
+{% url 'reactive_create_return_to_recipe' recipe_id=view.kwargs.recipe_id as reactive_create_url %}
+{% else %}
+{% url 'reactive_create' as reactive_create_url %}
+{% endif %}
+<a type="button" class="btn btn-primary" href="{{reactive_create_url}}">
+  <i class="bi bi-plus"></i> Reactive
+</a>

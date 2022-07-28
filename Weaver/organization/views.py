@@ -63,9 +63,32 @@ def project_set_current(request, pk):
     return response
 
 
+def show_from_all_projects_toggle(request):
+    next = '/'
+    if 'next' in request.GET:
+        next = request.GET.get('next')
+    current_show_from_all_projects = get_show_from_all_projects(request)
+    response = redirect(next)
+    response.set_cookie('show_from_all_projects', not current_show_from_all_projects)
+    return response
+
+
+def get_show_from_all_projects(request):
+    return False if 'show_from_all_projects' not in request.COOKIES else (True if request.COOKIES['show_from_all_projects'] == 'True' else False)
+
+
 def get_projects_where_member_can_any(member):
     pks = []
     for m in member.membership_set.all():
+        if m.project.id not in pks:
+            pks.append(m.project.id)
+    return Project.objects.filter(pk__in=pks)
+
+
+def get_projects_where_member_can_write_or_admin(member):
+    perms = ['a', 'w']
+    pks = []
+    for m in member.membership_set.filter(reduce(lambda q, f: q | Q(access_policies=f), perms, Q())):
         if m.project.id not in pks:
             pks.append(m.project.id)
     return Project.objects.filter(pk__in=pks)
@@ -110,6 +133,10 @@ def member_can_write_or_admin_plasmid(plasmid, member):
     return on_project_member_can_write_or_admin(plasmid.project, member)
 
 
+def member_can_write_or_admin_primer(primer, member):
+    return on_project_member_can_write_or_admin(primer.project, member)
+
+
 def member_can_write_or_admin_gs(gs, member):
     return on_project_member_can_write_or_admin(gs.project, member)
 
@@ -130,6 +157,12 @@ def on_project_member_can_write_or_admin(project, member):
         return False
     except Membership.DoesNotExist:
         return False
+
+
+def on_current_project_member_can_write_or_admin(request):
+    project = get_current_project_id(request)
+    member = request.user
+    return on_project_member_can_write_or_admin(project, member)
 
 
 def on_project_member_can(project, member, perm):

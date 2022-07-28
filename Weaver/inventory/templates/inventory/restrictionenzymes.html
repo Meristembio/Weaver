@@ -2,11 +2,6 @@
 {% load re_extras %}
 <div id="header">
     <h1>Restriction Enzymes</h1>
-    <div id="header-links">
-        {% if perms.inventory.add_restrictionenzime %}
-        <a href="{% url 'restrictionenzyme_create' %}" class="btn btn-primary" role="button"><i class="bi bi-plus"></i></a>
-        {% endif %}
-    </div>
 </div>
 {% include "./form_results.html" %}
 {% if restrictionenzymes %}

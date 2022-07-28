@@ -1,0 +1,9 @@
+<div id="header">
+    <h1><span class="text-secondary opacity-50 me-2 fs-3">Component</span><span>{{component}}</span></h1>
+    <div id="header-links">
+        {% include './create_reactive_button.html' %}
+        <a href="{% url 'component_delete' pk=component.id recipe_id=view.kwargs.recipe_id %}" class="btn btn-outline-danger" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Trash"><i
+                class="bi bi-trash"></i></a>
+        <a href="{% url 'recipe' recipe_id=view.kwargs.recipe_id %}" class="btn btn-outline-warning" role="button"><i class="bi bi-arrow-return-left"></i></a>
+    </div>
+</div>

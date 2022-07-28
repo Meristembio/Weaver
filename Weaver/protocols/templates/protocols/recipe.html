@@ -1,19 +1,8 @@
 {% include "inventory/parts/header.html" %}
 {% load humanize %}
-<div id="header">
-    <h1>Recipe / {{recipe}}</h1>
-    <div id="header-links">
-        <a href="{% url 'recipes' %}" class="btn btn-outline-danger" role="button"><i class="bi bi-arrow-return-left"></i></a>
-        {% if perms.protocols.change_recipe %}
-        <a href="{% url 'recipe_edit' pk=recipe.id %}" class="btn btn-outline-secondary" role="button"><i class="bi bi-pencil"></i></a>
-        {% endif %}
-        <a href="{% url 'recipe_label' recipe_id=recipe.id %}" class="btn btn-outline-info"
-           role="button"><i class="bi bi-tag"></i></a>
-    </div>
-</div>
-{% include "inventory/form_results.html" %}
-
 {% if recipe %}
+{% include "./parts/recipe-header.html" %}
+{% include "inventory/form_results.html" %}
 <div id="recipe-prepare" class="result">
     <h2 id="recipe-prepare-title">
         Prepare recipe
@@ -97,39 +86,35 @@
             <table class="table mb-0 sortable">
                 <thead>
                 <th scope="col">Reactive</th>
-                {% if perms.protocols.change_reactive %}
-                <th scope="col" data-defaultsort='disabled'>Reactive edit</th>
-                {% endif %}
+                <th scope="col" data-defaultsort='disabled'>Reactive - Edit / Delete</th>
                 <th scope="col">Concentration</th>
                 <th scope="col">Unit</th>
-                {% if perms.protocols.change_component %}
-                <th scope="col" data-defaultsort='disabled'>Component edit</th>
+                {% if user_can_edit_recipe %}
+                <th scope="col" data-defaultsort='disabled'>Component - Edit / Delete</th>
                 {% endif %}
                 </thead>
                 <tbody>
                 {% for component in recipe.components.all %}
                 <tr>
                     <td>{{component.reactive}}</td>
-                    {% if perms.protocols.change_reactive %}
                     <td>
-                        <a href="{% url 'reactive_edit' pk=component.reactive.id %}?recipe_id={{recipe.id}}"
-                           class="btn btn-outline-secondary" role="button"><i class="bi bi-pencil"></i></a>
-                    </td>
-                    {% endif %}
-                    <td>{{component.concentration}}</td>
-                    <td>
-                        {% for concentration_unit in CONCENTRATION_UNITS %}
-                        {% if concentration_unit.0 == component.concentration_unit %}
-                        {{concentration_unit.1}}
-                        {% endif %}
-                        {% endfor %}
-                    </td>
-                    {% if perms.protocols.change_component %}
-                    <td>
-                        <a href="{% url 'component_edit' pk=component.id %}?recipe_id={{recipe.id}}"
+                        {% if user_can_edit_recipe %}
+                        <a href="{% url 'reactive_edit' pk=component.reactive.id recipe_id=recipe.id %}"
                            class="btn btn-outline-dark" role="button"><i class="bi bi-pencil"></i></a>
+                        <a href="{% url 'reactive_delete' pk=component.reactive.id recipe_id=recipe.id %}"
+                           class="btn btn-outline-danger" role="button"><i class="bi bi-trash"></i></a>
+                        {% endif %}
                     </td>
-                    {% endif %}
+                    <td>{{component.concentration}}</td>
+                    <td>{{component.concentration_units}}</td>
+                    <td>
+                        {% if user_can_edit_recipe %}
+                        <a href="{% url 'component_edit' pk=component.id recipe_id=recipe.id %}"
+                           class="btn btn-outline-dark" role="button"><i class="bi bi-pencil"></i></a>
+                        <a href="{% url 'component_delete' pk=component.id recipe_id=recipe.id %}"
+                           class="btn btn-outline-danger" role="button"><i class="bi bi-trash"></i></a>
+                        {% endif %}
+                    </td>
                 </tr>
                 {% endfor %}
                 </tbody>

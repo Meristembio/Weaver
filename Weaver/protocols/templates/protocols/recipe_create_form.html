@@ -2,10 +2,7 @@
 <div id="header">
     <h1>Create a new Recipe</h1>
     <div id="header-links">
-        <a href="{% url 'recipes' %}" class="btn btn-outline-danger" role="button"><i class="bi bi-arrow-return-left"></i></a>
-        {% if perms.protocols.add_component %}
-        <a href="{% url 'component_create' %}" class="btn btn-primary" role="button"><i class="bi bi-plus"></i> Component</a>
-        {% endif %}
+        {% include './parts/create_component_reactive_button.html' %}
     </div>
 </div>
 {% include "inventory/form_results.html" %}

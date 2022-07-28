@@ -4,13 +4,14 @@
 <div id="header">
     <h1>Glycerol Stocks</h1>
     <div id="header-links">
-        <a target="_blank" href="{% url 'glycerolstock_create' %}" class="btn btn-primary{% if not on_project_member_can_write_or_admin %} disabled{% endif %}" role="button"><i
+        <a target="_blank" href="{% url 'glycerolstock_create' %}" class="btn btn-primary{% if not on_current_project_member_can_write_or_admin %} disabled{% endif %}" role="button"><i
                 class="bi bi-plus"></i></a>
         <a target="_blank" href="{% url 'glycerolstock_boxes' %}" class="btn btn-warning" role="button"><i
                 class="bi bi-archive"></i></a>
         <a target="_blank" href="{% url 'glycerolstock_qr' %}" class="btn btn-info" role="button"><i
                 class="bi bi-upc-scan"></i></a>
     </div>
+    {% include "./parts/show_from_all_projects.html" %}
 </div>
 {% include "./form_results.html" %}
 {% if has_glycerolstocks %}

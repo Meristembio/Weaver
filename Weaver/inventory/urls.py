@@ -10,10 +10,6 @@ from .views import GstockCreatePlasmidDefined
 from .views import GstockEdit
 from .views import GstockDelete
 
-from .views import RestrictionenzymeCreate
-from .views import RestrictionenzymeEdit
-from .views import RestrictionenzymeDelete
-
 from .views import PrimerCreate
 from .views import PrimerEdit
 from .views import PrimerDelete
@@ -63,9 +59,6 @@ urlpatterns = [
 
     path('restrictionenzymes/', login_required(views.restrictionenzymes, redirect_field_name='next'), name='restrictionenzymes'),
     path('restrictionenzyme/<uuid:restrictionenzyme_id>/', login_required(views.restrictionenzyme, redirect_field_name='next'), name='restrictionenzyme'),
-    path('restrictionenzyme/create/', login_required(RestrictionenzymeCreate.as_view(), redirect_field_name='next'), name='restrictionenzyme_create'),
-    path('restrictionenzyme/edit/<uuid:pk>/', login_required(RestrictionenzymeEdit.as_view(), redirect_field_name='next'), name='restrictionenzyme_edit'),
-    path('restrictionenzyme/delete/<uuid:pk>/', login_required(RestrictionenzymeDelete.as_view(), redirect_field_name='next'), name='restrictionenzyme_delete'),
 
     path('primers/', login_required(views.primers, redirect_field_name='next'), name='primers'),
     path('primer/<uuid:primer_id>/', login_required(views.primer, redirect_field_name='next'), name='primer'),

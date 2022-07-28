@@ -1,10 +1,6 @@
 <div id="header">
-    <h1>RE / {{restrictionenzyme}}</h1>
+    <h1><span class="text-secondary opacity-50 me-2 fs-3">R.E.</span><span>{{restrictionenzyme}}</span></h1>
     <div id="header-links">
-        <a href="{% url 'restrictionenzymes' %}" class="btn btn-outline-danger" role="button"><i class="bi bi-arrow-return-left"></i></a>
-        {% if perms.inventory.add_restrictionenzyme %}
-        <a href="{% url 'restrictionenzyme_edit' pk=restrictionenzyme.id %}" class="btn btn-outline-secondary"
-           role="button"><i class="bi bi-pencil-fill"></i></a>
-        {% endif %}
+        <a href="{% url 'restrictionenzymes' %}" class="btn btn-outline-warning" role="button"><i class="bi bi-arrow-return-left"></i></a>
     </div>
 </div>
