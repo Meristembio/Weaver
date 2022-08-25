@@ -1,0 +1,15 @@
+<div class="dropdown-menu p-2 fw-light " aria-labelledby="dropdownEnzymes">
+  <div class="dropdown-menu-header">Chooose enzyme</div>
+  <hr class="m-1"/>
+  <form method="post" class="default-style">
+      {% csrf_token %}
+      <input type="hidden" name="create_from_parts"/>
+      <div class="dropdown-menu-body pt-1 d-flex">
+          {% for enzyme in RESTRICTION_ENZYMES %}
+          <button class="btn {% if plasmid.refc == enzyme.name %}btn-primary{% else %}btn-outline-primary{% endif %} btn-sm me-1" role="button" name="enzyme" value="{{enzyme.name}}">
+              {{enzyme.name}}
+          </button>
+          {% endfor %}
+      </div>
+  </form>
+</div>

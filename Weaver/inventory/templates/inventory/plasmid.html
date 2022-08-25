@@ -22,17 +22,6 @@
 {% if plasmid_create_result %}
 <div class="alert alert-{{plasmid_create_result.1}}">{{plasmid_create_result.0}}</div>
 {% endif %}
-<div id="build-enzymes">
-    <form method="post" class="default-style">
-        {% csrf_token %}
-        {% for enzyme in RESTRICTION_ENZYMES %}
-        <input type="hidden" name="create_from_parts"/>
-        <button class="btn btn-outline-primary" role="button" name="enzyme" value="{{enzyme.name}}">
-            {{enzyme.name}}
-        </button>
-        {% endfor %}
-    </form>
-</div>
 <table class="table table-hover">
     <thead>
     <tr>
@@ -55,44 +44,56 @@
         <th scope="row">Sequence</th>
         <td>
             {% if plasmid.sequence %}
-            <a href="{% url 'plasmid_view_edit' plasmid_id=plasmid.id %}" class="btn btn-outline-info"
-               role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="View / Edit"><i class="bi bi-eye"></i> / <i class="bi bi-pencil"></i></a>
-            <div class="download-links">
-                <a href="{% url 'plasmid_download' plasmid_id=plasmid.id %}" class="btn btn-outline-primary"
-                   role="button"
-                   download="{{plasmid.name}}"><i class="bi bi-download"></i> ORIG</a>
-                <a href="{% url 'plasmid_download' plasmid_id=plasmid.id %}?format=gb" class="btn btn-outline-primary"
-                   role="button"
-                   download="{{plasmid.name}}"><i class="bi bi-download"></i> .GB</a>
-                <a href="{% url 'plasmid_download' plasmid_id=plasmid.id %}?format=fasta"
-                   class="btn btn-outline-primary" role="button"
-                   download="{{plasmid.name}}"><i class="bi bi-download"></i> .FASTA</a>
-            </div>
-            <button type="button" class="btn btn-outline-primary download-options" data-bs-toggle="tooltip" data-bs-placement="top" title="Download"><i class="bi bi-download"></i>
-            </button>
-            <a href="{% url 'plasmid_digest' plasmid_id=plasmid.id %}" class="btn btn-outline-secondary"
-               role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Digest"><i class="bi bi-scissors"></i></a>
-            <a href="{% url 'plasmid_pcr' plasmid_id=plasmid.id %}" class="btn btn-outline-success"
-                       role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="PCR"><i class="bi bi-arrow-return-right"></i></a>
-            <a href="{% url 'plasmid_sanger' plasmid_id=plasmid.id %}" class="btn btn-outline-warning"
-               role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Align ab1"><i class="bi bi-list-nested"></i></a>
-            {% if user_can_edit_plasmid %}
-            <button class="btn btn-outline-primary enzyme-options" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Build" data-refc="{{plasmid.refc}}"><i class="bi bi-arrow-repeat"></i><i
-                    class="bi bi-hammer"></i></button>
-            {% endif %}
+                <a href="{% url 'plasmid_view_edit' plasmid_id=plasmid.id %}" class="btn btn-outline-info"
+                   role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="View / Edit"><i class="bi bi-eye"></i> / <i class="bi bi-pencil"></i></a>
+                <div class="dropdown dropdown-download" data-bs-toggle="tooltip" data-bs-placement="top" title="Download">
+                    <button type="button" class="btn btn-outline-primary dropdown-toggle" id="dropdownDownload" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-download"></i>
+                    </button>
+                    <div class="dropdown-menu p-2 fw-light " aria-labelledby="dropdownDownload">
+                        <div class="dropdown-menu-header">Chooose format</div>
+                        <hr class="m-1"/>
+                        <div class="dropdown-menu-body pt-1 d-flex">
+                            <a href="{% url 'plasmid_download' plasmid_id=plasmid.id %}" class="btn btn-outline-primary btn-sm me-1"
+                               role="button"
+                               download="{{plasmid.name}}">ORIG</a>
+                            <a href="{% url 'plasmid_download' plasmid_id=plasmid.id %}?format=gb" class="btn btn-outline-primary btn-sm me-1"
+                               role="button"
+                               download="{{plasmid.name}}">GB</a>
+                            <a href="{% url 'plasmid_download' plasmid_id=plasmid.id %}?format=fasta"
+                               class="btn btn-outline-primary btn-sm" role="button"
+                               download="{{plasmid.name}}">FASTA</a>
+                        </div>
+                    </div>
+                </div>
+                <a href="{% url 'plasmid_digest' plasmid_id=plasmid.id %}" class="btn btn-outline-secondary"
+                   role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Digest"><i class="bi bi-scissors"></i></a>
+                <a href="{% url 'plasmid_pcr' plasmid_id=plasmid.id %}" class="btn btn-outline-success"
+                           role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="PCR"><i class="bi bi-arrow-return-right"></i></a>
+                <a href="{% url 'plasmid_sanger' plasmid_id=plasmid.id %}" class="btn btn-outline-warning"
+                   role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Align ab1"><i class="bi bi-list-nested"></i></a>
+                {% if user_can_edit_plasmid %}
+                    <div class="dropdown dropdown-enzymes" data-bs-toggle="tooltip" data-bs-placement="top" title="Build">
+                        <button type="button" class="btn btn-outline-primary dropdown-toggle" id="dropdownEnzymes" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-arrow-repeat"></i><i
+                            class="bi bi-hammer"></i></button>
+                        {% include "./parts/enzyme-options.html" %}
+                    </div>
+                {% endif %}
             {% else %}
-            {% if user_can_edit_plasmid %}
-            <form method="post" class="default-style inline"
-                  action="{% url 'plasmid_view_edit' plasmid_id=plasmid.id %}">
-                {% csrf_token %}
-                <button class="btn btn-outline-success" role="button" name="create"><i
-                        class="bi bi-file-earmark-plus"></i></button>
-            </form>
-            <button class="btn btn-outline-primary enzyme-options" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Build" data-refc="{{plasmid.refc}}"><i
-                    class="bi bi-hammer"></i></button>
-            {% else %}
-            You don't have perms to create plasmid sequence
-            {% endif %}
+                {% if user_can_edit_plasmid %}
+                <form method="post" class="default-style inline"
+                      action="{% url 'plasmid_view_edit' plasmid_id=plasmid.id %}">
+                    {% csrf_token %}
+                    <button class="btn btn-outline-success" role="button" name="create"><i
+                            class="bi bi-file-earmark-plus"></i></button>
+                </form>
+                <div class="dropdown dropdown-enzymes" data-bs-toggle="tooltip" data-bs-placement="top" title="Build">
+                    <button type="button" class="btn btn-outline-primary dropdown-toggle" id="dropdownEnzymes" data-bs-toggle="dropdown" aria-expanded="false"><i
+                            class="bi bi-hammer"></i></button>
+                    {% include "./parts/enzyme-options.html" %}
+                </div>
+                {% else %}
+                You don't have perms to create plasmid sequence
+                {% endif %}
             {% endif %}
         </td>
     </tr>

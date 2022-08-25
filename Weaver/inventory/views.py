@@ -680,6 +680,7 @@ def plasmid_record_from_inserts(plasmid_to_build, insert, oh_5, oh_3, the_re):
         return False, "Error reading backbone sequence file"
 
 
+@require_member_can_read_project_of_plasmid
 @require_member_can_write_or_admin_current_project
 def plasmid_duplicate(request, plasmid_id):
     try:
@@ -834,8 +835,9 @@ def plasmid_create_wizard_end(request):
     return render(request, 'inventory/plasmid.html', context)
 
 
-@require_member_can_read_project_of_plasmid
+
 @csrf_exempt
+@require_member_can_read_project_of_plasmid
 def plasmid_view_edit(request, plasmid_id):
     try:
         plasmid_to_detail = Plasmid.objects.get(id=plasmid_id)
@@ -1086,6 +1088,81 @@ def plasmid_sanger(request, plasmid_id):
         context['upload_form'] = SangerForms()
         context['show_upload_form'] = True
     return render(request, 'inventory/plasmid_sanger.html', context)
+
+
+class PlasmidDelete(DeleteView):
+    model = Plasmid
+
+    @method_decorator(require_member_can_write_or_admin_project_of_plasmid)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
+    def get_object(self, *args, **kwargs):
+        obj = super(PlasmidDelete, self).get_object(*args, **kwargs)
+        if not member_can_write_or_admin_plasmid(obj, self.request.user):
+            raise PermissionDenied()
+        return obj
+
+    def get_success_url(self, **kwargs):
+        return reverse('plasmids') + '?form_result_object_deleted=true'
+
+
+@require_current_project_set
+@require_member_can_write_or_admin_project_of_plasmid
+def PlasmidValidationEdit(request, plasmid_id):
+    try:
+        plasmid_to_validate = Plasmid.objects.get(id=plasmid_id)
+    except ObjectDoesNotExist:
+        raise Http404
+
+    form = PlasmidValidationForm(request.POST or None, instance=plasmid_to_validate)
+    if form.is_valid():
+        form.save()
+        return HttpResponseRedirect(reverse('plasmid', args=(
+            plasmid_to_validate.id,)) + '?form_result_plasmidvalidation_edit_success=true')
+
+    return render(request, 'inventory/plasmidvalidation_update_form.html',
+                  {'form': form, 'plasmid': plasmid_to_validate})
+
+
+@require_current_project_set
+def PlasmidValidations(request):
+    plasmidsToCheck = []
+    plasmidsToStock = []
+    # plasmidsWithStockWoCheck = []
+
+    show_from_all_projects = get_show_from_all_projects(request)
+    if show_from_all_projects:
+        all_plasmids = Plasmid.objects.filter(project_id__in=get_projects_where_member_can_any(request.user))
+    else:
+        all_plasmids = Plasmid.objects.filter(project_id=get_current_project_id(request))
+
+    # Plasmid w/o GS && Check state == Pending
+    for plasmid in all_plasmids.filter(check_state=1):
+        if plasmid.glycerolstock_set.all().count() == 0:
+            plasmidsToCheck.append(plasmid)
+
+    # Plasmid w/o GS && Check state != Pending && Sequencing state != Required
+    for plasmid in all_plasmids.exclude(check_state=1).exclude(sequencing_state=1):
+        if plasmid.glycerolstock_set.all().count() == 0:
+            plasmidsToStock.append(plasmid)
+
+    # Plasmid w/ GS && Check state == Pending && Sequencing state != Required
+    # for plasmid in all_plasmids.filter(check_state=1).exclude(sequencing_state=1):
+    #    if plasmid.glycerolstock_set.all().count() != 0:
+    #        plasmidsWithStockWoCheck.append(plasmid)
+
+    context = {
+        'plasmidsToCheck': plasmidsToCheck,
+        # Sequencing state = Required
+        'plasmidsToSequence': all_plasmids.filter(sequencing_state=1),
+        'plasmidsToStock': plasmidsToStock,
+        # 'plasmidsWithStockWoCheck': plasmidsWithStockWoCheck,
+        'CHECK_METHODS': CHECK_METHODS,
+        'show_from_all_projects': show_from_all_projects
+    }
+    return render(request, 'inventory/plasmidvalidations.html', context)
+
 
 
 def plasmid_update_computed_size(plasmid_to_update):
@@ -1349,70 +1426,6 @@ def primer_label(request, primer_id):
         'date': datetime.now().date(),
     }
     return render(request, 'inventory/primer_label.html', context)
-
-
-class PlasmidDelete(DeleteView):
-    model = Plasmid
-
-    def get_object(self, *args, **kwargs):
-        obj = super(PlasmidDelete, self).get_object(*args, **kwargs)
-        if not member_can_write_or_admin_plasmid(obj, self.request.user):
-            raise PermissionDenied()
-        return obj
-
-    def get_success_url(self, **kwargs):
-        return reverse('plasmids') + '?form_result_object_deleted=true'
-
-
-@require_current_project_set
-def PlasmidValidationEdit(request, plasmid_id):
-    try:
-        plasmid_to_validate = Plasmid.objects.get(id=plasmid_id)
-    except ObjectDoesNotExist:
-        raise Http404
-
-    form = PlasmidValidationForm(request.POST or None, instance=plasmid_to_validate)
-    if form.is_valid():
-        form.save()
-        return HttpResponseRedirect(reverse('plasmid', args=(
-            plasmid_to_validate.id,)) + '?form_result_plasmidvalidation_edit_success=true')
-
-    return render(request, 'inventory/plasmidvalidation_update_form.html',
-                  {'form': form, 'plasmid': plasmid_to_validate})
-
-
-@require_current_project_set
-def PlasmidValidations(request):
-    plasmidsToCheck = []
-    plasmidsToStock = []
-    # plasmidsWithStockWoCheck = []
-
-    all_plasmids = Plasmid.objects.filter(project_id=get_current_project_id(request))
-
-    # Plasmid w/o GS && Check state == Pending
-    for plasmid in all_plasmids.filter(check_state=1):
-        if plasmid.glycerolstock_set.all().count() == 0:
-            plasmidsToCheck.append(plasmid)
-
-    # Plasmid w/o GS && Check state != Pending && Sequencing state != Required
-    for plasmid in all_plasmids.exclude(check_state=1).exclude(sequencing_state=1):
-        if plasmid.glycerolstock_set.all().count() == 0:
-            plasmidsToStock.append(plasmid)
-
-    # Plasmid w/ GS && Check state == Pending && Sequencing state != Required
-    # for plasmid in all_plasmids.filter(check_state=1).exclude(sequencing_state=1):
-    #    if plasmid.glycerolstock_set.all().count() != 0:
-    #        plasmidsWithStockWoCheck.append(plasmid)
-
-    context = {
-        'plasmidsToCheck': plasmidsToCheck,
-        # Sequencing state = Required
-        'plasmidsToSequence': all_plasmids.filter(sequencing_state=1),
-        'plasmidsToStock': plasmidsToStock,
-        # 'plasmidsWithStockWoCheck': plasmidsWithStockWoCheck,
-        'CHECK_METHODS': CHECK_METHODS
-    }
-    return render(request, 'inventory/plasmidvalidations.html', context)
 
 
 def ServicesStats(request):

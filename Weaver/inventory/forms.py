@@ -63,8 +63,8 @@ class PlasmidCreateForm(forms.ModelForm):
         member = kwargs.pop('user')
         super(PlasmidCreateForm, self).__init__(*args, **kwargs)
         user_visible_plasmids = Plasmid.objects.filter(project__in=get_projects_where_member_can_any(member)).order_by('name')
-        self.fields['backbone'].queryset = user_visible_plasmids.filter(type=1)
-        self.fields['inserts'].queryset = user_visible_plasmids.filter(type=0)
+        # self.fields['backbone'].queryset = user_visible_plasmids.filter(type=1)
+        # self.fields['inserts'].queryset = user_visible_plasmids.filter(type=0)
 
     class Meta:
         model = Plasmid
@@ -78,8 +78,8 @@ class PlasmidEditForm(forms.ModelForm):
         super(PlasmidEditForm, self).__init__(*args, **kwargs)
         user_visible_plasmids = Plasmid.objects.filter(project__in=get_projects_where_member_can_any(member)).order_by('name')
         self.fields['project'].queryset = get_projects_where_member_can(member, ['a', 'w'])
-        self.fields['backbone'].queryset = user_visible_plasmids.filter(type=1)
-        self.fields['inserts'].queryset = user_visible_plasmids.filter(type=0)
+        # self.fields['backbone'].queryset = user_visible_plasmids.filter(type=1)
+        # self.fields['inserts'].queryset = user_visible_plasmids.filter(type=0)
 
     class Meta:
         model = Plasmid

@@ -2,36 +2,6 @@ $(document).ready(function(){
     onReady();
 });
 function onReady(){
-    /* download options */
-    $('.download-options').each( function() {
-        $(this).popover({
-            placement: 'bottom',
-            html: true,
-            title : 'Chooose format',
-            content : $(this).siblings('.download-links').first().html()
-        });
-    });
-    $('.enzyme-options').each( function() {
-        // change the action, if specified
-        var theForm = $('#build-enzymes').first().children('form').first()
-        if($(this).attr('data-link'))
-            theForm.attr('action', $(this).attr('data-link'));
-        if($(this).attr('data-refc')){
-            var refc = $(this).attr('data-refc');
-            theForm.children('Button').each(function(){
-                if($(this).attr('value') == refc){
-                    $(this).removeClass('btn-outline-primary').addClass('btn-primary');
-                }
-            });
-        }
-        $(this).popover({
-            placement: 'bottom',
-            html: true,
-            title : 'Chooose enzyme',
-            sanitize: false,
-            content : $('#build-enzymes').first().html()
-        });
-    });
     /* copy_clipboard */
     $('.copy_clipboard-child').click(function(e){
         e.preventDefault();
@@ -123,14 +93,14 @@ function saveOVE(sequenceDataToSave) {
       data: {
         saveOve: true,
         gbContent: genbankContents
-       }
-    })
-    .fail(function() {
-        window.toastr.error("Error while saving. Contact the administrator.");
-    })
-    .done(function( msg ) {
+       },
+      success: function(msg){
         window.toastr.success(msg.result);
-    });
+      },
+      error: function(XMLHttpRequest, textStatus, errorThrown) {
+        window.toastr.error("Error while saving. Contact the administrator.");
+      }
+    })
 }
 
 function expandName(){

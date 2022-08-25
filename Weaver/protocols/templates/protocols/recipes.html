@@ -31,7 +31,7 @@
     {% for recipe in recipes %}
     <tr class="filter-item {% if recipe.category %}{% for cat in recipe.category.all %}filter-{{cat}} {% endfor %}{% endif %}">
         <td>
-            <a class="btn btn-success table-search-search_on" role="button" href="{% url 'recipe' recipe_id=recipe.id %}">{{recipe}}</a>
+            <a class="btn btn-success table-search-search_on" role="button" href="{% url 'recipe' recipe_id=recipe.id %}" data-search={{recipe}}>{{recipe}}</a>
             <a href="{% url 'recipe_label' recipe_id=recipe.id %}" class="btn btn-outline-info" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Print label"><i class="bi bi-tag-fill"></i></a>
             <a href="{% url 'recipe_edit' pk=recipe.id %}" class="btn btn-outline-secondary {% if recipe.owner != request.user %}disabled{% endif %}" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit"><i class="bi bi-pencil-fill"></i></a>
         </td>

@@ -24,10 +24,6 @@
             <a class="btn btn-success" role="button" href="{% url 'restrictionenzyme' restrictionenzyme_id=restrictionenzyme.id %}">
                 {{restrictionenzyme}}
             </a>
-        {% if perms.inventory.change_restrictionenzime %}
-            <a href="{% url 'restrictionenzyme_edit' pk=restrictionenzyme.id %}" class="btn btn-outline-secondary"
-               role="button"><i class="bi bi-pencil-fill"></i></a>
-        {% endif %}
         </td>
         <td>
             {% re_render restrictionenzyme.recognition_site restrictionenzyme.fcut restrictionenzyme.rcut as re_render_seq %}

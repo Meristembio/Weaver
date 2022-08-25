@@ -170,10 +170,11 @@ div#ove-viewer {
 display:none;
 }
 
-.download-links,
-#build-enzymes {
-    display:none;
+.dropdown-enzymes,
+.dropdown-download {
+    display: inline-block;
 }
+
 .copy_clipboard{
     cursor: pointer;
 }
