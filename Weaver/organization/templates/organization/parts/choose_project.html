@@ -1,0 +1,21 @@
+{% if projects %}
+<div class="row">
+    {% for project in projects %}
+    <div class="col-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title border-bottom">{{project}}</h5>
+                <p class="card-text p-2 fw-lighter">
+                    {% if project.description %}{{project.description | urlize}}{% else %}No description{% endif %}
+                </p>
+                <a href="{% url 'project_set_current' pk=project.id %}?next={{request.get_full_path}}" class="btn btn-primary" role="button">
+                    Set as current project & continue to {{url_name}}
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="alert alert-info">You have no projects. <a href="{% url 'project_create' %}" class="btn btn-primary">Create new project</a></div>
+{% endif %}

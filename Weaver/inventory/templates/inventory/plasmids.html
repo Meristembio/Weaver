@@ -14,17 +14,6 @@
 </div>
 {% include "./form_results.html" %}
 {% if has_plasmids %}
-<div id="build-enzymes">
-    <form method="post" class="default-style">
-        {% csrf_token %}
-        {% for enzyme in RESTRICTION_ENZYMES %}
-        <input type="hidden" name="create_from_parts"/>
-        <button class="btn btn-outline-primary" role="button" name="enzyme" value="{{enzyme.name}}">
-            {{enzyme.name}}
-        </button>
-        {% endfor %}
-    </form>
-</div>
 <div id="plasmids-list">
     <div id="plasmids-tables">
         <div class="row">

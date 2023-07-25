@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.urls import resolve
 from .views import get_current_project
 from .views import has_current_project
 from .views import on_project_member_can_any
@@ -16,7 +17,8 @@ def require_current_project_set(function):
         else:
             context = {
                 'current_project': False,
-                'apo': access_policies_options
+                'apo': access_policies_options,
+                'url_name': resolve(request.path_info).url_name
             }
             return render(request, 'common/set_project.html', context)
     return wrap

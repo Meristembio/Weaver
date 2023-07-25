@@ -1,4 +1,3 @@
-from django.shortcuts import render
 from .models import Project
 from .models import Membership
 from .models import access_policies_options
@@ -11,8 +10,11 @@ from django.core.exceptions import ObjectDoesNotExist
 from functools import reduce
 from django.db.models import Q
 from django.core.exceptions import PermissionDenied
-from django.shortcuts import redirect
 
+from django.contrib import messages
+from django.contrib.auth import update_session_auth_hash
+from django.contrib.auth.forms import PasswordChangeForm
+from django.shortcuts import render, redirect
 
 def has_current_project(request):
     return True if 'current_project_id' in request.COOKIES and request.COOKIES['current_project_id'] != "" else False
@@ -270,3 +272,19 @@ class ProjectMemberEdit(UpdateView):
 def profile(request):
     context = {'apo': access_policies_options}
     return render(request, 'registration/profile.html', context)
+
+def profile_change_password(request):
+    if request.method == 'POST':
+        form = PasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            user = form.save()
+            update_session_auth_hash(request, user)  # Important!
+            messages.success(request, 'Your password was successfully updated!')
+            return redirect('change_password')
+        else:
+            messages.error(request, 'Please correct the error below.')
+    else:
+        form = PasswordChangeForm(request.user)
+    return render(request, 'registration/profile-change_password.html', {
+        'form': form
+    })

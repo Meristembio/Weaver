@@ -8,7 +8,7 @@ var editorProps = {
 	},
 	showMenuBar: true,
 	showReadOnly: false, //default true
-	disableSetReadOnly: true, //default false
+	disableSetReadOnly: false, //default false
 	onSave: function(event, sequenceDataToSave, editorState, onSuccessCallback) {
 		// console.info("event:", event);
 		// console.info("sequenceData:", sequenceDataToSave);

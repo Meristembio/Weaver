@@ -1,6 +1,6 @@
 <div id="header">
     <h1><span class="text-secondary opacity-50 me-2 fs-3">Plasmid</span><span>{{plasmid}}</span></h1>
-    <i class="bi bi-clipboard copy_clipboard" data-cc="{{plasmid.name}}"></i>
+    <i class="bi bi-clipboard copy_clipboard" data-cc="{{plasmid}}"></i>
     <div id="header-links">
         {% if user_can_edit_plasmid %}
         <a href="{% url 'plasmid_edit' pk=plasmid.id %}" class="btn btn-outline-secondary" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit"><i

@@ -9,33 +9,70 @@
             <p id="label-name">
                 {{plasmid.name}}
             </p>
-            <p id="label-length-created">
-                <span class="label-value">{{plasmid.computed_size|intcomma}} bp / {{today|date:'M d, Y'}}</span>
+            <p id="label-id">
+                <span class="label-name">IDX</span>
+                <span class="label-value"># {{plasmid.idx}}</span>
             </p>
-            <p id="label-conc-espectro">
-                 <span class="label-name">E</span>
-                <span class="label-value">[&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;]</span>
+            <p id="label-created">
+                <span class="label-name">Date</span>
+                <span class="label-value"><span id="target-date">-</span></span>
+            </p>
+            <p id="label-colony">
+                <span class="label-name">Colony</span>
+                <span class="label-value"># <span id="target-colony">-</span></span>
+            </p>
+            <p id="label-size">
+                <span class="label-name">Size</span>
+                <span class="label-value">{{plasmid.computed_size|intcomma}} bp</span>
             </p>
             <p id="label-conc-quantus">
-                 <span class="label-name">Q</span>
-                <span class="label-value">[&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;]</span>
-            </p>
-            <p id="label-260_280">
-                 <span class="label-name">260/280</span>
-                <span class="label-value">__________</span>
-            </p>
-            <p id="label-260_230">
-                 <span class="label-name">260/230</span>
-                <span class="label-value">__________</span>
-            </p>
-            <p id="label-id">
-                 <span class="label-name">ID</span>
-                <span class="label-value">{{plasmid.qr_id}}</span>
+                 <span class="label-name">Conc (Q)</span>
+                <span class="label-value"><span id="target-concentration">-</span> [ng/ul]</span>
             </p>
         </div>
     </div>
 </div>
-<button id="label-print-button" type="button" class="btn btn-info" onclick="window.print();return false;">Print label</button>
+<form method="POST" id="label-inputs">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button id="label-print-button" type="button" class="btn btn-info" onclick="window.print();return false;">Print label</button>
+</form>
+<script>
+    $( document ).ready(function() {
+        $("#id_colony").on("keyup", function(){
+            $("#target-colony").html($("#id_colony").val());
+        });
+
+        function getMonthName(monthNumber) {
+          const date = new Date();
+          date.setMonth(monthNumber - 1);
+
+          return date.toLocaleString('en-US', { month: 'short' });
+        }
+
+        function format_date(date){
+            var split = date.split("-");
+            return split[2] + "." + getMonthName(split[1]) + "." + split[0];
+        }
+
+        $("#target-date").html(format_date($("#id_date").val()));
+        $("#id_date").on("change", function(){
+            $("#target-date").html(format_date($("#id_date").val()));
+        });
+
+
+        $('#label-conc-quantus').hide();
+        $("#id_concentration").on("keyup", function(){
+            var val = $("#id_concentration").val();
+            $("#target-concentration").html(val);
+            if(val != ''){
+                $('#label-conc-quantus').show();
+            } else {
+                $('#label-conc-quantus').hide();
+            }
+        });
+    });
+</script>
 <div id="label-instructions">
     <pre>Impresora: Brother QL 810W</pre>
     <pre>Papel: 29 mm  ancho</pre>

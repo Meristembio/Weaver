@@ -9,17 +9,6 @@ CHECK_STATES = (
     (2, 'Correct')
 )
 
-CHECK_METHODS = (
-    (0, 'Digestion'),
-    (1, 'Colony PCR'),
-)
-
-SEQUENCING_STATES = (
-    (0, 'Not required'),
-    (1, 'Required'),
-    (2, 'Correct')
-)
-
 # bootstrap defaults
 COLORS = (
     ('primary', 'Blue'),

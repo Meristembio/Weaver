@@ -164,7 +164,7 @@ def recipes(request):
         ['category', 'Category', options],
     ]
     if get_show_from_all_projects(request):
-        recipes = Recipe.objects.filter(Q(owner=request.user) | Q(shared_to_project__in=get_projects_where_member_can_any(request.user)))
+        recipes = Recipe.objects.filter(Q(owner=request.user) | Q(shared_to_project__in=get_projects_where_member_can_any(request.user))).distinct()
     else:
         recipes = Recipe.objects.filter(owner=request.user)
     
@@ -212,12 +212,8 @@ class RecipeDelete(DeleteView):
         context['user_can_edit_recipe'] = can_member_edit_recipe(self.object, self.request.user)
         return context
 
-    def get_form_kwargs(self):
-        kwargs = super(RecipeDelete, self).get_form_kwargs()
-        kwargs.update({'user': self.request.user})
-        return kwargs
-
     def get_success_url(self, **kwargs):
+        # return reverse('glycerolstock_deleted')
         return reverse('recipes') + '?form_result_object_deleted=true'
 
 

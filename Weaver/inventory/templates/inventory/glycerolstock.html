@@ -13,7 +13,7 @@
     <tbody>
     <tr>
         <th scope="row">Strain</th>
-        <td>{{glycerolstock.strain.name}}</td>
+        <td>{{glycerolstock.strain}}</td>
     </tr>
     <tr>
         <th scope="row">Strain description</th>
@@ -46,14 +46,11 @@
     <tr>
         <th scope="row">Selectable markers</th>
         <td>
-            {% if glycerolstock.strain.selectable_markers %}<strong>Strain</strong>:
-            {{ resistantes_strain_human }}
+            {% if glycerolstock.resistantes_strain_human %}<strong>Strain Marker</strong>:
+            {{ glycerolstock.resistantes_strain_human }}
             <br/>{% endif %}
-            {% if glycerolstock.plasmid.selectable_markers %}<strong>Plasmid</strong>:
-            {{ resistantes_human }}
-            <br/>{% endif %}
-            {% if glycerolstock.plasmid.selectable_markers_plant %}<strong>Plasmid (plant)</strong>:
-            {{ resistantes_plant_human }}
+            {% if glycerolstock.resistantes_human %}<strong>Plasmid Marker</strong>:
+            {{ glycerolstock.resistantes_human }}
             <br/>{% endif %}
         </td>
     </tr>
@@ -93,6 +90,16 @@
     <tr>
         <th scope="row">Details</th>
         <td>{{glycerolstock.details}}</td>
+    </tr>
+    <tr>
+        <th scope="row">QR code</th>
+        <td>
+            <p id="label-qrcode"></p>
+            <p>{{glycerolstock.qr_id}}</p>
+            <script type="text/javascript">
+            new QRCode(document.getElementById("label-qrcode"), "{{glycerolstock.qr_id}}");
+            </script>
+        </td>
     </tr>
     </tbody>
 </table>

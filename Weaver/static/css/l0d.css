@@ -9,16 +9,50 @@ div#seqviz-container {
 }
 .hl{
     position: relative;
-    background: #fff3cd;
     line-height: 1em;
     padding: 0.4em 0.6em;
     font-size: .9em;
     margin-right: 0.4rem;
     cursor: pointer;
-    transition: all .3s ease-in-out;
+    transition: all .15s ease-in-out;
     line-height: 2.6em;
+    background: #faf4e2;
+    border: none;
+    border-badius: 0.25em;
 }
 
 .hl:hover {
-    background: #cff4fc;
+    background: #fbd765;
+}
+.flow_root{
+    display: flow-root;
+}
+
+#fidelity_result pre {
+    display: block;
+    font-family: monospace;
+    white-space-collapse: preserve;
+    text-wrap: nowrap;
+    margin: 1em 0px;
+}
+#fidelity_result .lfm_container {
+    display: table;
+    border: 1px solid black;
+    padding: 0px;
+    border-collapse: collapse;
+}
+#fidelity_result .lfm_row {
+    display: table-row;
+    border: 0px solid black;
+    padding: 0px;
+}
+#fidelity_result .lfm_cell {
+    display: table-cell;
+    border: 1px solid black;
+    width: 25px;
+    height: 25px;
+    vertical-align: middle;
+    text-align: center;
+    padding: 2px;
+    font-size: 10px;
 }

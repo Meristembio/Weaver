@@ -25,6 +25,7 @@
     <tr>
         <th scope="col">Recipe</th>
         <th scope="col" data-defaultsort='disabled'>Components</th>
+        <th scope="col">Owner</th>
     </tr>
     </thead>
     <tbody>
@@ -43,6 +44,7 @@
             {{component.reactive}}
             {% endfor %}
         </td>
+        <td>{{recipe.owner.last_name}}, {{recipe.owner.first_name}}</td>
     </tr>
     {% endfor %}
     </tbody>

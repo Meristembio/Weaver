@@ -12,7 +12,7 @@ REACTIVE_STATE = (
 CONCENTRATION_UNITS = (
     ('mol', 'M'),
     ('mmol', 'mM'),
-    ('grlt', 'gr / lt'),
+    ('grlt', 'mg / ml (= g/l)'),
     ('vvp', 'Volume / Volume %'),
     ('wvp', 'Weight / Volume %'),
 )

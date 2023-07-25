@@ -18,4 +18,5 @@ urlpatterns = [
     path('project/create', login_required(ProjectCreate.as_view(), redirect_field_name='next'), name='project_create'),
 
     path('accounts/profile/', login_required(views.profile), name='profile'),
+    path('accounts/profile/change_password', login_required(views.profile_change_password), name='profile_change_password'),
 ]

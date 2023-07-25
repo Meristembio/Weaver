@@ -1,3 +1,4 @@
+import os
 import uuid
 from django.db import models
 import datetime
@@ -7,11 +8,13 @@ from .custom.box import BOX_ROWS
 from .custom.box import BOX_COLUMNS
 from .custom.general import FWD_OR_REV
 from .custom.general import CHECK_STATES
-from .custom.general import CHECK_METHODS
-from .custom.general import SEQUENCING_STATES
 from .custom.general import COLORS
 from Bio.Restriction.Restriction_Dictionary import rest_dict, suppliers
 from organization.models import Project
+from django.dispatch import receiver
+
+
+from .validators import clustal_validate
 
 RE_Choices = []
 for key in rest_dict:
@@ -136,9 +139,9 @@ class Box(models.Model):
     class Meta:
         ordering = ['name']
 
-
 class Plasmid(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    idx = models.IntegerField(blank=True, null=True, editable=False)
     name = models.CharField(max_length=50)
     selectable_markers = models.ManyToManyField(Resistance, blank=True, symmetrical=False, related_name='+', help_text='Use CTRL for multiple select')
     sequence = models.FileField(upload_to='uploads/plasmids/', blank=True)
@@ -152,25 +155,174 @@ class Plasmid(models.Model):
     description = models.CharField(max_length=1000, blank=True)
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
     created_on = models.DateField(auto_now_add=False, default=datetime.date.today)
+
+    reference_sequence = models.BooleanField(blank=True, default=0)
+    under_construction = models.BooleanField(blank=True, default=0)
+
     qr_id = ShortUUIDField(default=shortuuid.uuid(), editable=False)
 
     # validation
 
     working_colony = models.IntegerField(blank=True, null=True)
-    check_state = models.IntegerField(choices=CHECK_STATES, blank=True, default=1)
-    check_method = models.IntegerField(choices=CHECK_METHODS, blank=True, default=0, null=True)
-    check_date = models.DateField(blank=True, null=True)
-    digestion_check_enzymes = models.CharField(max_length=100, blank=True, null=True)
-    check_observations = models.CharField(max_length=1000, blank=True, null=True)
-    sequencing_state = models.IntegerField(choices=SEQUENCING_STATES, blank=True, default=0)
+
+    colonypcr_state = models.IntegerField(choices=CHECK_STATES, blank=True, default=1)
+    colonypcr_observations = models.CharField(max_length=1000, blank=True, null=True)
+    colonypcr_date = models.DateField(blank=True, null=True)
+
+    digestion_state = models.IntegerField(choices=CHECK_STATES, blank=True, default=1)
+    digestion_observations = models.CharField(max_length=1000, blank=True, null=True)
+    digestion_date = models.DateField(blank=True, null=True)
+
+    sequencing_state = models.IntegerField(choices=CHECK_STATES, blank=True, default=0)
     sequencing_date = models.DateField(blank=True, null=True)
     sequencing_observations = models.CharField(max_length=1000, blank=True, null=True)
 
+    sequencing_clustal_file = models.FileField(upload_to="uploads/sequencing_clustal", blank=True, null=True, validators=[clustal_validate])
+
     def __str__(self):
-        return self.name
+        return self.name + " | " + str(self.idx)
 
     class Meta:
         ordering = ['name']
+
+    def is_validated(self):
+        if self.colonypcr_state != 1 and self.digestion_state != 1 and self.sequencing_state != 1:
+            return True
+        return False
+
+    def save(self, *args, **kwargs):
+        if not self.idx:
+            last_plasmid_idx = Plasmid.objects.order_by("idx").last().idx
+            if last_plasmid_idx:
+                new_idx = last_plasmid_idx + 1
+            else:
+                new_idx = 1
+            self.idx = new_idx
+        super(Plasmid, self).save(*args, **kwargs)
+
+    def get_insert_of(self):
+        # ToDo optimize query
+        insert_of = []
+        for plasmid in Plasmid.objects.all():
+            for insert in plasmid.inserts.all():
+                if insert == self:
+                    insert_of.append(plasmid)
+
+        return insert_of
+    def get_backbone_of(self):
+        # ToDo optimize query
+        backbone_of = []
+        for plasmid in Plasmid.objects.all():
+            if plasmid.backbone == self:
+                backbone_of.append(plasmid)
+
+        return backbone_of
+
+    def recommended_enzyme_for_create(self):
+        # ToDo generalize
+        output = "No level set"
+        if self.level is not None:
+            output = "SapI"
+            if self.level % 2:
+                output = "BsaI"
+        return output
+
+    def getPlasmidResistanceForLigation(self):
+        # ToDo generalize
+        if self.level:
+            if self.level % 2 == 0:
+                is_spe = False
+                for resistance in self.selectable_markers.all():
+                    if resistance.three_letter_code == 'SPE':
+                        is_spe = True
+                        break
+                if is_spe:
+                    return 'SPE'
+                else:
+                    return 'Error: SPE not in resistance list'
+            else:
+                is_kan = False
+                for resistance in self.selectable_markers.all():
+                    if resistance.three_letter_code == 'KAN':
+                        is_kan = True
+                        break
+                if is_kan:
+                    return 'KAN'
+                else:
+                    return 'Error: KAN not in resistance list'
+        if len(self.selectable_markers):
+            return self.selectable_markers[0]
+        else:
+            return 'More than one'
+    def ligation_raw(self):
+        tab = "	"
+        ligation_raw = self.__str__() + tab
+        if self.backbone:
+            ligation_raw += self.backbone.__str__() + tab
+
+        inserts = []
+        for plasmid in self.inserts.all():
+            inserts.append(plasmid.__str__())
+
+        if self.level:
+            ligation_raw = ligation_raw + " + ".join(inserts) + tab + tab +\
+                           self.recommended_enzyme_for_create() + tab +\
+                           self.getPlasmidResistanceForLigation().capitalize()
+        else:
+            if self.level == 0:
+                ligation_raw = "Level 0 ligation is not supported"
+            else:
+                ligation_raw = "Level not set"
+
+        return ligation_raw
+
+
+@receiver(models.signals.post_delete, sender=Plasmid)
+def auto_delete_file_on_delete(sender, instance, **kwargs):
+    """
+    Deletes file from filesystem
+    when corresponding `Plasmid` object is deleted.
+    """
+    try:
+        if instance.sequencing_clustal_file:
+            if os.path.isfile(instance.sequencing_clustal_file.path):
+                os.remove(instance.sequencing_clustal_file.path)
+        if instance.sequence:
+            if os.path.isfile(instance.sequence.path):
+                os.remove(instance.sequence.path)
+    except:
+        return False
+
+
+@receiver(models.signals.pre_save, sender=Plasmid)
+def auto_delete_file_on_change(sender, instance, **kwargs):
+    """
+    Deletes old file from filesystem
+    when corresponding `Plasmid` object is updated
+    with new file.
+    """
+    if not instance.pk:
+        return False
+
+    try:
+        old_file_sequencing_clustal_file = Plasmid.objects.get(pk=instance.pk).sequencing_clustal_file
+        old_file_sequence = Plasmid.objects.get(pk=instance.pk).sequence
+    except Plasmid.DoesNotExist:
+        return False
+
+    try:
+        new_file_sequencing_clustal_file = instance.sequencing_clustal_file
+        new_file_sequence = instance.sequence
+
+        if not old_file_sequencing_clustal_file == new_file_sequencing_clustal_file:
+            if os.path.isfile(old_file_sequencing_clustal_file.path):
+                os.remove(old_file_sequencing_clustal_file.path)
+
+        if not old_file_sequence == new_file_sequence:
+            if os.path.isfile(old_file_sequence.path):
+                os.remove(old_file_sequence.path)
+    except:
+        return False
 
 
 class Strain(models.Model):
@@ -178,9 +330,13 @@ class Strain(models.Model):
     name = models.CharField(max_length=200, blank=True)
     selectable_markers = models.ManyToManyField(Resistance, blank=True, symmetrical=False, related_name='+', help_text='Use CTRL for multiple select')
     description = models.CharField(max_length=1000, blank=True)
+    for_primary_gs = models.BooleanField(default=False)
 
     def __str__(self):
-        return self.name
+        result = self.name
+        if self.for_primary_gs:
+            result += ' (p)'
+        return result
 
     class Meta:
         ordering = ['name']
@@ -203,7 +359,7 @@ class GlycerolStock(models.Model):
         if self.plasmid is None:
             return self.strain.name
         else:
-            return self.strain.name + " / " + self.plasmid.name
+            return self.strain.name + " / " + self.plasmid.__str__()
 
     class Meta:
         ordering = ['strain', 'plasmid']

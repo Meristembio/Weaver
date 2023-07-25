@@ -81,6 +81,10 @@
         <td>{{recipe}}</td>
     </tr>
     <tr>
+        <th scope="row">Owner</th>
+        <td>{{recipe.owner.last_name}}, {{recipe.owner.first_name}}</td>
+    </tr>
+    <tr>
         <th scope="row">Components</th>
         <td>
             <table class="table mb-0 sortable">
@@ -128,6 +132,14 @@
     <tr>
         <th scope="row">Description</th>
         <td>{{recipe.description}}</td>
+    </tr>
+    <tr>
+        <th scope="row">Categories</th>
+        <td>{{recipe.category.all|join:" / "}}</td>
+    </tr>
+    <tr>
+        <th scope="row">Projects</th>
+        <td>{{recipe.shared_to_project.all|join:" / "}}</td>
     </tr>
     </tbody>
 </table>

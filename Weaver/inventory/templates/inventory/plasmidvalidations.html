@@ -1,129 +1,89 @@
 {% include "./parts/header.html" %}
+{% load general_extras %}
 <div id="header">
     <h1>Plasmid Validations</h1>
     {% include "./parts/show_from_all_projects.html" %}
 </div>
-<h3>Plasmids to check <i class="bi bi-clipboard copy_clipboard" data-cc="{% for plasmid in plasmidsToCheck %}{{plasmid}}
-{% endfor %}"></i></h3>
-<p><i><small>Plasmid w/o GS && Check state == Pending</small></i></p>
-{% if plasmidsToCheck %}
-<table class="table table-hover sortable">
-    <thead>
-    <tr>
-        <th>Plasmid</th>
-        <th>Check method</th>
-        <th>Check observations</th>
-    </tr>
-    </thead>
-    <tbody>
-    {% for plasmid in plasmidsToCheck %}
-    <tr>
-        <td>
-            <a href="{% url 'plasmid' plasmid_id=plasmid.id %}" class="btn btn-success table-search-search_on"
-               role="button">{{plasmid.name}} <i class="bi bi-clipboard copy_clipboard" data-cc="{{plasmid.name}}"></i></a>
-            <a href="{% url 'plasmid_validation_edit' plasmid_id=plasmid.id %}" class="btn btn-outline-info"
-               role="button">
-                <i class="bi bi-check2-square"></i>
-            </a>
-        </td>
-        <td>
-            {% for check_method in CHECK_METHODS %}
-            {% if check_method.0 == plasmid.check_method %}
-            {{check_method.1}}
-            {% endif %}
+<div class="accordion" id="plasmidValidations">
+  {% for k, list in lists.items %}
+  <div class="accordion-item">
+    <h2 class="accordion-header">
+      <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#{{k}}" aria-expanded="true" aria-controls="{{k}}">
+        {{list.name}} ({{list.data|length}} items)
+      </button>
+    </h2>
+    <div id="{{k}}" class="accordion-collapse collapse" data-bs-parent="#plasmidValidations">
+      <div class="accordion-body">
+        {% if list.data %}
+        <table class="table table-hover sortable">
+            <thead>
+            <tr>
+                <th>Plasmid</th>
+                {% if k == 'to_sequence' or k == 'to_stock' %}
+                <th>Working colony</th>
+                {% endif %}
+                {% if k == 'under_construction' %}
+                <th>Ligation raw</th>
+                {% endif %}
+                {% if k == 'to_colonypcr' or k == 'to_digest' or k == 'to_sequence' or k == 'to_stock' %}
+                <th>cPCR</th>
+                {% endif %}
+                {% if k == 'to_digest' or k == 'to_sequence' or k == 'to_stock' %}
+                <th>Digestion</th>
+                {% endif %}
+                {% if k == 'to_digest' or k == 'to_sequence' or k == 'to_stock' %}
+                <th>Sequencing</th>
+                {% endif %}
+            </tr>
+            </thead>
+            <tbody>
+            {% for plasmid in list.data %}
+            <tr>
+                <td>
+                    <a href="{% url 'plasmid' plasmid_id=plasmid.id %}" class="btn btn-success table-search-search_on"
+                       role="button">{{plasmid}} <i class="bi bi-clipboard copy_clipboard" data-cc="{{plasmid}}"></i></a>
+                    <a href="{% url 'plasmid_validation_edit' plasmid_id=plasmid.id %}" class="btn btn-outline-info"
+                       role="button">
+                        <i class="bi bi-check2-square"></i>
+                    </a>
+                    {% if k == 'to_colonypcr' %}
+                    <a href="{% url 'plasmid_pcr' plasmid_id=plasmid.id %}" class="btn btn-outline-success"
+                               role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="PCR"><i class="bi bi-arrow-return-right"></i></a>
+                    {% endif %}
+                    {% if k == 'to_digest' %}
+                    <a href="{% url 'plasmid_digest' plasmid_id=plasmid.id %}" class="btn btn-outline-secondary"
+                       role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Digest"><i class="bi bi-scissors"></i></a>
+                    {% endif %}
+                    {% if k == 'to_stock' %}
+                    <a href="{% url 'glycerolstock_create_plasmid_defined' pid=plasmid.id %}" class="btn btn-outline-secondary"
+                       role="button" target="_blank">Create GS</a>
+                    {% endif %}
+                </td>
+                {% if k == 'to_sequence' or k == 'to_stock' %}
+                <td>{% if plasmid.working_colony %}#{{plasmid.working_colony}}{% else %}Not set{% endif %}</td>
+                {% endif %}
+                {% if k == 'under_construction' %}
+                <td><i class="bi bi-clipboard copy_clipboard" data-cc="{{ ligation_raw }}"></i></td>
+                {% endif %}
+                {% if k == 'to_colonypcr' or k == 'to_digest' or k == 'to_sequence' or k == 'to_stock' %}
+                <td><strong>{{CHECK_STATES|get_element_by_key:plasmid.colonypcr_state}}</strong>{% if plasmid.colonypcr_date %} ({{plasmid.colonypcr_date|date:"d M, Y"}}){% endif %}{% if plasmid.colonypcr_observations %}: {{plasmid.colonypcr_observations}}{% endif %}</td>
+                {% endif %}
+                {% if k == 'to_digest' or k == 'to_sequence' or k == 'to_stock' %}
+                <td><strong>{{CHECK_STATES|get_element_by_key:plasmid.digestion_state}}</strong>{% if plasmid.digestion_date %} ({{plasmid.digestion_date|date:"d M, Y"}}){% endif %}{% if plasmid.digestion_observations %}: {{plasmid.digestion_observations}}{% endif %}</td>
+                {% endif %}
+                {% if k == 'to_digest' or k == 'to_sequence' or k == 'to_stock' %}
+                <td><strong>{{CHECK_STATES|get_element_by_key:plasmid.sequencing_state}}</strong>{% if plasmid.sequencing_date %} ({{plasmid.sequencing_date|date:"d M, Y"}}){% endif %}{% if plasmid.sequencing_observations %}: {{plasmid.sequencing_observations}}{% endif %}</td>
+                {% endif %}
+            </tr>
             {% endfor %}
-        </td>
-        <td>{{plasmid.sequencing_observations}}</td>
-    </tr>
-    {% endfor %}
-    </tbody>
-</table>
-{% else %}
-<div class="alert alert-warning">No plasmids to sequence.</div>
-{% endif %}
-
-<h3>Plasmids to sequence <i class="bi bi-clipboard copy_clipboard" data-cc="{% for plasmid in plasmidsToSequence %}{{plasmid}}
-{% endfor %}"></i></h3>
-<p><i><small>Sequencing state = Required</small></i></p>
-{% if plasmidsToSequence %}
-<table class="table table-hover sortable">
-    <thead>
-    <tr>
-        <th>Plasmid</th>
-        <th>Working colony</th>
-        <th>Sequencing observations</th>
-    </tr>
-    </thead>
-    <tbody>
-    {% for plasmid in plasmidsToSequence %}
-    <tr>
-        <td>
-            <a href="{% url 'plasmid' plasmid_id=plasmid.id %}" class="btn btn-success table-search-search_on"
-               role="button">{{plasmid.name}} <i class="bi bi-clipboard copy_clipboard" data-cc="{{plasmid.name}}"></i></a>
-            <a href="{% url 'plasmid_validation_edit' plasmid_id=plasmid.id %}" class="btn btn-outline-info"
-               role="button">
-                <i class="bi bi-check2-square"></i>
-            </a>
-        </td>
-        <td>{% if plasmid.working_colony %}#{{plasmid.working_colony}}{% else %}None{% endif %}</td>
-        <td>{{plasmid.sequencing_observations}}</td>
-    </tr>
-    {% endfor %}
-    </tbody>
-</table>
-{% else %}
-<div class="alert alert-warning">No plasmids to sequence.</div>
-{% endif %}
-
-<h3>Plasmids to stock <i class="bi bi-clipboard copy_clipboard" data-cc="{% for plasmid in plasmidsToStock %}{{plasmid}}
-{% endfor %}"></i></h3>
-<p><i><small>Plasmid w/o GS && Check state != Pending && Sequencing state != Required</small></i></p>
-{% if plasmidsToStock %}
-<table class="table table-hover sortable">
-    <thead>
-    <tr>
-        <th>Plasmid</th>
-        <th>Working colony</th>
-        <th>Check method</th>
-        <th>Check date</th>
-        <th>Digestion check enzymes</th>
-        <th>Check observations</th>
-        <th>Sequencing date</th>
-        <th>Sequencing observations</th>
-        <th>Create GS</th>
-    </tr>
-    </thead>
-    <tbody>
-    {% for plasmid in plasmidsToStock %}
-    <tr>
-        <td>
-            <a href="{% url 'plasmid' plasmid_id=plasmid.id %}" class="btn btn-success table-search-search_on"
-               role="button">{{plasmid.name}} <i class="bi bi-clipboard copy_clipboard" data-cc="{{plasmid.name}}"></i></a>
-            <a href="{% url 'plasmid_validation_edit' plasmid_id=plasmid.id %}" class="btn btn-outline-info"
-               role="button">
-                <i class="bi bi-check2-square"></i>
-            </a>
-        </td>
-        <td>{% if plasmid.working_colony %}#{{plasmid.working_colony}}{% else %}None{% endif %}</td>
-        <td>
-            {% for check_method in CHECK_METHODS %}
-            {% if check_method.0 == plasmid.check_method %}
-            {{check_method.1}}
-            {% endif %}
-            {% endfor %}
-        </td>
-        <td>{{plasmid.check_date|date:"d M, Y"}}</td>
-        <td>{{plasmid.digestion_check_enzymes}}</td>
-        <td>{{plasmid.check_observations}}</td>
-        <td>{{plasmid.sequencing_date|date:"d M, Y"}}</td>
-        <td>{{plasmid.sequencing_observations}}</td>
-        <td><a href="{% url 'glycerolstock_create_plasmid_defined' pid=plasmid.id %}" class="btn btn-outline-secondary"
-               role="button" target="_blank">Create</a></td>
-    </tr>
-    {% endfor %}
-    </tbody>
-</table>
-{% else %}
-<div class="alert alert-warning">No plasmids to stock.</div>
-{% endif %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="alert alert-warning">No plasmids {{list.empty_text}}.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
 {% include "./parts/footer.html" %}

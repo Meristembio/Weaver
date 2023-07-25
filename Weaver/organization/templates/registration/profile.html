@@ -1,5 +1,5 @@
 {% include "inventory/parts/header.html" %}
-<h1>Profile / {{ user.get_username }}</h1>
+<h1><span class="text-secondary opacity-50 me-2 fs-3">Profile</span><span>Dashboard</span></h1>
 <div class="alert alert-light border mt-4 mb-4">
     <table class="table table-hover">
         <thead>
@@ -26,6 +26,10 @@
                 <td>
                     <a href="mailto:{{user.email}}">{{user.email}}</a>
                 </td>
+            </tr>
+            <tr>
+                <th scope="row">Password</th>
+                <td><a href="{% url 'profile_change_password' %}" class="btn btn-outline-secondary" role="button">Change password</a></td>
             </tr>
             <tr>
                 <th scope="row">Projects</th>

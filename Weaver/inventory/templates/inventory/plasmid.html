@@ -35,6 +35,10 @@
         <td>{{plasmid.name}}</td>
     </tr>
     <tr>
+        <th scope="row">Idx</th>
+        <td>{{plasmid.idx}}</td>
+    </tr>
+    <tr>
         <th scope="row">Selectable markers</th>
         <td>
             {{ resistantes_human }}<br/>
@@ -52,7 +56,7 @@
                     <div class="dropdown-menu p-2 fw-light " aria-labelledby="dropdownDownload">
                         <div class="dropdown-menu-header">Chooose format</div>
                         <hr class="m-1"/>
-                        <div class="dropdown-menu-body pt-1 d-flex">
+                        <div class="dropdown-menu-body pt-1">
                             <a href="{% url 'plasmid_download' plasmid_id=plasmid.id %}" class="btn btn-outline-primary btn-sm me-1"
                                role="button"
                                download="{{plasmid.name}}">ORIG</a>
@@ -69,8 +73,18 @@
                    role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Digest"><i class="bi bi-scissors"></i></a>
                 <a href="{% url 'plasmid_pcr' plasmid_id=plasmid.id %}" class="btn btn-outline-success"
                            role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="PCR"><i class="bi bi-arrow-return-right"></i></a>
-                <a href="{% url 'plasmid_sanger' plasmid_id=plasmid.id %}" class="btn btn-outline-warning"
-                   role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Align ab1"><i class="bi bi-list-nested"></i></a>
+                <div class="dropdown dropdown-align" data-bs-toggle="tooltip" data-bs-placement="top" title="Align">
+                    <button type="button" class="btn btn-outline-warning dropdown-toggle" id="dropdownAlign" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-list-nested"></i>
+                    </button>
+                    <div class="dropdown-menu p-2 fw-light " aria-labelledby="dropdownAlign">
+                        <div class="dropdown-menu-header">Chooose type</div>
+                        <hr class="m-1"/>
+                        <div class="dropdown-menu-body pt-1">
+                            <a href="{% url 'plasmid_align_fasta' plasmid_id=plasmid.id %}" class="btn btn-outline-primary btn-sm me-1" role="button" >Fasta</a>
+                            <a href="{% url 'plasmid_align_sanger' plasmid_id=plasmid.id %}" class="btn btn-outline-primary btn-sm me-1" role="button" >Sanger</a>
+                        </div>
+                    </div>
+                </div>
                 {% if user_can_edit_plasmid %}
                     <div class="dropdown dropdown-enzymes" data-bs-toggle="tooltip" data-bs-placement="top" title="Build">
                         <button type="button" class="btn btn-outline-primary dropdown-toggle" id="dropdownEnzymes" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-arrow-repeat"></i><i
@@ -100,7 +114,7 @@
     <tr>
         <th scope="row">Computed size</th>
         <td>
-            {% if plasmid.computed_size != None %}
+            {% if plasmid.sequence and plasmid.computed_size != None %}
             {{plasmid.computed_size|intcomma}} bp
             {% else %}
             -
@@ -110,7 +124,7 @@
     <tr>
         <th scope="row">Insert computed size</th>
         <td>
-            {% if plasmid.insert_computed_size != None %}
+            {% if plasmid.sequence and plasmid.insert_computed_size != None %}
             {{plasmid.insert_computed_size|intcomma}} bp
             {% else %}
             -
@@ -142,31 +156,56 @@
             {% endif %}
         </td>
     </tr>
-    {% if insert_of %}
+    {% if plasmid.insert_of %}
     <tr>
         <th scope="row">Insert of</th>
         <td>
-            {% for insert in insert_of %}
-            <a href="{% url 'plasmid' plasmid_id=insert.id %}" class="btn btn-outline-secondary" role="button">{{insert.name}}
+            {% for insert in plasmid.insert_of %}
+            <a href="{% url 'plasmid' plasmid_id=insert.id %}" class="btn btn-outline-secondary" role="button">{{insert}}
                 <i class="bi bi-clipboard copy_clipboard" data-cc="{{insert}}"></i></a>
             {% endfor %}
         </td>
     </tr>
     {% endif %}
-    {% if backbone_of %}
+    {% if plasmid.backbone_of %}
     <tr>
         <th scope="row">Backbone of</th>
         <td>
-            {% for backbone in backbone_of %}
+            {% for backbone in plasmid.backbone_of %}
             <a href="{% url 'plasmid' plasmid_id=backbone.id %}" class="btn btn-outline-secondary" role="button">{{backbone}}</a>
             {% endfor %}
         </td>
     </tr>
     {% endif %}
     <tr>
-        <th scope="row">Ligation raw</th>
+        <th scope="row">Ligation</th>
         <td>
-            {{ ligation_raw }} <i class="bi bi-clipboard copy_clipboard" data-cc="{{ ligation_raw }}"></i>
+            <table class="table table-hover">
+                <tbody>
+                <tr>
+                    <th>Text</th>
+                    <td><i class="bi bi-clipboard copy_clipboard" data-cc="{{ plasmid.ligation_raw }}"></i> {{ ligation_raw }}</tr></td>
+                </tr>
+                <tr>
+                    <th>Working concentration</th>
+                    <td>
+                        {% if plasmid.computed_size %}
+                            {% if plasmid.type %}
+                                {% if plasmid.type|stringformat:"s" == "Insert" %}
+                                {{plasmid.computed_size|divide:300|floatformat:"1"|intcomma}} ng/ul
+                                {% elif plasmid.type|stringformat:"s" == "Receiver" %}
+                                {{plasmid.computed_size|divide:600|floatformat:"1"|intcomma}} ng/ul
+                                {% endif %}
+                            {% else %}
+                            No plasmid type
+                            {% endif %}
+                        {% else %}
+                            No plasmid computed size
+                        {% endif %}
+                    </td>
+                </tr>
+                </tbody>
+            </table>
         </td>
     </tr>
     <tr>
@@ -218,69 +257,100 @@
     </tr>
     <tr>
         <th scope="row">Validation</th>
+        {% if plasmid.reference_sequence %}
+        <td>This plasmid is used as reference sequence.</td>
+        {% elif plasmid.under_construction %}
+        <td>This plasmid is under construction.</td>
+        {% else %}
         <td>
             <table class="table table-hover">
                 <thead>
                 <tr>
                     <th>Property</th>
+                    <th>Sub-Property</th>
                     <th>Value</th>
                 </tr>
                 </thead>
                 <tbody>
                 <tr>
-                    <td>Working colony</td>
+                    <th>Working colony</th>
+                    <td></td>
                     <td>{% if plasmid.working_colony %}#{{plasmid.working_colony}}{% else %}None{% endif %}</td>
                 </tr>
                 <tr>
-                    <td>Check state</td>
+                    <th>Colony PCR</th>
+                    <td>State</td>
                     <td>
                         {% for check_state in CHECK_STATES %}
-                        {% if check_state.0 == plasmid.check_state %}
-                        <span class="badge bg-{% if check_state.0 == 0 %}secondary{% endif %}{% if check_state.0 == 1 %}danger{% endif %}{% if check_state.0 == 2 %}success{% endif %}">{{check_state.1}}</span>
+                        {% if check_state.0 == plasmid.colonypcr_state %}
+                        <span class="badge bg-{% if check_state.0 == 0 %}secondary{% endif %}{% if check_state.0 == 1 %}primary{% endif %}{% if check_state.0 == 2 %}success{% endif %}">{{check_state.1}}</span>
                         {% endif %}
                         {% endfor %}
                     </td>
                 </tr>
                 <tr>
-                    <td>Check method</td>
+                    <td></td>
+                    <td>Date</td>
+                    <td>{{plasmid.colonypcr_date|date:"d M, Y"}}</td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td>Observations</td>
+                    <td>{{plasmid.colonypcr_observations}}</td>
+                </tr>
+                <tr>
+                    <th>Digestion</th>
+                    <td>State</td>
                     <td>
-                        {% for check_method in CHECK_METHODS %}
-                        {% if check_method.0 == plasmid.check_method %}
-                        {{check_method.1}}
+                        {% for check_state in CHECK_STATES %}
+                        {% if check_state.0 == plasmid.digestion_state %}
+                        <span class="badge bg-{% if check_state.0 == 0 %}secondary{% endif %}{% if check_state.0 == 1 %}primary{% endif %}{% if check_state.0 == 2 %}success{% endif %}">{{check_state.1}}</span>
                         {% endif %}
                         {% endfor %}
                     </td>
                 </tr>
                 <tr>
-                    <td>Check date</td>
-                    <td>{{plasmid.check_date|date:"d M, Y"}}</td>
+                    <td></td>
+                    <td>Date</td>
+                    <td>{{plasmid.digestion_date|date:"d M, Y"}}</td>
                 </tr>
                 <tr>
-                    <td>Digestion check enzymes</td>
-                    <td>{{plasmid.digestion_check_enzymes}}</td>
+                    <td></td>
+                    <td>Observations</td>
+                    <td>{{plasmid.digestion_observations}}</td>
                 </tr>
                 <tr>
-                    <td>Check observations</td>
-                    <td>{{plasmid.check_observations}}</td>
-                </tr>
-                <tr>
-                    <td>Sequencing state</td>
+                    <th>Sequencing</th>
+                    <td>State</td>
                     <td>
-                        {% for sequencing_state in SEQUENCING_STATES %}
-                        {% if sequencing_state.0 == plasmid.sequencing_state %}
-                        <span class="badge bg-{% if sequencing_state.0 == 0 %}secondary{% endif %}{% if sequencing_state.0 == 1 %}primary{% endif %}{% if sequencing_state.0 == 2 %}success{% endif %}">{{sequencing_state.1}}</span>
+                        {% for check_state in CHECK_STATES %}
+                        {% if check_state.0 == plasmid.sequencing_state %}
+                        <span class="badge bg-{% if check_state.0 == 0 %}secondary{% endif %}{% if check_state.0 == 1 %}primary{% endif %}{% if check_state.0 == 2 %}success{% endif %}">{{check_state.1}}</span>
                         {% endif %}
                         {% endfor %}
                     </td>
                 </tr>
                 <tr>
-                    <td>Sequencing date</td>
-                    <td>{{plasmid.sequencing_date|date:"d M, Y"}}</td>
+                    <td></td>
+                    <td>Date</td>
+                    <td>{{plasmid.equencing_date|date:"d M, Y"}}</td>
                 </tr>
                 <tr>
-                    <td>Sequencing observations</td>
+                    <td></td>
+                    <td>Observations</td>
                     <td>{{plasmid.sequencing_observations}}</td>
                 </tr>
+                {% if plasmid.sequencing_clustal_file %}
+                <tr>
+                    <td></td>
+                    <td>Clustal file</td>
+                    <td>
+                            <a href="{% url 'plasmid_download_clustal' plasmid_id=plasmid.id %}" class="btn btn-outline-primary btn-sm me-1"
+                               role="button"
+                               download="{{plasmid.name}}-alignment">Download</a>
+                    </td>
+                </tr>
+                {% endif %}
                 </tbody>
             </table>
             <p>
@@ -290,6 +360,7 @@
                 {% endif %}
             </p>
         </td>
+        {% endif %}
     </tr>
     </tbody>
 </table>

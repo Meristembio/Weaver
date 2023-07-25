@@ -14,7 +14,7 @@
             var sequence_file_contents = `{{sequence_file_contents}}`;
             var save_ove_path = '{% url 'plasmid_view_edit' plasmid_id=plasmid.id %}';
         </script>
-        <script type="text/javascript" src="{% static 'js/open-vector-editor.js' %}{{version}}"></script>
+        <script type="text/javascript" src="https://unpkg.com/open-vector-editor/umd/open-vector-editor.js{{version}}"></script>
         <script type="text/javascript" src="{% static 'js/open-vector-editor-config.js' %}{{version}}"></script>
         <!-- /OVE -->
     {% else %}

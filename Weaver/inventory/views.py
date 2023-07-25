@@ -9,14 +9,12 @@ from .models import RestrictionEnzyme
 from .models import Primer
 from .models import Box
 from .models import Location
-from .custom.general import SEQUENCING_STATES
 from .custom.general import CHECK_STATES
-from .custom.general import CHECK_METHODS
 from .models import Stats
 from .models import PlasmidType
 from .models import TableFilter
+
 from .custom.standards import CURRENT_ASSEMBLY_STANDARD
-from .custom.standards import recommended_enzyme_for_create
 from organization.decorators import require_current_project_set
 from organization.decorators import require_member_can_write_or_admin_current_project
 from organization.decorators import require_member_can_read_project_of_plasmid
@@ -38,6 +36,7 @@ from organization.views import member_can_write_or_admin_primer
 from .forms import PlasmidValidationForm
 from .forms import PlasmidCreateForm
 from .forms import PlasmidEditForm
+from .forms import PlasmidLabel
 
 from django.http import HttpResponseRedirect
 
@@ -54,21 +53,21 @@ from django.urls import reverse
 from django.core.exceptions import PermissionDenied
 
 from Bio import SeqIO
-from Bio import pairwise2
+from Bio import Align
 from Bio.Seq import Seq
 from Bio.Seq import reverse_complement
 from Bio.SeqRecord import SeqRecord
 from Bio.SeqFeature import SeqFeature, FeatureLocation
-from Bio.Blast.Applications import NcbimakeblastdbCommandline
-from Bio.Blast.Applications import NcbiblastnCommandline
-from Bio.Blast import NCBIXML
 from Bio.Restriction import RestrictionBatch
 from Bio.Restriction.Restriction_Dictionary import rest_dict
+from pyblast import BioBlast
+from pyblast.utils import make_linear, make_circular
 
 from .forms import DigestForm
 from .forms import PCRForm
 import json
-from .forms import SangerForms
+from .forms import SangerAlignForm
+from .forms import FastaAlignForm
 from .forms import L0SequenceInput
 from .forms import BlastSequenceInput
 from .forms import GstockCreateForm
@@ -80,6 +79,7 @@ import os
 import tempfile
 import re
 import Bio
+from Bio import AlignIO
 import django
 from tempfile import mkstemp
 from shutil import move, copymode
@@ -88,6 +88,9 @@ from django.core.files.base import ContentFile
 from datetime import datetime
 from datetime import date
 from django.http import JsonResponse
+from io import StringIO
+import requests
+from bs4 import BeautifulSoup
 
 import plotly.express as px
 import pandas as pd
@@ -189,20 +192,22 @@ def glycerolstock(request, glycerolstock_id):
     if glycerolstock_to_detail.plasmid:
         resistantes_human_context = resistantes_human(glycerolstock_to_detail.plasmid.selectable_markers)
 
+    glycerolstock_to_detail.resistantes_human = resistantes_human_context
+    glycerolstock_to_detail.resistantes_strain_human = resistantes_human(
+        glycerolstock_to_detail.strain.selectable_markers, True)
+
     context = {
         'glycerolstock': glycerolstock_to_detail,
-        'resistantes_human': resistantes_human_context,
         'user_can_edit_gs': member_can_write_or_admin_gs(glycerolstock_to_detail, request.user),
-        'resistantes_strain_human': resistantes_human(glycerolstock_to_detail.strain.selectable_markers),
     }
     return render(request, 'inventory/glycerolstock.html', context)
 
 
 def glycerolstock_qr(request):
-    if request.method == 'POST' and 'glycerol_id' in request.POST:
+    if request.method == 'POST' and 'glycerol_qr_id' in request.POST:
         form = GlycerolQRInput(request.POST)
         if form.is_valid():
-            return glycerolstock_from_qr(request, form.cleaned_data['glycerol_id'])
+            return glycerolstock_from_qr(request, form.cleaned_data['glycerol_qr_id'])
     else:
         context = {
             'glycerol_qr_nput_form': GlycerolQRInput()
@@ -210,23 +215,21 @@ def glycerolstock_qr(request):
     return render(request, 'inventory/glycerolstock_qr.html', context)
 
 
-@require_member_can_read_project_of_gs
-def glycerolstock_from_qr(request, glycerolstock_id):
+def glycerolstock_from_qr(request, glycerolstock_qr_id):
     try:
-        glycerolstock_to_detail = GlycerolStock.objects.filter(qr_id=glycerolstock_id)[0]
+        glycerolstock_to_detail = GlycerolStock.objects.filter(qr_id=glycerolstock_qr_id)[0]
+    except IndexError:
+        raise Http404
     except ObjectDoesNotExist:
         raise Http404
-    context = {
-        'glycerolstock': glycerolstock_to_detail,
-    }
-    return render(request, 'inventory/glycerolstock.html', context)
+    return redirect('glycerolstock', glycerolstock_id=glycerolstock_to_detail.id)
 
 
 def gstock_check_pos(the_class, the_self, the_form):
     try:
         obj_curr_pos = GlycerolStock.objects.get(box_row=the_form.cleaned_data['box_row'],
-                                                    box_column=the_form.cleaned_data['box_column'],
-                                                    box=the_form.cleaned_data['box'])
+                                                 box_column=the_form.cleaned_data['box_column'],
+                                                 box=the_form.cleaned_data['box'])
         if obj_curr_pos:
             if obj_curr_pos != the_form.instance:
                 the_form.add_error(None, 'Box position not available')
@@ -253,7 +256,8 @@ def build_boxes(request, mode):
                 glycerolstocks = box.glycerolstock_set.all()
             else:
                 if get_show_from_all_projects(request):
-                    glycerolstocks = box.glycerolstock_set.filter(project_id__in=get_projects_where_member_can_any(request.user))
+                    glycerolstocks = box.glycerolstock_set.filter(
+                        project_id__in=get_projects_where_member_can_any(request.user))
                 else:
                     glycerolstocks = box.glycerolstock_set.filter(project_id=get_current_project_id(request))
 
@@ -349,7 +353,11 @@ class GstockDelete(DeleteView):
         return super().dispatch(*args, **kwargs)
 
     def get_success_url(self, **kwargs):
-        return reverse('glycerolstocks') + '?form_result_object_deleted=true'
+        return reverse('glycerolstock_deleted')
+
+
+def glycerolstock_deleted(request):
+    return render(request, 'inventory/glycerolstock_deleted.html')
 
 
 @require_member_can_read_project_of_gs
@@ -363,10 +371,12 @@ def glycerolstock_label(request, glycerolstock_id):
     if glycerolstock_to_label.plasmid:
         resistantes_human_context = resistantes_human(glycerolstock_to_label.plasmid.selectable_markers, True)
 
+    glycerolstock_to_label.resistantes_human = resistantes_human_context
+    glycerolstock_to_label.resistantes_strain_human = resistantes_human(
+        glycerolstock_to_label.strain.selectable_markers, True)
+
     context = {
         'glycerolstock': glycerolstock_to_label,
-        'resistantes_human': resistantes_human_context,
-        'resistantes_strain_human': resistantes_human(glycerolstock_to_label.strain.selectable_markers, True),
     }
     return render(request, 'inventory/glycerolstock_label.html', context)
 
@@ -392,7 +402,7 @@ def plasmids(request):
     hasPlasmids = False
     for plasmid in plasmids:
         hasPlasmids = True
-        plasmid.refc = recommended_enzyme_for_create(plasmid.level)
+        plasmid.refc = plasmid.recommended_enzyme_for_create()
         if plasmid.level:
             if plasmid.level > level_to_table_filters:
                 level_to_table_filters = plasmid.level
@@ -406,34 +416,6 @@ def plasmids(request):
         'show_from_all_projects': show_from_all_projects
     }
     return render(request, 'inventory/plasmids.html', context)
-
-
-def getPlasmidResistanceForLigation(plasmid):
-    if plasmid.level:
-        if plasmid.level % 2 == 0:
-            is_spe = False
-            for resistance in plasmid.selectable_markers.all():
-                if resistance.three_letter_code == 'SPE':
-                    is_spe = True
-                    break
-            if is_spe:
-                return 'SPE'
-            else:
-                return 'Error: SPE not in resistance list'
-        else:
-            is_kan = False
-            for resistance in plasmid.selectable_markers.all():
-                if resistance.three_letter_code == 'KAN':
-                    is_kan = True
-                    break
-            if is_kan:
-                return 'KAN'
-            else:
-                return 'Error: KAN not in resistance list'
-    if len(plasmid.selectable_markers):
-        return plasmid.selectable_markers[0]
-    else:
-        return 'More than one'
 
 
 def resistantes_human(selectable_markers, short=False):
@@ -457,43 +439,14 @@ def plasmid(request, plasmid_id):
     except ObjectDoesNotExist:
         raise Http404
 
-    insert_of = []
-    backbone_of = []
-    tab = "	"
-    ligation_raw = plasmid_to_detail.name + tab
-    if plasmid_to_detail.backbone:
-        ligation_raw += plasmid_to_detail.backbone.name + tab
-    for plasmid in Plasmid.objects.all():
-        if plasmid.backbone == plasmid_to_detail:
-            backbone_of.append(plasmid)
-        for insert in plasmid.inserts.all():
-            if insert == plasmid_to_detail:
-                insert_of.append(plasmid)
-
-    inserts = []
-    for plasmid in plasmid_to_detail.inserts.all():
-        inserts.append(plasmid.name)
-
-    if plasmid_to_detail.level:
-        ligation_raw = ligation_raw + " + ".join(inserts) + tab + recommended_enzyme_for_create(
-            plasmid_to_detail.level) + tab + getPlasmidResistanceForLigation(plasmid_to_detail).capitalize()
-    else:
-        if plasmid_to_detail.level == 0:
-            ligation_raw = "Level 0 ligation is not supported"
-        else:
-            ligation_raw = "Level not set"
-
-    plasmid_to_detail.refc = recommended_enzyme_for_create(plasmid_to_detail.level)
+    plasmid_to_detail.refc = plasmid_to_detail.recommended_enzyme_for_create()
+    plasmid_to_detail.insert_of = plasmid_to_detail.get_insert_of()
+    plasmid_to_detail.backbone_of = plasmid_to_detail.get_backbone_of()
 
     context = {
         'plasmid': plasmid_to_detail,
         'resistantes_human': resistantes_human(plasmid_to_detail.selectable_markers),
-        'insert_of': insert_of,
-        'backbone_of': backbone_of,
-        'ligation_raw': ligation_raw,
-        'SEQUENCING_STATES': SEQUENCING_STATES,
         'CHECK_STATES': CHECK_STATES,
-        'CHECK_METHODS': CHECK_METHODS,
         'RESTRICTION_ENZYMES': RestrictionEnzyme.objects.all(),
         'user_can_edit_plasmid': member_can_write_or_admin_plasmid(plasmid_to_detail, request.user)
     }
@@ -518,7 +471,8 @@ def plasmid(request, plasmid_id):
                           {'L_1SequenceInputForm': form, 'plasmid': plasmid_to_detail})
         else:
             if 'enzyme' in request.POST:
-                plasmid_create_from_inserts(plasmid_to_detail, context)
+                plasmid_create_from_inserts(plasmid_to_detail, context,
+                                            the_re=RestrictionEnzyme.objects.get(name=request.POST['enzyme']))
             else:
                 context['plasmid_create_result'] = ("No enzyme selected", "danger")
 
@@ -536,7 +490,7 @@ def plasmid(request, plasmid_id):
 
 def plasmid_create_from_inserts(plasmid_to_build, context, insert=None, oh_5=None, oh_3=None, the_re=None):
     if not the_re:
-        the_re = RestrictionEnzyme.objects.get(name=recommended_enzyme_for_create(plasmid_to_build.level))
+        the_re = RestrictionEnzyme.objects.get(name=plasmid_to_build.recommended_enzyme_for_create())
     plasmid_record = plasmid_record_from_inserts(plasmid_to_build, insert, oh_5, oh_3, the_re)
     if plasmid_record[0]:
         plasmid_record_final = plasmid_record[1]
@@ -637,10 +591,10 @@ def plasmid_record_from_inserts(plasmid_to_build, insert, oh_5, oh_3, the_re):
                         insert_hits = re_find_cut_positions(insert_record.seq, the_re, True, True)
 
                         if len(insert_hits) == 0:
-                            return False, "No " + re.name + " sites found at " + insert.name
+                            return False, "No " + the_re.name + " sites found at " + insert.name
                         if len(insert_hits) != 2:
-                            return False, "!= 2 " + re.name + " sites found at " + insert.name + ". Found sites #: " \
-                                   + len(insert_hits)
+                            return False, "!= 2 " + the_re.name + " sites found at " + insert.name + ". Found sites #: " \
+                                          + len(insert_hits)
                         inserts.append((
                             insert_record[insert_hits[0] - 1:insert_hits[1] - 1],
                             str(insert_record.seq[insert_hits[0] - 1:insert_hits[0] + oh_length - 1]),
@@ -664,7 +618,7 @@ def plasmid_record_from_inserts(plasmid_to_build, insert, oh_5, oh_3, the_re):
                     # if couldnt find a new part, something is missing in part list
                     if init_last_oh_added.lower() == last_oh_added.lower():
                         return False, "Inserts are not concatenated from " + first_oh.seq + " to " + \
-                               last_oh.seq + ". Joined = " + " + ".join(joined) + "."
+                                      last_oh.seq + ". Joined = " + " + ".join(joined) + "."
 
                 final_record = final_record + backbone_record[hits[1] - 1:]
 
@@ -694,28 +648,26 @@ def plasmid_duplicate(request, plasmid_id):
         form = PlasmidNameInput(request.POST)
         context['form'] = form
         if form.is_valid():
-            selectable_markers = plasmid_to_duplicate.selectable_markers.all()
-            inserts = plasmid_to_duplicate.inserts.all()
-            plasmid_to_duplicate.pk = None
-            plasmid_to_duplicate.created_on = datetime.now().date()
-            plasmid_to_duplicate.working_colony = None
-            plasmid_to_duplicate.check_state = 1
-            plasmid_to_duplicate.check_method = None
-            plasmid_to_duplicate.check_date = None
-            plasmid_to_duplicate.digestion_check_enzymes = None
-            plasmid_to_duplicate.check_observations = None
-            plasmid_to_duplicate.sequencing_state = 0
-            plasmid_to_duplicate.sequencing_date = None
-            plasmid_to_duplicate.sequencing_observations = None
-            plasmid_to_duplicate.name = form.cleaned_data['plasmid_name']
-            plasmid_to_duplicate.save()
-            plasmid_to_duplicate.selectable_markers.add(*selectable_markers)
-            plasmid_to_duplicate.inserts.add(*inserts)
-            return redirect('plasmid', plasmid_id=plasmid_to_duplicate.id)
+            new_plasmid = Plasmid(
+                name=form.cleaned_data['plasmid_name'],
+                created_on=datetime.now().date(),
+                colonypcr_state=1,
+                digestion_state=1,
+                level=plasmid_to_duplicate.level,
+                backbone=plasmid_to_duplicate.backbone,
+                type=plasmid_to_duplicate.type,
+                sequencing_state=0,
+                project=plasmid_to_duplicate.project,
+            )
+            new_plasmid.save()
+            new_plasmid.selectable_markers.add(*plasmid_to_duplicate.selectable_markers.all())
+            new_plasmid.inserts.add(*plasmid_to_duplicate.inserts.all())
+            return redirect('plasmid', plasmid_id=new_plasmid.id)
         return render(request, 'inventory/plasmid_duplicate.html', context)
     else:
         context['form'] = PlasmidNameInput()
         return render(request, 'inventory/plasmid_duplicate.html', context)
+
 
 @require_member_can_read_project_of_plasmid
 def plasmid_from_qr(request, plasmid_id):
@@ -812,12 +764,16 @@ def plasmid_create_wizard_end(request):
                 description = ""
                 if 'd' in params:
                     description = params['d']
+                sequencing_state = 0
+                if backbone.level == 0:
+                    sequencing_state = 1  # required
                 plasmid_created = Plasmid.objects.create(
                     name=params['n'],
                     description=description,
                     backbone=backbone,
                     type=PlasmidType.objects.get(id=0),
                     level=backbone.level,
+                    sequencing_state=sequencing_state,
                     project=get_current_project(request),
                 )
                 for i in params['i']:
@@ -834,6 +790,111 @@ def plasmid_create_wizard_end(request):
         context['wizard_error'] = "Plasmid can\'t be created. No parameters set."
     return render(request, 'inventory/plasmid.html', context)
 
+
+@require_member_can_write_or_admin_current_project
+def PlasmidCreateL0d(request):
+    # check parameters
+    if request.POST and request.POST.get('oh5-name') and request.POST.get('oh5-oh') and request.POST.get('oh3-name') and request.POST.get('oh3-oh') and request.POST.get('name') and request.POST.get('seq'):
+        # take the backbone
+        try:
+            the_re = RestrictionEnzyme.objects.get(name="SapI")
+            backbone=Plasmid.objects.get(name="pL0R-LacZ")
+
+        except:
+            context = {
+                'error': 'Backbone plasmid or Retriction Enzyme not found'
+            }
+        plasmid_backbone_seq_result = seqio_get(backbone)
+        oh_length = abs(the_re.rcut - the_re.fcut)
+
+        if plasmid_backbone_seq_result[0] and the_re:
+            backbone_record = plasmid_backbone_seq_result[1]
+            hits = re_find_cut_positions(backbone_record.seq, the_re, True, True)
+            if len(hits) == 2 and hits[1] > hits[0]:
+
+                final_record = backbone_record[0:hits[0] + oh_length - 1]
+
+                # go for the inserts
+                rec_oh_5 = SeqRecord(
+                    Seq(request.POST.get('oh5-oh').upper()),
+                    id=request.POST.get('oh5-name'),
+                    annotations={"molecule_type": "DNA"}
+                )
+                rec_oh_5.features.append(SeqFeature(
+                    FeatureLocation(0, len(request.POST.get('oh5-oh'))),
+                    type="misc_feature",
+                    strand=1,
+                    qualifiers={
+                        'ApEinfo_label': request.POST.get('oh5-name'),
+                        'label': request.POST.get('oh5-name'),
+                        'locus_tag': request.POST.get('oh5-name'),
+                    }
+                ))
+                final_record = final_record + rec_oh_5
+
+
+                rec_seq = SeqRecord(
+                    Seq(request.POST.get('seq').upper()),
+                    id=request.POST.get('name'),
+                    annotations={"molecule_type": "DNA"}
+                )
+                rec_seq.features.append(SeqFeature(
+                    FeatureLocation(0, len(request.POST.get('seq'))),
+                    type="misc_feature",
+                    strand=1,
+                    qualifiers={
+                        'ApEinfo_label': request.POST.get('name'),
+                        'label': request.POST.get('name'),
+                        'locus_tag': request.POST.get('name'),
+                    }
+                ))
+                final_record = final_record + rec_seq
+
+                rec_oh_3 = SeqRecord(
+                    Seq(request.POST.get('oh3-oh').upper()),
+                    id=request.POST.get('oh3-name'),
+                    annotations={"molecule_type": "DNA"}
+                )
+                rec_oh_3.features.append(SeqFeature(
+                    FeatureLocation(0, len(request.POST.get('oh3-oh'))),
+                    type="misc_feature",
+                    strand=1,
+                    qualifiers={
+                        'ApEinfo_label': request.POST.get('oh3-name'),
+                        'label': request.POST.get('oh3-name'),
+                        'locus_tag': request.POST.get('oh3-name'),
+                    }
+                ))
+                final_record = final_record + rec_oh_3
+
+                final_record = final_record + backbone_record[hits[1] - 1:]
+                final_record.name = request.POST.get('name')
+                final_record.description = "Created with Weaver L0 Designer"
+                final_record.annotations = {"molecule_type": "DNA", "topology": "circular"}
+
+                plasmid_created = Plasmid.objects.create(
+                    name=request.POST.get('name'),
+                    description="Created with Weaver L0 Designer",
+                    backbone=backbone,
+                    type=PlasmidType.objects.get(id=0),
+                    level=backbone.level,
+                    sequencing_state = 1,  # required
+                    project=get_current_project(request),
+                )
+                for r in backbone.selectable_markers.all():
+                    plasmid_created.selectable_markers.add(r.id)
+                plasmid_created.sequence.save(final_record.name.replace(" ", "_") + ".gb", ContentFile(final_record.format("gb")))
+                
+                return HttpResponseRedirect(reverse('plasmid', args=(plasmid_created.id,)))
+            else:   
+                context = {
+                    'error': 'Backbone plasmid does not contains appropriate restriction sites'
+                }
+    else:
+        context = {
+            'error': 'Bad input parameters'
+        }
+    return render(request, 'inventory/plasmid_create_l0d.html', context)
 
 
 @csrf_exempt
@@ -896,12 +957,29 @@ def plasmid_download(request, plasmid_id):
         record_response = seqio_get(plasmid_to_download)
         if record_response[0]:
             response = HttpResponse(record_response[1].format(request.GET['format']), content_type="plain/text")
-            response['Content-Disposition'] = 'inline; filename=' + plasmid_to_download.name + '.' + request.GET[
+            response['Content-Disposition'] = 'inline; filename=' + plasmid_to_download.__str__() + '.' + request.GET[
                 'format']
             return response
 
     # return original file if no format is specified
     file_path = os.path.join(settings.MEDIA_ROOT, plasmid_to_download.sequence.name)
+    if os.path.exists(file_path):
+        with open(file_path, 'rb') as fh:
+            response = HttpResponse(fh.read(), content_type="plain/text")
+            response['Content-Disposition'] = 'inline; filename=' + plasmid_to_download.__str__() + \
+                                              os.path.splitext(os.path.basename(file_path))[1]
+            return response
+    raise Http404
+
+
+@require_member_can_read_project_of_plasmid
+def plasmid_download_clustal(request, plasmid_id):
+    try:
+        plasmid_to_download = Plasmid.objects.get(id=plasmid_id)
+    except ObjectDoesNotExist:
+        raise Http404
+
+    file_path = os.path.join(settings.MEDIA_ROOT, plasmid_to_download.sequencing_clustal_file.name)
     if os.path.exists(file_path):
         with open(file_path, 'rb') as fh:
             response = HttpResponse(fh.read(), content_type="plain/text")
@@ -920,7 +998,7 @@ def plasmid_label(request, plasmid_id):
 
     context = {
         'plasmid': plasmid_to_label,
-        'today': date.today(),
+        'form': PlasmidLabel()
     }
     return render(request, 'inventory/plasmid_label.html', context)
 
@@ -1038,8 +1116,39 @@ def plasmid_pcr(request, plasmid_id):
     return render(request, 'inventory/plasmid_pcr.html', context)
 
 
+def plasmid_save_clustal(plasmid, records):
+    try:
+        file_name = "uploads/sequencing_clustal/" + plasmid.name + ".clustal"
+        with open(file_name, "w") as output_handle:
+            align = Bio.Align.MultipleSeqAlignment(records)
+            AlignIO.write(align, output_handle, "clustal")
+
+        plasmid.sequencing_clustal_file = file_name
+        plasmid.save()
+        return True, 'Save clustal file done'
+    except Exception as e:
+        return False, e.__str__()
+
+
+def get_optimal_alignment(ref_seq, query_seq, is_reversed=False):
+    aligner = Align.PairwiseAligner()
+    aligner.open_gap_score = -10
+    aligner.extend_gap_score = -0.5
+    aligner.substitution_matrix = Align.substitution_matrices.load("BLOSUM62")
+
+    if is_reversed:
+        query_seq = reverse_complement(query_seq)
+
+    try:
+        alignments = aligner.align(ref_seq.upper(), query_seq.upper())
+        return True, next(alignments)
+    except MemoryError:
+        return False, 'Too many alignments.'
+    except Exception as e:
+        return False, e.__str__()
+
 @require_member_can_read_project_of_plasmid
-def plasmid_sanger(request, plasmid_id):
+def plasmid_align_fasta(request, plasmid_id):
     try:
         plasmid_to_align = Plasmid.objects.get(id=plasmid_id)
     except ObjectDoesNotExist:
@@ -1050,7 +1159,74 @@ def plasmid_sanger(request, plasmid_id):
     }
 
     if request.method == 'POST':
-        form = SangerForms(request.POST, request.FILES)
+        form = FastaAlignForm(request.POST, request.FILES)
+        if form.is_valid():
+            if request.POST.get('fasta_sequence'):
+                fasta_io = StringIO(request.POST.get('fasta_sequence'))
+                try:
+                    record = list(SeqIO.parse(fasta_io, "fasta"))[0]
+                except IndexError:
+                    record = None
+                    context['error'] = 'Input sequence not in FASTA format'
+                fasta_io.close()
+            else:
+                if request.FILES["fasta_file"]:
+                    fasta_file = request.FILES["fasta_file"]
+                    f = tempfile.NamedTemporaryFile(delete=False)
+                    for chunk in fasta_file.chunks():
+                        f.write(chunk)
+                    f.close()
+                    record = SeqIO.read(f.name, "fasta")
+                else:
+                    context['error'] = 'No input sequence'
+
+            if record:
+                plasmid_seq = grab_seq(plasmid_to_align)[1]
+
+                alignment_result, optimal_alignment = get_optimal_alignment(plasmid_seq, record.seq, is_reversed=request.POST.get('is_reversed'))
+
+                if alignment_result:
+                    context['align_data'] = json.dumps([
+                        [plasmid_to_align.name, record.id],
+                        [str(plasmid_seq), str(record.seq)],
+                        [optimal_alignment[0], optimal_alignment[1]]
+                    ])
+
+                    if request.POST.get('save_clustal_file'):
+                        result, output_text = plasmid_save_clustal(plasmid_to_align, [
+                            SeqRecord(optimal_alignment[0], id=plasmid_to_align.name),
+                            SeqRecord(optimal_alignment[1], id=record.id)
+                        ])
+                        if result:
+                            context['save_clustal_done'] = output_text
+                        else:
+                            context['output_text'] = output_text
+
+                    context['plasmid_sequence_file_contents'] = plasmid_sequence_file_contents(plasmid_to_align)
+                else:
+                    context['error'] = optimal_alignment
+            else:
+                if not context['error']:
+                    context['error'] = 'Error while parsing input sequence'
+    else:
+        context['upload_form'] = FastaAlignForm()
+        context['show_upload_form'] = True
+    return render(request, 'inventory/plasmid_align_fasta.html', context)
+
+
+@require_member_can_read_project_of_plasmid
+def plasmid_align_sanger(request, plasmid_id):
+    try:
+        plasmid_to_align = Plasmid.objects.get(id=plasmid_id)
+    except ObjectDoesNotExist:
+        raise Http404
+
+    context = {
+        'plasmid': plasmid_to_align,
+    }
+
+    if request.method == 'POST':
+        form = SangerAlignForm(request.POST, request.FILES)
         if form.is_valid():
             ab1_chromatos = []
             ab1_chromatos.append({})  # no chromato data for template
@@ -1072,22 +1248,34 @@ def plasmid_sanger(request, plasmid_id):
                 'baseCalls': list(record.annotations['abif_raw']['PBAS2'].decode()),
                 'qualNums': []
             })
-            if request.POST.get('is_reverse'):
-                alignment = pairwise2.align.localxx(plasmid_seq, reverse_complement(record.seq))[0]
-            else:
-                alignment = pairwise2.align.localxx(plasmid_seq, record.seq)[0]
 
-            context['align_data'] = json.dumps([
-                [plasmid_to_align.name, ab1_file.name],
-                [str(plasmid_seq), str(record.seq)],
-                [alignment[0], alignment[1]],
-                ab1_chromatos
-            ])
-            context['plasmid_sequence_file_contents'] = plasmid_sequence_file_contents(plasmid_to_align)
+            alignment_result, optimal_alignment = get_optimal_alignment(plasmid_seq, record.seq, is_reversed=request.POST.get('is_reversed'))
+
+            if alignment_result:
+                context['align_data'] = json.dumps([
+                    [plasmid_to_align.name, ab1_file.name],
+                    [str(plasmid_seq), str(record.seq)],
+                    [optimal_alignment[0], optimal_alignment[1]],
+                    ab1_chromatos
+                ])
+
+                if request.POST.get('save_clustal_file'):
+                    result, output_text = plasmid_save_clustal(plasmid_to_align, [
+                        SeqRecord(optimal_alignment[0], id=plasmid_to_align.name),
+                        SeqRecord(optimal_alignment[1], id=record.id)
+                    ])
+                    if result:
+                        context['save_clustal_done'] = output_text
+                    else:
+                        context['output_text'] = output_text
+
+                context['plasmid_sequence_file_contents'] = plasmid_sequence_file_contents(plasmid_to_align)
+            else:
+                context['error'] = optimal_alignment
     else:
-        context['upload_form'] = SangerForms()
+        context['upload_form'] = SangerAlignForm()
         context['show_upload_form'] = True
-    return render(request, 'inventory/plasmid_sanger.html', context)
+    return render(request, 'inventory/plasmid_align_sanger.html', context)
 
 
 class PlasmidDelete(DeleteView):
@@ -1104,7 +1292,11 @@ class PlasmidDelete(DeleteView):
         return obj
 
     def get_success_url(self, **kwargs):
-        return reverse('plasmids') + '?form_result_object_deleted=true'
+        return reverse('plasmid_deleted')
+
+
+def plasmid_deleted(request):
+    return render(request, 'inventory/plasmid_deleted.html')
 
 
 @require_current_project_set
@@ -1115,11 +1307,14 @@ def PlasmidValidationEdit(request, plasmid_id):
     except ObjectDoesNotExist:
         raise Http404
 
-    form = PlasmidValidationForm(request.POST or None, instance=plasmid_to_validate)
-    if form.is_valid():
-        form.save()
-        return HttpResponseRedirect(reverse('plasmid', args=(
-            plasmid_to_validate.id,)) + '?form_result_plasmidvalidation_edit_success=true')
+    if request.method == 'POST':
+        form = PlasmidValidationForm(request.POST or None, request.FILES, instance=plasmid_to_validate)
+        if form.is_valid():
+            form.save()
+            return HttpResponseRedirect(reverse('plasmid', args=(
+                plasmid_to_validate.id,)) + '?form_result_plasmidvalidation_edit_success=true')
+    else:
+        form = PlasmidValidationForm(instance=plasmid_to_validate)
 
     return render(request, 'inventory/plasmidvalidation_update_form.html',
                   {'form': form, 'plasmid': plasmid_to_validate})
@@ -1127,42 +1322,58 @@ def PlasmidValidationEdit(request, plasmid_id):
 
 @require_current_project_set
 def PlasmidValidations(request):
-    plasmidsToCheck = []
-    plasmidsToStock = []
-    # plasmidsWithStockWoCheck = []
-
     show_from_all_projects = get_show_from_all_projects(request)
     if show_from_all_projects:
         all_plasmids = Plasmid.objects.filter(project_id__in=get_projects_where_member_can_any(request.user))
     else:
         all_plasmids = Plasmid.objects.filter(project_id=get_current_project_id(request))
 
-    # Plasmid w/o GS && Check state == Pending
-    for plasmid in all_plasmids.filter(check_state=1):
-        if plasmid.glycerolstock_set.all().count() == 0:
-            plasmidsToCheck.append(plasmid)
-
-    # Plasmid w/o GS && Check state != Pending && Sequencing state != Required
-    for plasmid in all_plasmids.exclude(check_state=1).exclude(sequencing_state=1):
-        if plasmid.glycerolstock_set.all().count() == 0:
-            plasmidsToStock.append(plasmid)
-
-    # Plasmid w/ GS && Check state == Pending && Sequencing state != Required
-    # for plasmid in all_plasmids.filter(check_state=1).exclude(sequencing_state=1):
-    #    if plasmid.glycerolstock_set.all().count() != 0:
-    #        plasmidsWithStockWoCheck.append(plasmid)
+    plasmidsToStock = []
+    for plasmid in all_plasmids:
+        if plasmid.under_construction == False and plasmid.reference_sequence == False and plasmid.colonypcr_state != 1 and plasmid.digestion_state != 1 and plasmid.sequencing_state != 1:
+            primary_gs = False
+            for gs in plasmid.glycerolstock_set.all():
+                if gs.strain.for_primary_gs:
+                    primary_gs = True
+                    break
+            if not primary_gs:
+                plasmidsToStock.append(plasmid)
 
     context = {
-        'plasmidsToCheck': plasmidsToCheck,
-        # Sequencing state = Required
-        'plasmidsToSequence': all_plasmids.filter(sequencing_state=1),
-        'plasmidsToStock': plasmidsToStock,
-        # 'plasmidsWithStockWoCheck': plasmidsWithStockWoCheck,
-        'CHECK_METHODS': CHECK_METHODS,
-        'show_from_all_projects': show_from_all_projects
+        'show_from_all_projects': show_from_all_projects,
+        'CHECK_STATES': dict(CHECK_STATES),
+        'lists': {
+            'under_construction': {
+                'name': 'Under Construction',
+                'empty_text': 'under construction',
+                'data': all_plasmids.filter(under_construction=True)
+            },
+            'to_colonypcr': {
+                'name': 'Colony PCR pending',
+                'empty_text': 'to colony PCR',
+                'data': all_plasmids.filter(colonypcr_state=1).exclude(under_construction=True).exclude(
+                    reference_sequence=True)
+            },
+            'to_digest': {
+                'name': 'Digestion pending',
+                'empty_text': 'to digest',
+                'data': all_plasmids.filter(digestion_state=1).exclude(under_construction=True).exclude(
+                    reference_sequence=True)
+            },
+            'to_sequence': {
+                'name': 'Sequencing pending',
+                'empty_text': 'to sequence',
+                'data': all_plasmids.filter(sequencing_state=1).exclude(under_construction=True).exclude(
+                    reference_sequence=True)
+            },
+            'to_stock': {
+                'name': 'To Stock',
+                'empty_text': 'to stock',
+                'data': plasmidsToStock
+            },
+        }
     }
     return render(request, 'inventory/plasmidvalidations.html', context)
-
 
 
 def plasmid_update_computed_size(plasmid_to_update):
@@ -1279,6 +1490,8 @@ def seqio_get(plasmid_to_grab_from):
                 return False, 'File bad format: ' + e.__str__()
             except FileNotFoundError as e:
                 return False, 'File not found: ' + e.__str__()
+        except AttributeError as e:
+            return False, e.__str__()
     return False, 'Unsupported file extension'
 
 
@@ -1318,6 +1531,7 @@ def re_digestion_fragments(sequence, the_res, is_circular):
         fragments.append(fragment)
         prev_fragment = fragment
 
+    fragments.sort(key=lambda dic: dic['length'])
     return fragments
 
 
@@ -1347,6 +1561,7 @@ def re_find_cut_positions(sequence, the_re, is_circular, sort):
     if sort:
         found_hits = sorted(found_hits)
     return found_hits
+
 
 @require_member_can_read_project_of_primer
 def primer(request, primer_id):
@@ -1534,82 +1749,81 @@ def ServicesGtr(request):
 
 
 def ServicesL0d(request):
-    return render(request, 'inventory/services/l0d/l0d.html')
+    context={
+        'csrf_token': django.middleware.csrf.get_token(request),
+    }
+    return render(request, 'inventory/services/l0d/l0d.html', context)
 
 
 def ServicesBlast(request):
-    # collect fastas
+    context = {}
+    project_choices = [('a', 'All')]
+    for project in get_projects_where_member_can_any(request.user):
+        project_choices.append((project.id, project.name),)
 
-    records = []
-    for plasmid in Plasmid.objects.filter(project__in=get_projects_where_member_can_any(request.user)).order_by('name'):
-        record_output = seqio_get(plasmid)
-        if record_output[0]:
-            record_output[1].id = str(len(records) + 1) + "-" + plasmid.name.replace(" ", "_")
-            record_output[1].description = str(plasmid.id)
-            records.append(record_output[1])
+    if request.method == 'POST':
+        form = BlastSequenceInput(project_choices, request.POST, request.FILES)
+        if form.is_valid():
+            if request.POST.get('fasta_sequence'):
+                fasta_io = StringIO(request.POST.get('fasta_sequence'))
+                try:
+                    record = list(SeqIO.parse(fasta_io, "fasta"))[0]
+                except IndexError:
+                    record = None
+                    context['error'] = 'Input sequence not in FASTA format'
+                fasta_io.close()
+            else:
+                if request.FILES["fasta_file"]:
+                    fasta_file = request.FILES["fasta_file"]
+                    f = tempfile.NamedTemporaryFile(delete=False)
+                    for chunk in fasta_file.chunks():
+                        f.write(chunk)
+                    f.close()
+                    record = SeqIO.read(f.name, "fasta")
+                else:
+                    context['error'] = 'No input sequence'
 
-    database_folder_path = os.path.join(settings.BASE_DIR, 'blast')
-    database_path = os.path.join(database_folder_path, 'all')
-    error = ""
-    alignment_output = ""
-    database_creation_result = ""
-    last_update = "No database yet"
+            if request.POST.get('project') == 'a':
+                plasmids = Plasmid.objects.filter(project__in=get_projects_where_member_can_any(request.user))
+            else:
+                plasmids = Plasmid.objects.filter(project=request.POST.get('project'))
 
-    if not os.path.exists(database_path + ".nhr") or (request.method == 'POST' and 'makeblastdb' in request.POST):
-        with tempfile.NamedTemporaryFile() as tmp:
-            SeqIO.write(records, tmp.name, "fasta")
-            cline = NcbimakeblastdbCommandline(dbtype="nucl", input_file=tmp.name, out=database_path, parse_seqids=True)
-            stdout, stderr = cline()
-            database_creation_result = "New BLAST database created with " + str(len(records)) + " plasmids"
+            subjects = []
+            context['not_considered_subjects'] = []
+            for plasmid in plasmids:
+                try:
+                    seqio_get_result = seqio_get(plasmid)
+                    if seqio_get_result[0]:
+                        seqio_get_result[1].id = plasmid.id
+                        seqio_get_result[1].name = plasmid.name
+                        subjects.append(make_circular([seqio_get_result[1]])[0])
+                    else:
+                        context['not_considered_subjects'].append((plasmid, 'No sequence file'))
+                except Exception as e:
+                    context['not_considered_subjects'].append((plasmid, e))
 
-    if os.path.exists(database_path + ".nhr"):
-        # db exists
-        last_update = datetime.fromtimestamp(os.stat(database_path + ".nhr").st_mtime)
-        alignments = []
-        if request.method == 'POST' and 'doblast' in request.POST:
-            form = BlastSequenceInput(request.POST)
-            if form.is_valid():
-                query_seq = form.cleaned_data['sequence_input']
-                query_record = SeqRecord(Seq(query_seq), id="query_seq")
-                with tempfile.NamedTemporaryFile() as tmp:
-                    SeqIO.write(query_record, tmp.name, "fasta")
-                    with tempfile.NamedTemporaryFile() as xml_output:
-                        cline = NcbiblastnCommandline(query=tmp.name, db=database_path, evalue=0.001,
-                                                      out=xml_output.name, outfmt=5)
-                        stdout, stderr = cline()
-
-                        records = NCBIXML.parse(open(xml_output.name, "r"))
-                        item = next(records)
-                        chunk_size = 200
-                        for alignment in item.alignments:
-                            for hsp in alignment.hsps:
-                                if hsp.expect < 0.01:
-                                    alignment.hsp = hsp
-                                    alignment.chunk = []
-                                    alignment.plasmid = Plasmid.objects.get(id=alignment.title.split(' ')[1])
-                                    for i in range(0, len(hsp.query), chunk_size):
-                                        alignment.chunk.append(
-                                            [
-                                                hsp.query[i:i + chunk_size],
-                                                hsp.match[i:i + chunk_size],
-                                                hsp.sbjct[i:i + chunk_size]
-                                            ]
-                                        )
-                                    alignments.append(alignment)
-                        alignment_output = True
-        else:
-            form = BlastSequenceInput(request.POST)
+            if record and subjects:
+                context['query'] = record
+                context['short_blast'] = "No"
+                if request.POST.get('short_blast'):
+                    context['short_blast'] = "Yes"
+                queries = make_linear([record])
+                blast = BioBlast(subjects, queries)
+                if request.POST.get('short_blast'):
+                    context['results'] = blast.blastn_short()
+                else:
+                    context['results'] = blast.blastn()
+                for result in context['results']:
+                    result['alignment'] = Bio.Align.MultipleSeqAlignment([
+                        SeqRecord(Seq(result['meta']['query seq']), id=result['query']['name']),
+                        SeqRecord(Seq(result['meta']['subject seq']), id=result['subject']['name']),
+                    ]).__format__('clustal')
+            else:
+                if not context['error']:
+                    context['error'] = 'Error while parsing input sequence'
     else:
-        error = "No database exists yet"
+        context['form'] = BlastSequenceInput(project_choices)
 
-    context = {
-        'last_update': last_update,
-        'error': error,
-        'form': form,
-        'alignment_output': alignment_output,
-        'alignments': alignments,
-        'database_creation_result': database_creation_result
-    }
     return render(request, 'inventory/services/blast/blast.html', context)
 
 
@@ -1619,21 +1833,29 @@ def get_plasmid_type_id(plasmid):
     return None
 
 
-def api_plasmid_getfasta_byid(request, name):
-    plasmid = Plasmid.objects.get(name=name)
+def api_plasmid_get_fasta(plasmid):
     if plasmid:
         sequence = ""
         result = grab_seq(plasmid)
         if result[0]:
             sequence = result[1]
         return JsonResponse({
-            'name': plasmid.name,
-            'id': plasmid.id,
+            'name': str(plasmid),
+            'id': str(plasmid.id),
+            'idx': str(plasmid.idx),
             'seq': str(sequence)
         })
     return JsonResponse({
         'error': 'Plasmid not found'
     })
+
+
+def api_plasmid_get_fasta_by_idx(request, idx):
+    return api_plasmid_get_fasta(Plasmid.objects.get(idx=idx))
+
+
+def api_plasmid_get_fasta_by_name(request, name):
+    return api_plasmid_get_fasta(Plasmid.objects.get(name=name))
 
 
 def api_plasmids(request):
@@ -1642,11 +1864,11 @@ def api_plasmids(request):
         level_from_table_filters = 0
         level_to_table_filters = 0
         if get_show_from_all_projects(request):
-            plasmids = Plasmid.objects.filter(project_id__in=get_projects_where_member_can_any(request.user)).order_by('name')
+            plasmids = Plasmid.objects.filter(project_id__in=get_projects_where_member_can_any(request.user)).order_by(
+                'name')
         else:
             plasmids = Plasmid.objects.filter(project_id=get_current_project_id(request)).order_by('name')
         for plasmid in plasmids:
-            plasmid_grab_seq = grab_seq(plasmid)
             gs_out = []
             for gs in plasmid.glycerolstock_set.all():
                 gs_out.append({
@@ -1657,17 +1879,29 @@ def api_plasmids(request):
                     'b': str(gs.box),
                 })
 
+            check_state = ""
+            if plasmid.under_construction:
+                check_state = 'c'
+            elif plasmid.reference_sequence:
+                check_state = 'r'
+            elif plasmid.is_validated():
+                check_state = 'v'
+
+            hs = False
+            if plasmid.sequence:
+                hs = True
+
             output.append({
-                'n': plasmid.name,
+                'n': plasmid.__str__(),
                 'l': plasmid.level,
                 't': get_plasmid_type_id(plasmid),
                 'i': plasmid.id,
-                'hs': plasmid_grab_seq[0],
+                'ix': str(plasmid.idx),
+                'hs': hs,
                 'c': plasmid.computed_size,
                 'ic': plasmid.insert_computed_size,
-                'cs': plasmid.check_state,
-                'ss': plasmid.sequencing_state,
-                'r': recommended_enzyme_for_create(plasmid.level),
+                'cs': check_state,
+                'r': plasmid.recommended_enzyme_for_create(),
                 'g': gs_out,
                 'sm': " + ".join(list(plasmid.selectable_markers.all().values_list('three_letter_code', flat=True))),
                 'p': member_can_write_or_admin_plasmid(plasmid, request.user)
@@ -1681,7 +1915,8 @@ def api_plasmids(request):
             'current_project': True,
             'table_filters': get_table_filters(level_from_table_filters, level_to_table_filters),
             'plasmids': output,
-            'csrf_token': django.middleware.csrf.get_token(request)
+            'csrf_token': django.middleware.csrf.get_token(request),
+            'RESTRICTION_ENZYMES': list(RestrictionEnzyme.objects.values()),
         }
         return JsonResponse(context, safe=False)
     return JsonResponse({})
@@ -1692,9 +1927,11 @@ def api_glycerolstocks(request):
     level_from_table_filters = 0
     level_to_table_filters = 0
     if get_show_from_all_projects(request):
-        glycerolstocks = GlycerolStock.objects.filter(project_id__in=get_projects_where_member_can_any(request.user)).order_by('strain', 'plasmid')
+        glycerolstocks = GlycerolStock.objects.filter(
+            project_id__in=get_projects_where_member_can_any(request.user)).order_by('strain', 'plasmid')
     else:
-        glycerolstocks = GlycerolStock.objects.filter(project_id=get_current_project_id(request)).order_by('strain', 'plasmid')
+        glycerolstocks = GlycerolStock.objects.filter(project_id=get_current_project_id(request)).order_by('strain',
+                                                                                                           'plasmid')
     for glycerolstock in glycerolstocks:
         pi = ""
         pn = ""
@@ -1707,7 +1944,7 @@ def api_glycerolstocks(request):
                 if glycerolstock.plasmid.level < level_from_table_filters:
                     level_from_table_filters = glycerolstock.plasmid.level
             pi = glycerolstock.plasmid.id
-            pn = glycerolstock.plasmid.name
+            pn = glycerolstock.plasmid.__str__()
             if glycerolstock.plasmid.type:
                 pt = glycerolstock.plasmid.type.id
             pl = glycerolstock.plasmid.level
@@ -1774,7 +2011,7 @@ def api_parts(request, enzyme_name, assembly_standard):
                         oh5 = ohtmp
                         length = len(str(plasmid_grab_seq[1])) - length
                     parts.append({
-                        'n': plasmid.name,
+                        'n': plasmid.__str__(),
                         'd': plasmid.description,
                         'l': plasmid.level,
                         't': get_plasmid_type_id(plasmid),
@@ -1789,3 +2026,25 @@ def api_parts(request, enzyme_name, assembly_standard):
         'csrf_token': django.middleware.csrf.get_token(request),
     }
     return JsonResponse(context, safe=False)
+
+
+def api_fidelity_calc(request, enzyme, ohs):
+    url = 'https://ligasefidelity.neb.com/viewset/run.cgi'
+    context = {
+        'error': 'Bad parameters'
+    }
+    if enzyme == 'sapi':
+        page = requests.post(url, {
+            'ohlen': 3,
+            'dataset': 'b3-SapI-37_16_cycling',
+            'olist': ','.join(ohs.split('-'))
+        })
+        soup = BeautifulSoup(page.content, "html.parser")
+        ligation_fidelity = re.findall(r'\d+', soup.find_all('div', class_="estimated-fidelity")[0].text)[0]
+        ligation_frequency_matrix = soup.find_all('div', class_="tool-results-header")[0].findNext('pre')
+        ligation_frequency_matrix_html = ligation_frequency_matrix.__str__() + ligation_frequency_matrix.find_next_siblings('table')[0].__str__()
+        context = {
+            'fidelity': ligation_fidelity,
+            'ligation_frequency_matrix_html': ligation_frequency_matrix_html
+        }
+    return JsonResponse(context)

@@ -1,6 +1,12 @@
 {% include "inventory/parts/header.html" %}
-<div class="alert alert-danger">Set current project to continue</div>
+<div class="alert alert-info">
+    {% if url_name %}
+        Set your current project in order to continue to {{url_name}}
+        {% else %}
+        Set current project
+    {% endif %}
+</div>
 {% with user.project_members.all as projects %}
-{% include "organization/parts/list_projects.html" %}
+{% include "organization/parts/choose_project.html" %}
 {% endwith %}
 {% include "inventory/parts/footer.html" %}

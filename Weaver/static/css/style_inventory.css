@@ -8,6 +8,10 @@ div#label-qrcode img {
     margin-left: 1rem;
 }
 
+p#label-qrcode img {
+    max-width: 5rem;
+}
+
 div#label {
     border: solid 1px;
     border-radius: 1rem;
@@ -171,8 +175,16 @@ display:none;
 }
 
 .dropdown-enzymes,
-.dropdown-download {
+.dropdown-download,
+.dropdown-align {
     display: inline-block;
+}
+
+.dropdown-menu-body{
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    grid-auto-rows: 1fr;
+    grid-auto-flow: row;
 }
 
 .copy_clipboard{

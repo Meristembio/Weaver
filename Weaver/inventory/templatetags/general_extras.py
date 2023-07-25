@@ -1,6 +1,5 @@
 from django import template
 from organization.models import Project
-from django.template.defaultfilters import stringfilter
 
 register = template.Library()
 
@@ -25,3 +24,10 @@ def startswith(text, starts):
     if text.lower().startswith(starts):
         return True
     return False
+
+@register.filter
+def divide(value, arg):
+    try:
+        return int(value) / int(arg)
+    except (ValueError, ZeroDivisionError):
+        return None

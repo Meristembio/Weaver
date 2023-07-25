@@ -1,3 +1,4 @@
+import datetime
 from django import forms
 from .models import Plasmid
 from .models import Primer
@@ -14,11 +15,18 @@ class PlasmidNameInput(forms.Form):
 
 
 class GlycerolQRInput(forms.Form):
-    glycerol_id = forms.CharField()
+    glycerol_qr_id = forms.CharField()
 
 
 class BlastSequenceInput(forms.Form):
-    sequence_input = forms.CharField(widget=forms.Textarea)
+    def __init__(self, project_choices, *args, **kwargs):
+        super(BlastSequenceInput, self).__init__(*args, **kwargs)
+        self.fields['project'].choices = project_choices
+
+    project = forms.ChoiceField(label="Project to search in", choices=())
+    fasta_sequence = forms.CharField(label="Fasta Text Input (Preferred)", widget=forms.Textarea(attrs={}), required=False)
+    fasta_file = forms.FileField(label="Fasta File Input", required=False)
+    short_blast = forms.BooleanField(label="Use short input BLAST parameters?", required=False)
 
 
 class L0SequenceInput(forms.Form):
@@ -30,9 +38,17 @@ class L0SequenceInput(forms.Form):
     enzyme = forms.CharField(required=True, widget=forms.HiddenInput())
 
 
-class SangerForms(forms.Form):
+class FastaAlignForm(forms.Form):
+    fasta_sequence = forms.CharField(widget=forms.Textarea(attrs={}), required=False)
+    save_clustal_file = forms.BooleanField(required=False)
+    is_reversed = forms.BooleanField(label="Is reversed?", required=False)
+    fasta_file = forms.FileField(label="Fasta File", required=False)
+
+
+class SangerAlignForm(forms.Form):
+    save_clustal_file = forms.BooleanField(required=False)
+    is_reversed = forms.BooleanField(label="Is reversed?", required=False)
     ab1 = forms.FileField(label="AB1 File", required=True)
-    is_reverse = forms.BooleanField(label="Is reverse?", required=False)
 
 
 class DateInput(forms.DateInput):
@@ -84,17 +100,20 @@ class PlasmidEditForm(forms.ModelForm):
     class Meta:
         model = Plasmid
         fields = ['name', 'selectable_markers', 'sequence', 'backbone', 'inserts', 'intended_use', 'type', 'level',
-                  'description', 'created_on', 'project']
+                  'description', 'created_on', 'project', 'reference_sequence', 'under_construction']
 
 
 class PlasmidValidationForm(forms.ModelForm):
     class Meta:
         model = Plasmid
-        fields = ['working_colony', 'check_state', 'check_method', 'check_date', 'digestion_check_enzymes',
-                  'check_observations', 'sequencing_state', 'sequencing_date', 'sequencing_observations',
-                  'sequencing_observations']
+        fields = ['working_colony',
+                  'colonypcr_state', 'colonypcr_date', 'colonypcr_observations',
+                  'digestion_state', 'digestion_date', 'digestion_observations',
+                  'sequencing_state', 'sequencing_date', 'sequencing_observations',
+                  'sequencing_observations', 'sequencing_clustal_file']
         widgets = {
-            'check_date': DateInput(),
+            'colonypcr_date': DateInput(),
+            'digestion_date': DateInput(),
             'sequencing_date': DateInput()
         }
 
@@ -130,3 +149,9 @@ class MsaChromatosStep2Form(forms.Form):
 class MsaUploadFastaFileForm(forms.Form):
     fasta_text = forms.CharField(widget=forms.Textarea)
     fasta_file = forms.FileField(label="Fasta file")
+
+
+class PlasmidLabel(forms.Form):
+    date = forms.DateField(widget=DateInput(), initial=datetime.date.today)
+    colony = forms.CharField()
+    concentration = forms.CharField()

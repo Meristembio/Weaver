@@ -9,7 +9,7 @@
         <span>
             Using: {% for re in selected_res %}{% if forloop.counter0 %} / {% endif %}{{re}}{% endfor %}
         </span>
-        <i class="bi bi-clipboard copy_clipboard" data-cc="{{plasmid.name}} / {% for re in selected_res %}{% if forloop.counter0 %} + {% endif %}{{re}}{% endfor %} / {% for fragment in fragments %}{% if forloop.counter0 %} + {% endif %}{{fragment.length}}{% endfor %}"></i>
+        <i class="bi bi-clipboard copy_clipboard" data-cc="{{plasmid}} / {% for re in selected_res %}{% if forloop.counter0 %} + {% endif %}{{re}}{% endfor %} / {% for fragment in fragments %}{% if forloop.counter0 %} + {% endif %}{{fragment.length}}{% endfor %}"></i>
     </p>
     <table id="digest-fragments" class="table table-striped table-hover sortable">
         <thead>
@@ -103,53 +103,53 @@
         </thead>
         <tbody>
         {% for restrictionenzyme in res %}
-        {% if restrictionenzyme.hits|length %}
-        <tr>
-            <td>
-                <button class="btn btn-outline-primary" type="button" data-name="{{restrictionenzyme.name}}">
-                    {{restrictionenzyme}}
-                </button>
-                <i class="bi bi-clipboard copy_clipboard" data-cc="{{plasmid.name}} / {{restrictionenzyme}} / {% for ref in restrictionenzyme.fragments %}{% if forloop.counter0 %} - {% endif %}{{ref}}{% endfor %}"></i>
-            </td>
-            <td>
-                {% if restrictionenzyme.activity_buffer_1_1 %}
-                {{restrictionenzyme.activity_buffer_1_1}} %
-                {% else %}
-                -
-                {% endif %}
-            </td>
-            <td>
-                {% if restrictionenzyme.activity_buffer_2_1 %}
-                {{restrictionenzyme.activity_buffer_2_1}} %
-                {% else %}
-                -
-                {% endif %}
-            </td>
-            <td>
-                {% if restrictionenzyme.activity_buffer_3_1 %}
-                {{restrictionenzyme.activity_buffer_3_1}} %
-                {% else %}
-                -
-                {% endif %}
-            </td>
-            <td>
-                {% if restrictionenzyme.activity_buffer_CS %}
-                {{restrictionenzyme.activity_buffer_CS}} %
-                {% else %}
-                -
-                {% endif %}
-            </td>
-            <td>
-                {{restrictionenzyme.hits|length}}
-            </td>
-            <td>
-                {% for reh in restrictionenzyme.hits %}{% if forloop.counter0 %} / {% endif %}{{reh}}{% endfor %}
-            </td>
-            <td>
-                {% for ref in restrictionenzyme.fragments %}{% if forloop.counter0 %} / {% endif %}{{ref}}{% endfor %}
-            </td>
-        </tr>
-        {% endif %}
+            {% if restrictionenzyme.hits|length %}
+            <tr>
+                <td>
+                    <button class="btn btn-outline-primary" type="button" data-name="{{restrictionenzyme.name}}">
+                        {{restrictionenzyme}}
+                    </button>
+                    <i class="bi bi-clipboard copy_clipboard" data-cc="{{plasmid}} / {{restrictionenzyme}} / {% for ref in restrictionenzyme.fragments %}{% if forloop.counter0 %} - {% endif %}{{ref}}{% endfor %}"></i>
+                </td>
+                <td>
+                    {% if restrictionenzyme.activity_buffer_1_1 %}
+                    {{restrictionenzyme.activity_buffer_1_1}} %
+                    {% else %}
+                    -
+                    {% endif %}
+                </td>
+                <td>
+                    {% if restrictionenzyme.activity_buffer_2_1 %}
+                    {{restrictionenzyme.activity_buffer_2_1}} %
+                    {% else %}
+                    -
+                    {% endif %}
+                </td>
+                <td>
+                    {% if restrictionenzyme.activity_buffer_3_1 %}
+                    {{restrictionenzyme.activity_buffer_3_1}} %
+                    {% else %}
+                    -
+                    {% endif %}
+                </td>
+                <td>
+                    {% if restrictionenzyme.activity_buffer_CS %}
+                    {{restrictionenzyme.activity_buffer_CS}} %
+                    {% else %}
+                    -
+                    {% endif %}
+                </td>
+                <td>
+                    {{restrictionenzyme.hits|length}}
+                </td>
+                <td>
+                    {% for reh in restrictionenzyme.hits %}{% if forloop.counter0 %} / {% endif %}{{reh}}{% endfor %}
+                </td>
+                <td>
+                    {% for ref in restrictionenzyme.fragments %}{% if forloop.counter0 %} / {% endif %}{{ref}}{% endfor %}
+                </td>
+            </tr>
+            {% endif %}
         {% endfor %}
         </tbody>
     </table>
