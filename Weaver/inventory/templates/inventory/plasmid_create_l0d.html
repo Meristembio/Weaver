@@ -1,0 +1,12 @@
+{% include "./parts/header.html" %}
+<div id="header">
+    <h1>Plasmid / Create / L0D</h1>
+</div>
+{% if error %}
+<div class="alert alert-danger">
+    {{error}}
+</div>
+{% else %}
+{{output}}
+{% endif %}
+{% include "./parts/footer.html" %}
