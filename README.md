@@ -37,13 +37,17 @@ Make sure you are running python > 3.6. To check your python version run:
 python -v
 ```
 
-Install following packages via python package installer (pip):
+Install the following packages via python package installer (pip) in a fresh [Virtual environment](https://docs.python.org/3/library/venv.html):
 
 ```
 pip3 install django-mathfilters django-shortuuidfield django-multiselectfield Bio plotly pandas pyblastbio more_itertools bs4
 ```
 
-Check all requirements at [requirements.txt](requirements.txt)
+If you have any version conflict, install the requirements using [requirements.txt](requirements.txt) file:
+
+```
+pip3 install -r requirements.txt
+```
 
 ### Running
 Enter project folder:
