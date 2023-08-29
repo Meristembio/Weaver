@@ -26,25 +26,35 @@ Coming soon!
 ### Clone repo
 Clone repo:
 
-`git clone https://github.com/Meristembio/Weaver`
+```
+git clone https://github.com/Meristembio/Weaver
+```
 
 ### Pre-requisites
 Make sure you are running python > 3.6. To check your python version run:
 
-`python -v`
+```
+python -v
+```
 
 Install following packages via python package installer (pip):
 
-`pip3 install django-mathfilters django-shortuuidfield django-multiselectfield Bio plotly pandas pyblastbio more_itertools bs4`
+```
+pip3 install django-mathfilters django-shortuuidfield django-multiselectfield Bio plotly pandas pyblastbio more_itertools bs4
+```
 
 ### Running
 Enter project folder:
 
-`cd Weaver/Weaver`
+```
+cd Weaver/Weaver
+```
 
 Run the server:
 
-`python3 manage.py runserver`
+```
+python3 manage.py runserver
+```
 
 Access local server : [http://127.0.0.1:8000/](http://127.0.0.1:8000/)
 
