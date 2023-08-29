@@ -1,5 +1,8 @@
 <div id="header">
-    <h1><span class="text-secondary opacity-50 me-2 fs-3">Reactive</span><span>{{reactive}}</span></h1>
+    <div id="header-element">
+        <span class="badge text-dark text-secondary opacity-50 p-1 ps-0 fs-2 m-0 fw-lighter align-middle">Reactives</span>
+        <span class="badge text-dark fw-light fs-2 p-1 m-0 align-middle">{{reactive}}</span>
+    </div>
     <div id="header-links">
         <a href="{% url 'reactive_delete' pk=reactive.id recipe_id=view.kwargs.recipe_id %}?recipe_id={{recipe_id}}" class="btn btn-outline-danger" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Trash"><i
                 class="bi bi-trash"></i></a>

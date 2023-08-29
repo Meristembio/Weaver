@@ -6,41 +6,39 @@
             <th scope="col">Current</th>
             <th scope="col">Description</th>
             <th scope="col">Visibility</th>
-            <th scope="col">Memberships</th>
-            <th scope="col">Edit</th>
+            <th scope="col">Members</th>
         </tr>
     </thead>
     <tbody>
     {% for project in projects %}
-        <tr>
-            <td>
-                <a href="{% url 'project' project_id=project.id %}" class="btn btn-success me-2" role="button">{{project}}</a>
-            </td>
-            <td>
-                {% if project.id|slugify == request.COOKIES.current_project_id %}
-                <span class="badge bg-primary">Current</span>
-                {% else %}
-                <a href="{% url 'project_set_current' pk=project.id %}?next={{request.get_full_path}}" class="btn btn-sm btn-warning" role="button">
-                    Set
-                </a>
-                {% endif %}
-            </td>
-            <td>
-                {{project.description | urlize}}
-            </td>
-            <td>{% if project.public %}Public{% else %}Private{% endif %} (Not implemented)</td>
-            {% for user_membership in user.membership_set.all %}
+        {% for user_membership in user.membership_set.all %}
             {% if user_membership.project == project %}
-            <td>
-                {% include './list_project_members.html' %}
-            </td>
-            <td>
-                <a href="{% url 'project_edit' pk=project.id %}" class="btn btn-outline-secondary{% if user_membership.access_policies != 'a' %} disabled{% endif %}" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit"><i
-            class="bi bi-pencil-fill"></i></a>
-            </td>
+            <tr>
+                <td>
+                    <a href="{% url 'project' project_id=project.id %}" class="btn btn-success" role="button">{{project}}</a>
+                    {% if user_membership.access_policies == 'a' %}
+                        <a href="{% url 'project_edit' pk=project.id %}" class="btn" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit"><i class="bi bi-pencil-fill ms-1"></i></a>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if project.id|slugify == request.COOKIES.current_project_id %}
+                    <button class="btn btn-sm btn-secondary" disabled>Current</button>
+                    {% else %}
+                    <a href="{% url 'project_set_current' pk=project.id %}?next={{request.get_full_path}}" class="btn btn-sm btn-primary" role="button">
+                        Set
+                    </a>
+                    {% endif %}
+                </td>
+                <td>
+                    {{project.description | urlize}}
+                </td>
+                <td>{% if project.public %}Public{% else %}Private{% endif %} (Not implemented)</td>
+                <td>
+                    {% include './list_project_members.html' %}
+                </td>
+            </tr>
             {% endif %}
-            {% endfor %}
-        </tr>
+        {% endfor %}
     {% endfor %}
     </tbody>
 </table>

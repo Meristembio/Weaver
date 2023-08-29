@@ -1,12 +1,5 @@
 /* GENERAL */
-@font-face {
-  font-family: ManjariRegular;
-  src: url(fonts/Manjari-Regular.ttf);
-}
-@font-face {
-  font-family: LatoLight;
-  src: url(fonts/Lato-Light.ttf);
-}
+@import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap');
 body{
     font-family: 'Lato', sans-serif;
 }
@@ -187,15 +180,8 @@ div#nav-logo a {
 div#nav-logo a:hover {
     text-decoration: none;
 }
-.logo-main {
-    font-family: ManjariRegular;
-    font-size: 3.5rem;
-    line-height: .5em;
-}
-.logo-desc {
-    font-family: LatoLight;
-    font-size: 1.2rem;
-    letter-spacing: 2.4px;
+div#nav-logo img {
+    width: 18em;
 }
 #nav-menu a:hover{
     text-decoration: none;
@@ -205,6 +191,10 @@ div#footer {
     padding: 6rem 0 2rem;
     font-size: .9em;
     color: #999;
+}
+
+div#footer img{
+    width: 5em;
 }
 
 #admin_site-link a {

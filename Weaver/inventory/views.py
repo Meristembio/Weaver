@@ -14,7 +14,6 @@ from .models import Stats
 from .models import PlasmidType
 from .models import TableFilter
 
-from .custom.standards import CURRENT_ASSEMBLY_STANDARD
 from organization.decorators import require_current_project_set
 from organization.decorators import require_member_can_write_or_admin_current_project
 from organization.decorators import require_member_can_read_project_of_plasmid
@@ -32,6 +31,8 @@ from organization.views import member_can_write_or_admin_plasmid
 from organization.views import member_can_write_or_admin_gs
 from organization.views import get_show_from_all_projects
 from organization.views import member_can_write_or_admin_primer
+
+from .custom.standards import ligation_standards
 
 from .forms import PlasmidValidationForm
 from .forms import PlasmidCreateForm
@@ -94,8 +95,6 @@ from bs4 import BeautifulSoup
 
 import plotly.express as px
 import pandas as pd
-
-LO_OHS = CURRENT_ASSEMBLY_STANDARD['odd_custom']
 
 
 def get_table_filters(level_from_table_filters, level_to_table_filters):
@@ -456,7 +455,8 @@ def plasmid(request, plasmid_id):
         if form.is_valid():
             plasmid_create_from_inserts(plasmid_to_detail, context, insert=form.cleaned_data['l0_sequence_input'],
                                         oh_5=form.cleaned_data['l0_oh_5'], oh_3=form.cleaned_data['l0_oh_3'],
-                                        the_re=RestrictionEnzyme.objects.get(name=request.POST.get('enzyme')))
+                                        the_re=RestrictionEnzyme.objects.get(name=request.POST.get('enzyme')),
+                                        ligation_standard_slug=form.cleaned_data['ligation_standard_slug'])
         else:
             context['plasmid_create_result'] = ("Bad inputs", "danger")
 
@@ -482,16 +482,31 @@ def plasmid(request, plasmid_id):
     if request.method == 'POST' and 'params' in request.POST:
         context['plasmid_create_result'] = ("Plasmid create wizard is complete.", "success")
 
+    if plasmid_to_detail.public_visibility:
+        context['public_url'] = request.build_absolute_uri(reverse('plasmid_public', args=(plasmid_to_detail.id, )))
+
     # in case of update or never computed
     plasmid_update_computed_size(plasmid_to_detail)
 
     return render(request, 'inventory/plasmid.html', context)
 
 
-def plasmid_create_from_inserts(plasmid_to_build, context, insert=None, oh_5=None, oh_3=None, the_re=None):
+def plasmid_public(request, plasmid_id):
+    try:
+        plasmid_to_detail = Plasmid.objects.get(id=plasmid_id)
+    except ObjectDoesNotExist:
+        return render(request, 'inventory/general_error.html', {'error': 'Plasmid does not exists or is not public available.'})
+
+    if plasmid_to_detail.public_visibility:
+        return render(request, 'inventory/general_error.html', {'error': 'Public system is under construction'})
+    else:
+        return render(request, 'inventory/general_error.html', {'error': 'Plasmid does not exists or is not public available.'})
+
+
+def plasmid_create_from_inserts(plasmid_to_build, context, insert=None, oh_5=None, oh_3=None, the_re=None, ligation_standard_slug=None):
     if not the_re:
         the_re = RestrictionEnzyme.objects.get(name=plasmid_to_build.recommended_enzyme_for_create())
-    plasmid_record = plasmid_record_from_inserts(plasmid_to_build, insert, oh_5, oh_3, the_re)
+    plasmid_record = plasmid_record_from_inserts(plasmid_to_build, insert, oh_5, oh_3, the_re, ligation_standard_slug)
     if plasmid_record[0]:
         plasmid_record_final = plasmid_record[1]
         plasmid_record_final.name = plasmid_record_final.name.replace(" ", "_")
@@ -501,7 +516,7 @@ def plasmid_create_from_inserts(plasmid_to_build, context, insert=None, oh_5=Non
         context['plasmid_create_result'] = (plasmid_record[1], "danger")
 
 
-def plasmid_record_from_inserts(plasmid_to_build, insert, oh_5, oh_3, the_re):
+def plasmid_record_from_inserts(plasmid_to_build, insert, oh_5, oh_3, the_re, ligation_standard_slug):
     if plasmid_to_build.level != 0 and plasmid_to_build.level != -1 and len(plasmid_to_build.inserts.all()) == 0:
         return False, "No inserts defined"
     if not plasmid_to_build.backbone:
@@ -520,11 +535,12 @@ def plasmid_record_from_inserts(plasmid_to_build, insert, oh_5, oh_3, the_re):
             if plasmid_to_build.level == 0 or plasmid_to_build.level == -1:
                 final_record = backbone_record[0:hits[0] + oh_length - 1]
 
-                for name, value in LO_OHS:
-                    if oh_5 == name:
-                        oh_5_tuple = (name, value)
-                    if oh_3 == name:
-                        oh_3_tuple = (name, value)
+                l0_ohs = ligation_standards[ligation_standard_slug]['ohs']['l0']
+                for oh_id in l0_ohs:
+                    if oh_5 == oh_id:
+                        oh_5_tuple = (l0_ohs[oh_5]['name'], l0_ohs[oh_5]['oh'])
+                    if oh_3 == oh_id:
+                        oh_3_tuple = (l0_ohs[oh_3]['name'], l0_ohs[oh_3]['oh'])
 
                 if oh_5_tuple[1]:
                     rec_oh_5 = SeqRecord(
@@ -594,7 +610,7 @@ def plasmid_record_from_inserts(plasmid_to_build, insert, oh_5, oh_3, the_re):
                             return False, "No " + the_re.name + " sites found at " + insert.name
                         if len(insert_hits) != 2:
                             return False, "!= 2 " + the_re.name + " sites found at " + insert.name + ". Found sites #: " \
-                                          + len(insert_hits)
+                                          + len(insert_hits).__str__()
                         inserts.append((
                             insert_record[insert_hits[0] - 1:insert_hits[1] - 1],
                             str(insert_record.seq[insert_hits[0] - 1:insert_hits[0] + oh_length - 1]),
@@ -798,98 +814,138 @@ def PlasmidCreateL0d(request):
         # take the backbone
         try:
             the_re = RestrictionEnzyme.objects.get(name="SapI")
-            backbone=Plasmid.objects.get(name="pL0R-LacZ")
+            backbone = Plasmid.objects.get(name="pL0R-lacZ")
+
+            if not the_re or not backbone:
+                raise ObjectDoesNotExist
+
+            plasmid_backbone_seq_result = seqio_get(backbone)
+            oh_length = abs(the_re.rcut - the_re.fcut)
+
+            if plasmid_backbone_seq_result[0] and the_re:
+                backbone_record = plasmid_backbone_seq_result[1]
+                hits = re_find_cut_positions(backbone_record.seq, the_re, True, True)
+                if len(hits) == 2 and hits[1] > hits[0]:
+
+                    final_record = backbone_record[0:hits[0] + oh_length - 1]
+
+                    # go for the inserts
+                    rec_oh_5 = SeqRecord(
+                        Seq(request.POST.get('oh5-oh').upper()),
+                        id=request.POST.get('oh5-name'),
+                        annotations={"molecule_type": "DNA"}
+                    )
+                    rec_oh_5.features.append(SeqFeature(
+                        FeatureLocation(0, len(request.POST.get('oh5-oh'))),
+                        type="misc_feature",
+                        strand=1,
+                        qualifiers={
+                            'ApEinfo_label': request.POST.get('oh5-name'),
+                            'label': request.POST.get('oh5-name'),
+                            'locus_tag': request.POST.get('oh5-name'),
+                        }
+                    ))
+                    final_record = final_record + rec_oh_5
+
+
+                    rec_seq = SeqRecord(
+                        Seq(request.POST.get('seq').upper()),
+                        id=request.POST.get('name'),
+                        annotations={"molecule_type": "DNA"}
+                    )
+                    rec_seq.features.append(SeqFeature(
+                        FeatureLocation(0, len(request.POST.get('seq'))),
+                        type="misc_feature",
+                        strand=1,
+                        qualifiers={
+                            'ApEinfo_label': request.POST.get('name'),
+                            'label': request.POST.get('name'),
+                            'locus_tag': request.POST.get('name'),
+                        }
+                    ))
+                    final_record = final_record + rec_seq
+
+                    if request.POST.get('oh3-tc'):
+                        rec_oh3_tc = SeqRecord(
+                            Seq(request.POST.get('oh3-tc').upper()),
+                            id='TC',
+                            annotations={"molecule_type": "DNA"}
+                        )
+                        rec_oh3_tc.features.append(SeqFeature(
+                            FeatureLocation(0, len(request.POST.get('oh3-tc'))),
+                            type="misc_feature",
+                            strand=1,
+                            qualifiers={
+                                'ApEinfo_label': 'TC',
+                                'label': 'TC',
+                                'locus_tag': 'TC',
+                            }
+                        ))
+                        final_record = final_record + rec_oh3_tc
+
+                    if request.POST.get('oh3-stop'):
+                        rec_oh3_stop = SeqRecord(
+                            Seq(request.POST.get('oh3-stop').upper()),
+                            id='STOP',
+                            annotations={"molecule_type": "DNA"}
+                        )
+                        rec_oh3_stop.features.append(SeqFeature(
+                            FeatureLocation(0, len(request.POST.get('oh3-stop'))),
+                            type="misc_feature",
+                            strand=1,
+                            qualifiers={
+                                'ApEinfo_label': 'STOP',
+                                'label': 'STOP',
+                                'locus_tag': 'STOP',
+                            }
+                        ))
+                        final_record = final_record + rec_oh3_stop
+
+                    rec_oh_3 = SeqRecord(
+                        Seq(request.POST.get('oh3-oh').upper()),
+                        id=request.POST.get('oh3-name'),
+                        annotations={"molecule_type": "DNA"}
+                    )
+                    rec_oh_3.features.append(SeqFeature(
+                        FeatureLocation(0, len(request.POST.get('oh3-oh'))),
+                        type="misc_feature",
+                        strand=1,
+                        qualifiers={
+                            'ApEinfo_label': request.POST.get('oh3-name'),
+                            'label': request.POST.get('oh3-name'),
+                            'locus_tag': request.POST.get('oh3-name'),
+                        }
+                    ))
+                    final_record = final_record + rec_oh_3
+
+                    final_record = final_record + backbone_record[hits[1] - 1:]
+                    final_record.name = request.POST.get('name')
+                    final_record.description = "Created with Weaver L0 Designer"
+                    final_record.annotations = {"molecule_type": "DNA", "topology": "circular"}
+
+                    plasmid_created = Plasmid.objects.create(
+                        name=request.POST.get('name'),
+                        description="Created with Weaver L0 Designer",
+                        backbone=backbone,
+                        type=PlasmidType.objects.get(id=0),
+                        level=backbone.level,
+                        sequencing_state=1,  # required
+                        project=get_current_project(request),
+                    )
+                    for r in backbone.selectable_markers.all():
+                        plasmid_created.selectable_markers.add(r.id)
+                    plasmid_created.sequence.save(final_record.name.replace(" ", "_") + ".gb", ContentFile(final_record.format("gb")))
+
+                    return HttpResponseRedirect(reverse('plasmid', args=(plasmid_created.id,)))
+                else:
+                    context = {
+                        'error': 'Backbone plasmid does not contains appropriate restriction sites'
+                    }
 
         except:
             context = {
                 'error': 'Backbone plasmid or Retriction Enzyme not found'
             }
-        plasmid_backbone_seq_result = seqio_get(backbone)
-        oh_length = abs(the_re.rcut - the_re.fcut)
-
-        if plasmid_backbone_seq_result[0] and the_re:
-            backbone_record = plasmid_backbone_seq_result[1]
-            hits = re_find_cut_positions(backbone_record.seq, the_re, True, True)
-            if len(hits) == 2 and hits[1] > hits[0]:
-
-                final_record = backbone_record[0:hits[0] + oh_length - 1]
-
-                # go for the inserts
-                rec_oh_5 = SeqRecord(
-                    Seq(request.POST.get('oh5-oh').upper()),
-                    id=request.POST.get('oh5-name'),
-                    annotations={"molecule_type": "DNA"}
-                )
-                rec_oh_5.features.append(SeqFeature(
-                    FeatureLocation(0, len(request.POST.get('oh5-oh'))),
-                    type="misc_feature",
-                    strand=1,
-                    qualifiers={
-                        'ApEinfo_label': request.POST.get('oh5-name'),
-                        'label': request.POST.get('oh5-name'),
-                        'locus_tag': request.POST.get('oh5-name'),
-                    }
-                ))
-                final_record = final_record + rec_oh_5
-
-
-                rec_seq = SeqRecord(
-                    Seq(request.POST.get('seq').upper()),
-                    id=request.POST.get('name'),
-                    annotations={"molecule_type": "DNA"}
-                )
-                rec_seq.features.append(SeqFeature(
-                    FeatureLocation(0, len(request.POST.get('seq'))),
-                    type="misc_feature",
-                    strand=1,
-                    qualifiers={
-                        'ApEinfo_label': request.POST.get('name'),
-                        'label': request.POST.get('name'),
-                        'locus_tag': request.POST.get('name'),
-                    }
-                ))
-                final_record = final_record + rec_seq
-
-                rec_oh_3 = SeqRecord(
-                    Seq(request.POST.get('oh3-oh').upper()),
-                    id=request.POST.get('oh3-name'),
-                    annotations={"molecule_type": "DNA"}
-                )
-                rec_oh_3.features.append(SeqFeature(
-                    FeatureLocation(0, len(request.POST.get('oh3-oh'))),
-                    type="misc_feature",
-                    strand=1,
-                    qualifiers={
-                        'ApEinfo_label': request.POST.get('oh3-name'),
-                        'label': request.POST.get('oh3-name'),
-                        'locus_tag': request.POST.get('oh3-name'),
-                    }
-                ))
-                final_record = final_record + rec_oh_3
-
-                final_record = final_record + backbone_record[hits[1] - 1:]
-                final_record.name = request.POST.get('name')
-                final_record.description = "Created with Weaver L0 Designer"
-                final_record.annotations = {"molecule_type": "DNA", "topology": "circular"}
-
-                plasmid_created = Plasmid.objects.create(
-                    name=request.POST.get('name'),
-                    description="Created with Weaver L0 Designer",
-                    backbone=backbone,
-                    type=PlasmidType.objects.get(id=0),
-                    level=backbone.level,
-                    sequencing_state = 1,  # required
-                    project=get_current_project(request),
-                )
-                for r in backbone.selectable_markers.all():
-                    plasmid_created.selectable_markers.add(r.id)
-                plasmid_created.sequence.save(final_record.name.replace(" ", "_") + ".gb", ContentFile(final_record.format("gb")))
-                
-                return HttpResponseRedirect(reverse('plasmid', args=(plasmid_created.id,)))
-            else:   
-                context = {
-                    'error': 'Backbone plasmid does not contains appropriate restriction sites'
-                }
     else:
         context = {
             'error': 'Bad input parameters'
@@ -1880,6 +1936,7 @@ def api_plasmids(request):
                 })
 
             check_state = ""
+
             if plasmid.under_construction:
                 check_state = 'c'
             elif plasmid.reference_sequence:
@@ -1892,7 +1949,8 @@ def api_plasmids(request):
                 hs = True
 
             output.append({
-                'n': plasmid.__str__(),
+                'cn': plasmid.__str__(),
+                'n': plasmid.name,
                 'l': plasmid.level,
                 't': get_plasmid_type_id(plasmid),
                 'i': plasmid.id,
@@ -1904,7 +1962,9 @@ def api_plasmids(request):
                 'r': plasmid.recommended_enzyme_for_create(),
                 'g': gs_out,
                 'sm': " + ".join(list(plasmid.selectable_markers.all().values_list('three_letter_code', flat=True))),
-                'p': member_can_write_or_admin_plasmid(plasmid, request.user)
+                'p': member_can_write_or_admin_plasmid(plasmid, request.user),
+                'wc': plasmid.working_colony_text(),
+                'lc': plasmid.ligation_concentration()
             })
             if plasmid.level:
                 if plasmid.level > level_to_table_filters:
@@ -1912,7 +1972,6 @@ def api_plasmids(request):
                 if plasmid.level < level_from_table_filters:
                     level_from_table_filters = plasmid.level
         context = {
-            'current_project': True,
             'table_filters': get_table_filters(level_from_table_filters, level_to_table_filters),
             'plasmids': output,
             'csrf_token': django.middleware.csrf.get_token(request),
@@ -1934,6 +1993,7 @@ def api_glycerolstocks(request):
                                                                                                            'plasmid')
     for glycerolstock in glycerolstocks:
         pi = ""
+        pix = ""
         pn = ""
         pt = ""
         pl = ""
@@ -1944,7 +2004,8 @@ def api_glycerolstocks(request):
                 if glycerolstock.plasmid.level < level_from_table_filters:
                     level_from_table_filters = glycerolstock.plasmid.level
             pi = glycerolstock.plasmid.id
-            pn = glycerolstock.plasmid.__str__()
+            pix = glycerolstock.plasmid.idx
+            pn = glycerolstock.plasmid.name
             if glycerolstock.plasmid.type:
                 pt = glycerolstock.plasmid.type.id
             pl = glycerolstock.plasmid.level
@@ -1954,9 +2015,9 @@ def api_glycerolstocks(request):
             bn = glycerolstock.box.name
             bl = str(glycerolstock.box.location)
         output.append({
-            'n': str(glycerolstock),
             'i': glycerolstock.id,
             'pi': pi,
+            'pix': pix,
             'pn': pn,
             'pt': pt,
             'pl': pl,

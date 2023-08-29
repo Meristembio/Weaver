@@ -158,6 +158,7 @@ class Plasmid(models.Model):
 
     reference_sequence = models.BooleanField(blank=True, default=0)
     under_construction = models.BooleanField(blank=True, default=0)
+    public_visibility = models.BooleanField(blank=True, default=0)
 
     qr_id = ShortUUIDField(default=shortuuid.uuid(), editable=False)
 
@@ -184,6 +185,38 @@ class Plasmid(models.Model):
 
     class Meta:
         ordering = ['name']
+
+    def working_colony_text_for_ligation(self):
+        if self.under_construction:
+            return "UC"
+        elif self.reference_sequence:
+            return "RS"
+        elif self.is_validated():
+            if self.working_colony:
+                return "c"+str(self.working_colony) + "-V"
+            else:
+                return "NS"
+        else:
+            if self.working_colony:
+                return "c"+str(self.working_colony) + "-NV"
+            else:
+                return "NS"
+
+    def working_colony_text(self):
+        if self.under_construction:
+            return "Under construction"
+        elif self.reference_sequence:
+            return "Reference sequence"
+        elif self.is_validated():
+            if self.working_colony:
+                return str(self.working_colony) + " (Validated)"
+            else:
+                return "Not set"
+        else:
+            if self.working_colony:
+                return str(self.working_colony) + " (Not validated)"
+            else:
+                return "Not set"
 
     def is_validated(self):
         if self.colonypcr_state != 1 and self.digestion_state != 1 and self.sequencing_state != 1:
@@ -218,6 +251,20 @@ class Plasmid(models.Model):
 
         return backbone_of
 
+    def ligation_concentration(self):
+        if self.computed_size:
+            if self.type:
+                if str(self.type) == "Insert":
+                    return str(round(self.computed_size / 300, 1)) + " ng / ul"
+                elif str(self.type) == "Receiver":
+                    return str(round(self.computed_size / 600, 1)) + " ng / ul"
+                else:
+                    return "Plasmid type no formula"
+            else:
+                return "No plasmid type set"
+        else:
+            return "No plasmid computed size"
+
     def recommended_enzyme_for_create(self):
         # ToDo generalize
         output = "No level set"
@@ -228,41 +275,25 @@ class Plasmid(models.Model):
         return output
 
     def getPlasmidResistanceForLigation(self):
-        # ToDo generalize
-        if self.level:
-            if self.level % 2 == 0:
-                is_spe = False
-                for resistance in self.selectable_markers.all():
-                    if resistance.three_letter_code == 'SPE':
-                        is_spe = True
-                        break
-                if is_spe:
-                    return 'SPE'
-                else:
-                    return 'Error: SPE not in resistance list'
-            else:
-                is_kan = False
-                for resistance in self.selectable_markers.all():
-                    if resistance.three_letter_code == 'KAN':
-                        is_kan = True
-                        break
-                if is_kan:
-                    return 'KAN'
-                else:
-                    return 'Error: KAN not in resistance list'
-        if len(self.selectable_markers):
-            return self.selectable_markers[0]
+        if self.selectable_markers.count() == 1:
+            return self.selectable_markers.all()[0].three_letter_code
+        elif self.selectable_markers.count() == 0:
+            return 'No selectable marker set'
         else:
-            return 'More than one'
+            res_txt=[]
+            for res in self.selectable_markers.all():
+                res_txt.append(res.three_letter_code)
+            return 'More than one selectable marker set: ' + ' / '.join(res_txt)
+
     def ligation_raw(self):
         tab = "	"
         ligation_raw = self.__str__() + tab
         if self.backbone:
-            ligation_raw += self.backbone.__str__() + tab
+            ligation_raw += self.backbone.__str__() + " [" + self.backbone.working_colony_text_for_ligation() + "]" + tab
 
         inserts = []
         for plasmid in self.inserts.all():
-            inserts.append(plasmid.__str__())
+            inserts.append(plasmid.__str__() + " [" + plasmid.working_colony_text_for_ligation() + "]")
 
         if self.level:
             ligation_raw = ligation_raw + " + ".join(inserts) + tab + tab +\

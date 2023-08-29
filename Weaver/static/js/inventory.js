@@ -104,13 +104,14 @@ function saveOVE(sequenceDataToSave) {
 }
 
 function expandName(){
+    var elements = $('#plasmids-table td a:first-child span.plasmid_list-name');
     if($('#table_search-expand').is(":checked")){
-        $('#plasmids-table td a:first-child span').each(function(){
+        elements.each(function(){
             $(this).attr('data-short', $(this).html())
-            $(this).html($(this).parent().attr('data-search'))
+            $(this).html($(this).parent().parent().attr('data-name'))
         })
     } else {
-        $('#plasmids-table td > a:first-child span').each(function(){
+        elements.each(function(){
             $(this).html($(this).attr('data-short'))
         })
     }

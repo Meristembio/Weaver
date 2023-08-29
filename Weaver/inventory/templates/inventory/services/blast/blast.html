@@ -2,14 +2,22 @@
 {% load static %}
 {% load general_extras %}
 {% if error %}
-<h1>Blast</h1>
+<div id="header">
+    <div id="header-element">
+        <span class="badge text-dark fw-light fs-2 p-1 ps-0 m-0 align-middle">Blast</span>
+    </div>
+</div>
 <div id="blast-messages">
     <div class="alert alert-danger">{{error}}</div>
 </div>
 {% else %}
 {% if form %}
 <div id="blast-search">
-    <h1>Blast</h1>
+    <div id="header">
+        <div id="header-element">
+            <span class="badge text-dark fw-light fs-2 p-1 ps-0 m-0 align-middle">Blast</span>
+        </div>
+    </div>
     <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}
         {{form.as_p}}
@@ -20,14 +28,16 @@
 {% if results %}
 <div id="blast-results">
     <div id="header">
-        <h1>Blast / results</h1>
+        <div id="header-element">
+            <span class="badge text-dark fw-light fs-2 p-1 ps-0 m-0 align-middle">Blast / results</span>
+        </div>
         <div id="header-links">
             <a href="{% url 'services-blast' %}" class="btn btn-outline-primary" role="button"><i
                     class="bi bi-plus-circle"></i></a>
         </div>
     </div>
     <!-- Modal -->
-    <div class="modal fade" id="alignmentModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal fade modal-xl" id="alignmentModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">

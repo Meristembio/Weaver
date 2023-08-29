@@ -3,7 +3,7 @@
 {% load general_extras %}
 <html lang="en">
 <head>
-{% with version="?version=16" %}
+{% with version="?version=18" %}
     <meta charset="UTF-8">
     <link href="{% static 'css/googleapis-css2.css' %}{{version}}" rel="stylesheet">
     <title>Weaver</title>
@@ -61,11 +61,11 @@
 </head>
 <body>
 <nav>
-    <div class="container pt-4 pb-4">
+    <div class="container pt-4 pb-2">
         <div id="nav-wrapper" class="row">
-            <div id="nav-logo" class="mt-4 col-4 pt-1">
+            <div id="nav-logo" class="mt-1 col-4">
                 <a href="/">
-                    <span class="logo-main">weaver</span><br/>
+                    <img src="{% static 'img/logo.png' %}{{version}}" alt="Weaver Logo" />
                 </a>
             </div>
             <div id="nav-right" class="col-8">
@@ -105,13 +105,15 @@
                         <span class="visually-hidden">Toggle Dropdown</span>
                       </button>
                       <ul class="dropdown-menu">
+                        <li><a class="dropdown-item text-center small" href="{% url 'plasmid_create_wizard' %}"><span class="text-secondary">+ Create </span> Wizard</a></li>
+                        <li><a class="dropdown-item text-center small" href="{% url 'plasmid_create_l0d' %}"><span class="text-secondary">+ Create </span> L0 designer</a></li>
+                        <li><a class="dropdown-item text-center small" href="{% url 'plasmid_create' %}"><span class="text-secondary">+ Create </span> Form</a></li>
+                          <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item text-center small" href="{% url 'plasmid_validations' %}">Validation</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item text-center small" href="{% url 'plasmid_create_wizard' %}">+ Create</a></li>
                       </ul>
                     </div>
                     <div class="btn-group me-2 dropdown-center">
-                      <a role="button" class="btn btn-light border" href="{% url 'glycerolstocks' %}">Glycerol Stocks</a>
+                      <a role="button" class="btn btn-light border" href="{% url 'glycerolstocks' %}">Stocks</a>
                       <button type="button" class="btn btn-secondary opacity-25 dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
                         <span class="visually-hidden">Toggle Dropdown</span>
                       </button>
@@ -152,4 +154,4 @@
         </div>
     </div>
 </nav>
-<div class="container">
+<div class="container pt-2">

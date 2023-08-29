@@ -1,7 +1,7 @@
 <div class="form-check form-switch" data-bs-toggle="tooltip" data-bs-placement="top" title="Show elements from all my projects">
   <form method="post" class="default-style" action="{% url 'show_from_all_projects_toggle' %}?next={{request.get_full_path}}">
     {% csrf_token %}
-    <input class="form-check-input" type="checkbox" role="switch" id="show_from_all_projects" {% if show_from_all_projects %}checked{% endif %}></a>
+    <input class="form-check-input" type="checkbox" role="switch" id="show_from_all_projects" {% if show_from_all_projects %}checked{% endif %} />
   </form>
   <label class="form-check-label" for="show_from_all_projects">From all projects ({% if text %}{{text}}{% else %}or just current{% endif %})</label>
 </div>

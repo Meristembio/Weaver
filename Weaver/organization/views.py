@@ -211,14 +211,6 @@ class ProjectCreate(CreateView):
             membership = Membership.objects.get(member=self.request.user, project=form.instance)
             membership.access_policies = 'a'
             membership.save()
-            hasActive = False
-            for m in self.request.user.membership_set.all():
-                if m.project.active:
-                    hasActive = True
-                    break
-            if not hasActive:
-                membership.project.active = True
-                membership.project.save()
         except Membership.DoesNotExist:
             Membership.objects.create(member=self.request.user, project=form.instance, access_policies='w')
         return response

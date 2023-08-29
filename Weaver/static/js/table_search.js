@@ -3,13 +3,16 @@ function do_filter_default(){
 }
 function do_filter(value){
     value = value.replace(/[^A-Za-z0-9]/g,'').toLowerCase();
+    if(value)
     $(".table-search-target tbody tr").filter(function() {
-        var element_value = $(this).find('.table-search-search_on').first().attr('data-search').replace(/[^A-Za-z0-9]/g,'').toLowerCase();
-        console.log(element_value + " / " + value);
-        if(element_value.indexOf(value) > -1){
-            $(this).removeClass('table_search-hide');
-        } else {
-            $(this).addClass('table_search-hide');
+        var element = $(this).find('.table-search-search_on').first().attr('data-search')
+        if(element){
+            var element_value = element.replace(/[^A-Za-z0-9]/g,'').toLowerCase();
+            if(element_value.indexOf(value) > -1){
+                $(this).removeClass('table_search-hide');
+            } else {
+                $(this).addClass('table_search-hide');
+            }
         }
     });
 }

@@ -2,7 +2,9 @@
 {% load general_extras %}
 {% load static %}
 <div id="header">
-    <h1>Glycerol Stocks</h1>
+    <div id="header-element">
+        <span class="badge text-dark fw-light fs-2 p-1 ps-0 m-0 align-middle">Stocks</span>
+    </div>
     <div id="header-links">
         <a target="_blank" href="{% url 'glycerolstock_create' %}" class="btn btn-primary{% if not on_current_project_member_can_write_or_admin %} disabled{% endif %}" role="button"><i
                 class="bi bi-plus"></i></a>

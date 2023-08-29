@@ -24,7 +24,9 @@
         <td>
         {% if glycerolstock.plasmid %}
             <a href="{% url 'plasmid' plasmid_id=glycerolstock.plasmid.id %}" class="btn btn-outline-secondary" role="button">
-                {{glycerolstock.plasmid}}
+                <span>{{glycerolstock.plasmid.name}}</span>
+                <span class="badge text-bg-light border fw-light p-1 fw-light m-0 align-middle">{{glycerolstock.plasmid.idx}}</span>
+                <i class="bi bi-clipboard copy_clipboard" data-cc="{{glycerolstock.plasmid}}"></i>
             </a>
         {% else %}
             No plasmid

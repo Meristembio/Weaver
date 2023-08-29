@@ -4,7 +4,9 @@
 {% load mathfilters %}
 {% load static %}
 <div id="header">
-    <h1>Plasmids</h1>
+    <div id="header-element">
+        <span class="badge text-dark fw-light fs-2 p-1 ps-0 m-0 align-middle">Plasmids</span>
+    </div>
     <div id="header-links">
         <a href="{% url 'plasmids' %}" class="btn btn-secondary" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Refresh"><i class="bi bi-arrow-clockwise"></i></a>
         <a href="{% url 'plasmid_create_wizard' %}" class="btn btn-primary{% if not on_current_project_member_can_write_or_admin %} disabled{% endif %}" role="button" target="_blank"><i

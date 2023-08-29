@@ -1,23 +1,47 @@
-<div>
-{% for member in project.members.all %}
-    {% with project.membership_set.all as mss %}
-    {% for ms in mss %}
-    {% if ms.member == member %}
-    <p>
-        <span>{{member}}{% if member == user %} (you){% endif %}</span>
-        <span class="text-secondary"> /
-            {% if ms.access_policies %}
-                {% for ap in apo %}
-                {% if ap.0 == ms.access_policies %}
-                    Can {{ap.1}}
-                {% endif %}
-                {% endfor %}
-            {% endif %}
-        </span>
-        {% if user_membership.access_policies == 'a' %} <a href="{% url 'membership_edit' pk=ms.id %}" class="badge bg-secondary ms-1" role="button">Edit</a>{% endif %}
-    </p>
-    {% endif %}
-    {% endfor %}
-    {% endwith %}
-{% endfor %}
+<div class="project_members_list">
+    <div class="accordion" id="accordion-{{project.id}}">
+        <div class="accordion-item">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed p-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{project.id}}" aria-expanded="false" aria-controls="collapse-{{project.id}}">
+                Members list
+                </button>
+            </h2>
+            <div id="collapse-{{project.id}}" class="accordion-collapse collapse" data-bs-parent="#accordion-{{project.id}}">
+                <div class="accordion-body">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Capability</th>
+                                <th>Edit</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for member in project.members.all %}
+                            {% with project.membership_set.all as mss %}
+                            {% for ms in mss %}
+                            {% if ms.member == member %}
+                                    <tr>
+                                        <td>{{member}}{% if member == user %} (you){% endif %}</td>
+                                        <td>
+                                            {% if ms.access_policies %}
+                                                {% for ap in apo %}
+                                                {% if ap.0 == ms.access_policies %}
+                                                    Can {{ap.1}}
+                                                {% endif %}
+                                                {% endfor %}
+                                            {% endif %}
+                                        </td>
+                                        <td>{% if user_membership.access_policies == 'a' %} <a href="{% url 'membership_edit' pk=ms.id %}" role="button"><i class="bi bi-pencil-fill"></i></a>{% endif %}</td>
+                                    </tr>
+                            {% endif %}
+                            {% endfor %}
+                            {% endwith %}
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>

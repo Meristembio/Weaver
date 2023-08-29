@@ -136,8 +136,11 @@
         <td>
             {% if plasmid.backbone %}
             <a href="{% url 'plasmid' plasmid_id=plasmid.backbone.id %}" class="btn btn-outline-secondary"
-               role="button">{{plasmid.backbone}} <i class="bi bi-clipboard copy_clipboard"
-                                                     data-cc="{{plasmid.backbone}}"></i></a>
+               role="button">
+                <span>{{plasmid.backbone.name}}</span>
+                <span class="badge text-bg-light border fw-light p-1 fw-light m-0 align-middle">{{plasmid.backbone.idx}}</span>
+                <i class="bi bi-clipboard copy_clipboard" data-cc="{{plasmid.backbone}}"></i>
+            </a>
             {% else %}
             -
             {% endif %}
@@ -148,8 +151,11 @@
         <td>
             {% if plasmid.inserts.all %}
             {% for insert in plasmid.inserts.all %}
-            <a href="{% url 'plasmid' plasmid_id=insert.id %}" class="btn btn-outline-secondary" role="button">{{insert}}
-                <i class="bi bi-clipboard copy_clipboard" data-cc="{{insert}}"></i></a>
+            <a href="{% url 'plasmid' plasmid_id=insert.id %}" class="btn btn-outline-secondary" role="button">
+                <span>{{insert.name}}</span>
+                <span class="badge text-bg-light border fw-light p-1 fw-light m-0 align-middle">{{insert.idx}}</span>
+                <i class="bi bi-clipboard copy_clipboard" data-cc="{{insert}}"></i>
+            </a>
             {% endfor %}
             {% else %}
             -
@@ -161,8 +167,11 @@
         <th scope="row">Insert of</th>
         <td>
             {% for insert in plasmid.insert_of %}
-            <a href="{% url 'plasmid' plasmid_id=insert.id %}" class="btn btn-outline-secondary" role="button">{{insert}}
-                <i class="bi bi-clipboard copy_clipboard" data-cc="{{insert}}"></i></a>
+            <a href="{% url 'plasmid' plasmid_id=insert.id %}" class="btn btn-outline-secondary" role="button">
+                <span>{{insert.name}}</span>
+                <span class="badge text-bg-light border fw-light p-1 fw-light m-0 align-middle">{{insert.idx}}</span>
+                <i class="bi bi-clipboard copy_clipboard" data-cc="{{insert}}"></i>
+            </a>
             {% endfor %}
         </td>
     </tr>
@@ -184,24 +193,12 @@
                 <tbody>
                 <tr>
                     <th>Text</th>
-                    <td><i class="bi bi-clipboard copy_clipboard" data-cc="{{ plasmid.ligation_raw }}"></i> {{ ligation_raw }}</tr></td>
+                    <td><i class="bi bi-clipboard copy_clipboard" data-cc="{{ plasmid.ligation_raw }}"></i></td>
                 </tr>
                 <tr>
                     <th>Working concentration</th>
                     <td>
-                        {% if plasmid.computed_size %}
-                            {% if plasmid.type %}
-                                {% if plasmid.type|stringformat:"s" == "Insert" %}
-                                {{plasmid.computed_size|divide:300|floatformat:"1"|intcomma}} ng/ul
-                                {% elif plasmid.type|stringformat:"s" == "Receiver" %}
-                                {{plasmid.computed_size|divide:600|floatformat:"1"|intcomma}} ng/ul
-                                {% endif %}
-                            {% else %}
-                            No plasmid type
-                            {% endif %}
-                        {% else %}
-                            No plasmid computed size
-                        {% endif %}
+                        {{plasmid.ligation_concentration}}
                     </td>
                 </tr>
                 </tbody>
@@ -234,6 +231,14 @@
             <a href="{% url 'project' project_id=plasmid.project.id %}" class="btn btn-outline-secondary" role="button">{{plasmid.project}}</a>
         </td>
     </tr>
+    {% if plasmid.public_visibility %}
+    <tr>
+        <th scope="row">Public visibility</th>
+        <td>
+            <i class="bi bi-clipboard copy_clipboard" data-cc="{{public_url}}"></i> <a href="{{public_url}}" role="button">Public link for {{plasmid}} <i class="bi bi-box-arrow-up-right"></i></a>
+        </td>
+    </tr>
+    {% endif %}
     <tr>
         <th scope="row">Created On</th>
         <td>{{plasmid.created_on}}</td>

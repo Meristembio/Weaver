@@ -1,5 +1,9 @@
 <div id="header">
-    <h1><span class="text-secondary opacity-50 me-2 fs-3">G.S.</span><span>{{glycerolstock}}</span></h1>
+    <div id="header-element">
+        <span class="badge text-dark text-secondary opacity-50 p-1 ps-0 fs-2 m-0 fw-lighter align-middle">Stock</span>
+        <span class="badge text-dark fw-light fs-2 p-1 m-0 align-middle">{{glycerolstock.strain}} / {{glycerolstock.plasmid.name}}</span>
+        <span class="badge text-bg-light border fw-normal p-1 fs-3 fw-light m-0 align-middle">{{glycerolstock.plasmid.idx}}</span>
+    </div>
     <div id="header-links">
         {% if user_can_edit_gs %}
         <a href="{% url 'glycerolstock_edit' pk=glycerolstock.id %}" class="btn btn-outline-secondary" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit"><i class="bi bi-pencil"></i></a>

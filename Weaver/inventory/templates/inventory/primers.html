@@ -2,7 +2,9 @@
 {% load primer_extras %}
 {% load humanize %}
 <div id="header">
-    <h1>Primers</h1>
+    <div id="header-element">
+        <span class="badge text-dark fw-light fs-2 p-1 m-0 align-middle">Primers</span>
+    </div>
     <div id="header-links">
         <a href="{% url 'primer_create' %}" class="btn btn-primary{% if not on_current_project_member_can_write_or_admin %} disabled{% endif %}" role="button" target="_blank"><i
                 class="bi bi-plus"></i></a>
@@ -31,7 +33,7 @@
             <a class="btn btn-success" role="button" href="{% url 'primer' primer_id=primer.id %}">
                 {{primer}}
             </a>
-            <a href="{% url 'primer_edit' pk=primer.id %}" class="btn btn-outline-secondary{% if not primer.can_edit %} disabled{% endif %}" role="button"><i class="bi bi-pencil"></i></a>
+            <a href="{% url 'primer_edit' pk=primer.id %}" class="btn text-secondary{% if not primer.can_edit %} disabled{% endif %}" role="button"><i class="bi bi-pencil-fill"></i></a>
         </td>
         <td><span class="overhang">{{primer.sequence_5}}</span>{{primer.sequence_3}}</td>
         <td>{{primer.intended_use}}</td>

@@ -1,6 +1,9 @@
 {% include "inventory/parts/header.html" %}
-
-<h1>Login</h1>
+<div id="header">
+    <div id="header-element">
+        <span class="badge text-dark fw-light fs-2 p-1 m-0 align-middle">Login</span>
+    </div>
+</div>
 <form method="post">
     {% csrf_token %}
     {{ form.as_p }}

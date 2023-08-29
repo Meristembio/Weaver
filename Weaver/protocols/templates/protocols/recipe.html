@@ -90,7 +90,6 @@
             <table class="table mb-0 sortable">
                 <thead>
                 <th scope="col">Reactive</th>
-                <th scope="col" data-defaultsort='disabled'>Reactive - Edit / Delete</th>
                 <th scope="col">Concentration</th>
                 <th scope="col">Unit</th>
                 {% if user_can_edit_recipe %}
@@ -100,13 +99,13 @@
                 <tbody>
                 {% for component in recipe.components.all %}
                 <tr>
-                    <td>{{component.reactive}}</td>
                     <td>
+                        {{component.reactive}}
                         {% if user_can_edit_recipe %}
                         <a href="{% url 'reactive_edit' pk=component.reactive.id recipe_id=recipe.id %}"
-                           class="btn btn-outline-dark" role="button"><i class="bi bi-pencil"></i></a>
+                           class="btn text-secondary" role="button"><i class="bi bi-pencil-fill"></i></a>
                         <a href="{% url 'reactive_delete' pk=component.reactive.id recipe_id=recipe.id %}"
-                           class="btn btn-outline-danger" role="button"><i class="bi bi-trash"></i></a>
+                           class="btn text-danger" role="button"><i class="bi bi-trash"></i></a>
                         {% endif %}
                     </td>
                     <td>{{component.concentration}}</td>
@@ -114,9 +113,9 @@
                     <td>
                         {% if user_can_edit_recipe %}
                         <a href="{% url 'component_edit' pk=component.id recipe_id=recipe.id %}"
-                           class="btn btn-outline-dark" role="button"><i class="bi bi-pencil"></i></a>
+                           class="btn text-dark" role="button"><i class="bi bi-pencil-fill"></i></a>
                         <a href="{% url 'component_delete' pk=component.id recipe_id=recipe.id %}"
-                           class="btn btn-outline-danger" role="button"><i class="bi bi-trash"></i></a>
+                           class="btn text-danger" role="button"><i class="bi bi-trash"></i></a>
                         {% endif %}
                     </td>
                 </tr>

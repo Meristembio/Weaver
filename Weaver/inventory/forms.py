@@ -3,11 +3,9 @@ from django import forms
 from .models import Plasmid
 from .models import Primer
 from .models import GlycerolStock
-from .custom.standards import CURRENT_ASSEMBLY_STANDARD
+from .custom.standards import ligation_standards
 from organization.views import get_projects_where_member_can
 from organization.views import get_projects_where_member_can_any
-
-LO_OHS = CURRENT_ASSEMBLY_STANDARD['odd_custom']
 
 
 class PlasmidNameInput(forms.Form):
@@ -31,10 +29,13 @@ class BlastSequenceInput(forms.Form):
 
 class L0SequenceInput(forms.Form):
     l0_sequence_input = forms.CharField(widget=forms.Textarea, label="Sequence input")
-    l0_oh_5 = forms.ChoiceField(choices=tuple([(name, name + " [" + value + "]") for name, value in LO_OHS]),
+    # Todo append None
+    ligation_standard_slug = forms.ChoiceField(choices=tuple([(index, ligation_standard['name']) for index, ligation_standard in ligation_standards.items()]),
+                                required=True, label="Ligation standard")
+    l0_oh_5 = forms.ChoiceField(choices=tuple([(oh_slug, oh['name'] + " [" + oh['oh'] + "]") for index, ligation_standard in ligation_standards.items() for oh_slug, oh in ligation_standard['ohs']['l0'].items()]),
                                 required=True, label="L0 OH 5'")
-    l0_oh_3 = forms.ChoiceField(choices=tuple([(name, name + " [" + value + "]") for name, value in LO_OHS]),
-                                initial="B", required=True, label="L0 OH 3'")
+    l0_oh_3 = forms.ChoiceField(choices=tuple([(oh_slug, oh['name'] + " [" + oh['oh'] + "]") for index, ligation_standard in ligation_standards.items() for oh_slug, oh in ligation_standard['ohs']['l0'].items()]),
+                                required=True, label="L0 OH 3'")
     enzyme = forms.CharField(required=True, widget=forms.HiddenInput())
 
 

@@ -1,6 +1,8 @@
 {% include "inventory/parts/header.html" %}
 <div id="header">
-    <h1>Recipes</h1>
+    <div id="header-element">
+        <span class="badge text-dark fw-light fs-2 p-1 ps-0 m-0 align-middle">Recipes</span>
+    </div>
     <div id="header-links">
         <a href="{% url 'recipe_create' %}" class="btn btn-primary" role="button"><i class="bi bi-plus"></i></a>
     </div>
@@ -24,6 +26,7 @@
     <thead>
     <tr>
         <th scope="col">Recipe</th>
+        <th scope="col" data-defaultsort='disabled'>Actions</th>
         <th scope="col" data-defaultsort='disabled'>Components</th>
         <th scope="col">Owner</th>
     </tr>
@@ -33,16 +36,34 @@
     <tr class="filter-item {% if recipe.category %}{% for cat in recipe.category.all %}filter-{{cat}} {% endfor %}{% endif %}">
         <td>
             <a class="btn btn-success table-search-search_on" role="button" href="{% url 'recipe' recipe_id=recipe.id %}" data-search={{recipe}}>{{recipe}}</a>
-            <a href="{% url 'recipe_label' recipe_id=recipe.id %}" class="btn btn-outline-info" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Print label"><i class="bi bi-tag-fill"></i></a>
-            <a href="{% url 'recipe_edit' pk=recipe.id %}" class="btn btn-outline-secondary {% if recipe.owner != request.user %}disabled{% endif %}" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit"><i class="bi bi-pencil-fill"></i></a>
+            {% if recipe.owner == request.user %}
+            <a href="{% url 'recipe_edit' pk=recipe.id %}" class="btn text-secondary" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit"><i class="bi bi-pencil-fill"></i></a>
+            {% endif %}
         </td>
         <td>
-            {% for component in recipe.components.all %}
-            {% if forloop.counter != 1 %}
-            +
-            {% endif %}
-            {{component.reactive}}
-            {% endfor %}
+
+            <a href="{% url 'recipe_label' recipe_id=recipe.id %}" class="btn text-info" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Print label"><i class="bi bi-tag-fill"></i></a>
+        </td>
+        <td>
+            <div class="accordion" id="accordion-{{recipe.id}}">
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed p-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{recipe.id}}" aria-expanded="false" aria-controls="collapse-{{recipe.id}}">
+                        Components
+                        </button>
+                    </h2>
+                    <div id="collapse-{{recipe.id}}" class="accordion-collapse collapse" data-bs-parent="#accordion-{{recipe.id}}">
+                        <div class="accordion-body">
+                            {% for component in recipe.components.all %}
+                            {% if forloop.counter != 1 %}
+                            <br/>
+                            {% endif %}
+                            {{component}}
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
         </td>
         <td>{{recipe.owner.last_name}}, {{recipe.owner.first_name}}</td>
     </tr>

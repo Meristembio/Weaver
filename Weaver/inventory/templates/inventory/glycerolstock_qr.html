@@ -1,7 +1,9 @@
 {% include "./parts/header.html" %}
 {% load general_extras %}
 <div id="header">
-    <h1>Glycerol Stocks / QR</h1>
+    <div id="header-element">
+        <span class="badge text-dark fw-light fs-2 p-1 ps-0 m-0 align-middle">Glycerol Stocks / QR</span>
+    </div>
 </div>
 <form method="post">
     {% csrf_token %}
