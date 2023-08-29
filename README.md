@@ -1,5 +1,5 @@
-<div align="center">
-<img src="Weaver/static/img/logo-original.png" width="50%">
+<div align="center" background="red">
+<img src="Weaver/static/img/logo-original-gh.png" width="100%">
 </div>
 
 # About
