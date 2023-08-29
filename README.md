@@ -1,5 +1,5 @@
 <div align="center" background="red">
-<img src="Weaver/static/img/logo-original-gh.png" width="100%">
+<img src="Django/static/img/logo-original-gh.png" width="100%">
 </div>
 
 # About
