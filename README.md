@@ -43,6 +43,8 @@ Install following packages via python package installer (pip):
 pip3 install django-mathfilters django-shortuuidfield django-multiselectfield Bio plotly pandas pyblastbio more_itertools bs4
 ```
 
+Check all requirements at [requirements.txt](requirements.txt)
+
 ### Running
 Enter project folder:
 
