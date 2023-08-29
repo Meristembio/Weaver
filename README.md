@@ -49,7 +49,7 @@ Check all requirements at [requirements.txt](requirements.txt)
 Enter project folder:
 
 ```
-cd Weaver/Weaver
+cd Weaver/Django
 ```
 
 Run the server:
