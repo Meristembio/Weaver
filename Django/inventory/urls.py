@@ -85,6 +85,4 @@ urlpatterns = [
     path('api/plasmids/', login_required(views.api_plasmids, redirect_field_name='next'), name='api-plasmids'),
     path('api/parts/<str:enzyme_name>/<str:assembly_standard>/', login_required(views.api_parts, redirect_field_name='next'), name='api-parts'),
     path('api/glycerolstocks/', login_required(views.api_glycerolstocks, redirect_field_name='next'), name='api-glycerolstocks'),
-
-    # path('__debug__/', include(debug_toolbar.urls)), #delete
 ]
