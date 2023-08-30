@@ -3,7 +3,7 @@
 {% load general_extras %}
 <html lang="en">
 <head>
-{% with version="?version=18" %}
+{% with version="?version=19" %}
     <meta charset="UTF-8">
     <link href="{% static 'css/googleapis-css2.css' %}{{version}}" rel="stylesheet">
     <title>Weaver</title>
@@ -106,7 +106,7 @@
                       </button>
                       <ul class="dropdown-menu">
                         <li><a class="dropdown-item text-center small" href="{% url 'plasmid_create_wizard' %}"><span class="text-secondary">+ Create </span> Wizard</a></li>
-                        <li><a class="dropdown-item text-center small" href="{% url 'plasmid_create_l0d' %}"><span class="text-secondary">+ Create </span> L0 designer</a></li>
+                        <li><a class="dropdown-item text-center small" href="{% url 'services-l0d' %}"><span class="text-secondary">+ Create </span> L0 designer</a></li>
                         <li><a class="dropdown-item text-center small" href="{% url 'plasmid_create' %}"><span class="text-secondary">+ Create </span> Form</a></li>
                           <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item text-center small" href="{% url 'plasmid_validations' %}">Validation</a></li>
