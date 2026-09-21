@@ -108,6 +108,7 @@
 {% if labels %}
 <div class="batch-print-sheet">
     {% for label in labels %}
+    <div class="batch-print-page">
         {% if label.kind == "plasmids" %}
             {% with plasmid=label.object %}
             <div class="plasmid label mb-4">
@@ -123,12 +124,23 @@
                                 {% endif %}
                             </span>
                         </p>
-                        <p class="batch-label-title">{{ plasmid.name }}</p>
-                        <p><span class="label-name">Date</span> <span class="label-value">{{ label.date }}</span></p>
+                        <p class="label-name">
+                            {{ plasmid.name }}
+                        </p>
+                        <p class="label-created">
+                            <span class="label-name">Date</span>
+                            <span class="label-value">{{ label.date|date:"d.M.Y" }}</span>
+                        </p>
                         {% if label.concentration %}
-                        <p><span class="label-name">Conc</span> <span class="label-value">{{ label.concentration }} [ng/ul]</span></p>
+                        <p class="label-conc-quantus">
+                            <span class="label-name">Conc</span>
+                            <span class="label-value">{{ label.concentration }} [ng/ul]</span>
+                        </p>
                         {% endif %}
-                        <p><span class="label-name">Size</span> <span class="label-value">{{ plasmid.computed_size|intcomma }} bp</span></p>
+                        <p class="label-size">
+                            <span class="label-name">Size</span>
+                            <span class="label-value">{{ plasmid.computed_size|intcomma }} bp</span>
+                        </p>
                     </div>
                 </div>
             </div>
@@ -145,9 +157,13 @@
                             ~ <span class="label-value">{{ glycerolstock.plasmid.working_colony_text_short }}</span>
                         </p>
                         {% endif %}
-                        <p class="batch-label-title">{% if glycerolstock.plasmid %}{{ glycerolstock.plasmid.name }}{% endif %}</p>
-                        <p class="batch-label-subtitle">{{ glycerolstock.strain }}</p>
-                        <p>
+                        <p id="label-name">
+                            {% if glycerolstock.plasmid %}{{ glycerolstock.plasmid.name }}{% endif %}
+                        </p>
+                        <p id="label-strain">
+                            {{ glycerolstock.strain }}
+                        </p>
+                        <p id="label-resistance">
                             {% if glycerolstock.resistantes_strain_human %}
                             <span class="label-name">Strain Marker</span>
                             <span class="label-value">{{ glycerolstock.resistantes_strain_human }}</span><br/>
@@ -157,14 +173,21 @@
                             <span class="label-value">{{ glycerolstock.resistantes_human }}</span><br/>
                             {% endif %}
                         </p>
-                        <p><span class="label-value">{% if glycerolstock.box_column and glycerolstock.box_row %}{{ glycerolstock.box_row }}{{ glycerolstock.box_column }} @ {% endif %}{{ glycerolstock.box.name }}</span></p>
-                        <p><span class="label-value">{{ glycerolstock.box.location }}</span></p>
-                        <p><span class="label-value">{{ label.date }}</span></p>
+                        <p id="label-box">
+                            <span class="label-value">{% if glycerolstock.box_column and glycerolstock.box_row %}{{ glycerolstock.box_row }}{{ glycerolstock.box_column }} @ {% endif %}{{ glycerolstock.box.name }}</span>
+                        </p>
+                        <p id="label-location">
+                            <span class="label-value">{{ glycerolstock.box.location }}</span>
+                        </p>
+                        <p id="label-created">
+                            <span class="label-value">{{ glycerolstock.created_on }}</span>
+                        </p>
                     </div>
                 </div>
             </div>
             {% endwith %}
         {% endif %}
+    </div>
     {% endfor %}
 </div>
 {% endif %}

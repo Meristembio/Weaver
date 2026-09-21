@@ -11,6 +11,18 @@ nav,
 #recipe-concentration-wrapper{
     display:none !important;
 }
+/* Batch labels live inside the shared content container. Remove that
+   container's screen padding so their print origin matches an individual
+   label, which is positioned at the page origin. */
+body:has(.batch-prints-page) #content-container > .container {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0 !important;
+}
+body:has(.batch-prints-page) #header-container {
+    display: none !important;
+}
 div.label {
     position:absolute;
     left: 0;

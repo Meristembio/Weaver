@@ -414,6 +414,42 @@ class GlycerolstockBatchFlowTests(TestCase):
         self.assertFalse(response.context["all_created"])
 
 
+class BatchPrintLabelFormatTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="batch-print-user", password="pw")
+        self.project = Project.objects.create(name="Batch Print Project", public=False)
+        Membership.objects.create(member=self.user, project=self.project, access_policies="w")
+        self.plasmid = Plasmid.objects.create(
+            idx=200,
+            name="Print format plasmid",
+            computed_size=1234,
+            intended_use="Test",
+            project=self.project,
+        )
+        self.client.force_login(self.user)
+
+    def test_plasmid_batch_uses_individual_label_markup_and_date_format(self):
+        response = self.client.post(
+            reverse("services-batch-prints"),
+            {
+                "label_type": "plasmids",
+                "identifier": str(self.plasmid.idx),
+                "colony": "7",
+                "date": "2026-01-09",
+                "concentration": "12.5",
+            },
+        )
+
+        self.assertContains(response, 'class="label-name"')
+        self.assertContains(response, 'class="label-created"')
+        self.assertContains(response, 'class="label-conc-quantus"')
+        self.assertContains(response, 'class="label-size"')
+        self.assertContains(response, 'class="batch-print-page"')
+        self.assertContains(response, "09.Jan.2026")
+        self.assertContains(response, "ID 200 ~ c7")
+        self.assertNotContains(response, "batch-label-title")
+
+
 class GlycerolstockListViewTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username="stock-list-user", password="pw")

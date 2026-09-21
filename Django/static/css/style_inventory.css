@@ -1983,45 +1983,32 @@ span.plasmid-opts:hover {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 1rem;
+    margin-top: 1.5rem;
 }
 
-.batch-print-sheet div.label {
-    position: static;
-    left: auto;
-    top: auto;
-    max-width: none;
-    min-height: 8.5rem;
-    padding: .85rem;
-    border: 1px solid rgba(128, 128, 128, .35);
-    border-radius: .5rem;
-    background: var(--bs-body-bg);
-    color: var(--bs-body-color);
-    box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .08);
+.batch-print-page {
+    display: contents;
 }
 
-.batch-print-sheet div.label-info {
-    margin: 0;
-    padding: 0;
-}
+@media screen {
+    .batch-print-sheet div.label {
+        position: static;
+        left: auto;
+        top: auto;
+        max-width: none;
+        min-height: 8.5rem;
+        padding: .85rem;
+        border: 1px solid rgba(128, 128, 128, .35);
+        border-radius: .5rem;
+        background: var(--bs-body-bg);
+        color: var(--bs-body-color);
+        box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .08);
+    }
 
-.batch-print-sheet .batch-label-title,
-.batch-print-sheet .batch-label-subtitle,
-.batch-print-sheet div.label-info p.label-id-colony {
-    margin: 0 0 .35rem;
-    font-size: .95rem;
-    line-height: 1.1em;
-}
-
-.batch-print-sheet .batch-label-subtitle {
-    font-size: .85rem;
-    line-height: 1.05em;
-}
-
-.batch-print-sheet div.label-info p:not(.label-id-colony) {
-    margin-bottom: .2rem;
-    padding: 0;
-    font-size: .75rem;
-    line-height: 1.15em;
+    .batch-print-sheet div.label-info {
+        margin: 0;
+        padding: 0;
+    }
 }
 
 @media (max-width: 768px) {
@@ -2056,46 +2043,24 @@ span.plasmid-opts:hover {
 
     .batch-print-sheet {
         display: block;
+        margin-top: 0;
     }
 
-    .batch-print-sheet div.label {
-        position: static !important;
-        left: auto !important;
-        top: auto !important;
-        padding: 0;
-        border: none;
-        border-radius: 0;
-        background: none;
-        box-shadow: none;
+    .batch-print-page {
+        display: block;
+        position: relative;
+        min-height: 1px;
         break-inside: avoid;
         page-break-inside: avoid;
         break-after: page;
         page-break-after: always;
     }
 
-    .batch-print-sheet div.label:last-child {
+    .batch-print-page:last-child {
         break-after: auto;
         page-break-after: auto;
     }
 
-    .batch-print-sheet .batch-label-title,
-    .batch-print-sheet .batch-label-subtitle,
-    .batch-print-sheet div.label-info p.label-id-colony {
-        margin: 0 0 .5rem;
-        font-size: .8rem;
-        line-height: 1em;
-    }
-
-    .batch-print-sheet .batch-label-subtitle {
-        font-size: .6rem;
-        line-height: .8em;
-    }
-
-    .batch-print-sheet div.label-info p:not(.label-id-colony) {
-        padding: 0;
-        font-size: .4rem;
-        line-height: 1em;
-    }
 }
 
 /* Local BLAST follows the shared inventory form and compact result-table style. */
