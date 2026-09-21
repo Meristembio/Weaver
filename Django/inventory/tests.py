@@ -96,9 +96,11 @@ from inventory.views import fasta_alignment_result
 from inventory.views import fasta_record_from_text
 from inventory.views import fasta_records_from_text
 from inventory.views import amplicon_contains_region
+from inventory.views import amplicon_matches_all_primer_ids
 from inventory.views import amplicon_matches_primer_binding_regions
 from inventory.views import amplicon_matches_any_primer_id
 from inventory.views import amplicon_matches_primer_id
+from inventory.views import filter_amplicons_for_primer_ids
 from inventory.views import optional_int_query_param
 from inventory.views import plasmid_update_computed_size
 from inventory.views import plasmid_validation_initial_from_payload
@@ -1211,6 +1213,42 @@ class PcrSuggestionTests(SimpleTestCase):
         self.assertTrue(amplicon_matches_any_primer_id(amplicon, ("695", "694")))
         self.assertFalse(amplicon_matches_any_primer_id(amplicon, ("695", "696")))
 
+    def test_amplicon_primer_id_filter_requires_both_ids_when_pair_exists(self):
+        exact_pair = {"id": "exact", "notes": {"fwd_primer_id": ["693"], "rev_primer_id": ["694"]}}
+        one_primer = {"id": "one", "notes": {"fwd_primer_id": ["693"], "rev_primer_id": ["695"]}}
+
+        self.assertTrue(amplicon_matches_all_primer_ids(exact_pair, ("693", "694")))
+        self.assertFalse(amplicon_matches_all_primer_ids(one_primer, ("693", "694")))
+
+        matches, fallback = filter_amplicons_for_primer_ids(
+            [exact_pair, one_primer],
+            ("693", "694"),
+        )
+
+        self.assertEqual([amplicon["id"] for amplicon in matches], ["exact"])
+        self.assertFalse(fallback)
+
+        matches, fallback = filter_amplicons_for_primer_ids(
+            [exact_pair, one_primer],
+            ("693",),
+        )
+
+        self.assertEqual([amplicon["id"] for amplicon in matches], ["exact", "one"])
+        self.assertFalse(fallback)
+
+    def test_amplicon_primer_id_filter_falls_back_to_either_id_without_exact_pair(self):
+        forward_match = {"id": "forward", "notes": {"fwd_primer_id": ["693"], "rev_primer_id": ["695"]}}
+        reverse_match = {"id": "reverse", "notes": {"fwd_primer_id": ["696"], "rev_primer_id": ["694"]}}
+        unrelated = {"id": "unrelated", "notes": {"fwd_primer_id": ["696"], "rev_primer_id": ["697"]}}
+
+        matches, fallback = filter_amplicons_for_primer_ids(
+            [forward_match, reverse_match, unrelated],
+            ("693", "694"),
+        )
+
+        self.assertEqual([amplicon["id"] for amplicon in matches], ["forward", "reverse"])
+        self.assertTrue(fallback)
+
     def test_amplicon_size_filter_limits_are_optional(self):
         factory = RequestFactory()
 
@@ -1439,6 +1477,77 @@ class PcrSuggestionTests(SimpleTestCase):
         self.assertEqual(complementarity["max_both_3prime_contiguous"], 1)
         self.assertEqual(complementarity["warnings"], [])
         self.assertIn("||", complementarity["alignment"]["match"])
+
+
+class AmpliconPrimerFilterApiTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="amplicon-filter-user", password="pw")
+        self.project = Project.objects.create(name="Amplicon Filter Project", public=False)
+        Membership.objects.create(member=self.user, project=self.project, access_policies="r")
+        self.plasmid = Plasmid.objects.create(
+            idx=901,
+            name="Amplicon filter plasmid",
+            intended_use="Test",
+            project=self.project,
+        )
+        self.client.force_login(self.user)
+
+    @staticmethod
+    def annotation(identifier, fwd_id, rev_id):
+        return {
+            "id": identifier,
+            "start": 0,
+            "end": 9,
+            "notes": {
+                "fwd_primer_id": [fwd_id],
+                "rev_primer_id": [rev_id],
+            },
+        }
+
+    def test_api_requires_both_ids_and_falls_back_when_exact_pair_is_missing(self):
+        exact_pair = self.annotation("exact", "693", "694")
+        forward_match = self.annotation("forward", "693", "695")
+        reverse_match = self.annotation("reverse", "696", "694")
+        unrelated = self.annotation("unrelated", "696", "697")
+
+        with patch("inventory.views.grab_seq", return_value=(True, Seq("A" * 16))), \
+                patch("inventory.views.matching_amplicon_annotations", return_value=[
+                    exact_pair,
+                    forward_match,
+                    reverse_match,
+                    unrelated,
+                ]):
+            response = self.client.get(reverse("api-plasmid-amplicon-matches", kwargs={
+                "plasmid_id": self.plasmid.id,
+            }), {
+                "primer_ids": "693,694",
+                "min_size": "1",
+                "non_overlapping": "false",
+            })
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual([amplicon["id"] for amplicon in payload["candidates"]], ["exact"])
+        self.assertFalse(payload["primer_filter_fallback"])
+
+        with patch("inventory.views.grab_seq", return_value=(True, Seq("A" * 16))), \
+                patch("inventory.views.matching_amplicon_annotations", return_value=[
+                    forward_match,
+                    reverse_match,
+                    unrelated,
+                ]):
+            response = self.client.get(reverse("api-plasmid-amplicon-matches", kwargs={
+                "plasmid_id": self.plasmid.id,
+            }), {
+                "primer_ids": "693,694",
+                "min_size": "1",
+                "non_overlapping": "false",
+            })
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual([amplicon["id"] for amplicon in payload["candidates"]], ["forward", "reverse"])
+        self.assertTrue(payload["primer_filter_fallback"])
 
 
 class RestrictionDigestTests(SimpleTestCase):

@@ -1505,6 +1505,7 @@ function renderAmpliconPanel(candidates) {
 		return;
 	}
 	list.innerHTML = "";
+	summary.classList.remove("is-filter-fallback");
 	summary.textContent = (candidates || []).length + " candidate primer pairs.";
 
 	if (!candidates || candidates.length === 0) {
@@ -1930,7 +1931,18 @@ async function loadPlasmidAmplicons() {
 			setTimeout(mountWeaverPrimerToolbar, 0);
 		}
 		renderAmpliconPanel(weaverAmpliconCandidates);
-		setPrimerMatchStatus((data.candidate_count || data.count || 0) + " candidate primer pairs loaded.");
+		const fallbackMessage = data.primer_filter_fallback ?
+			" No exact pair found; showing combinations for each selected primer." : "";
+		const statusMessage =
+			(data.candidate_count || data.count || 0) + " candidate primer pairs loaded." + fallbackMessage;
+		const panelSummary = document.getElementById("ove-amplicon-panel-summary");
+		if (panelSummary) {
+			panelSummary.classList.toggle("is-filter-fallback", Boolean(data.primer_filter_fallback));
+			if (data.primer_filter_fallback) {
+				panelSummary.textContent = statusMessage;
+			}
+		}
+		setPrimerMatchStatus(statusMessage);
 		setAmpliconPanelOpen(true);
 	} catch (error) {
 		setPrimerMatchStatus("Unable to load amplicons.", true);

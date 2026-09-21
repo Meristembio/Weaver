@@ -72,6 +72,13 @@ html[data-bs-theme="dark"]{
     color: #aebbc4;
 }
 
+#ove-viewer.bp3-dark ~ .weaver-amplicon-panel .weaver-amplicon-panel-summary.is-filter-fallback,
+.bp3-dark.weaver-amplicon-panel .weaver-amplicon-panel-summary.is-filter-fallback {
+    border-color: #d6a928;
+    background: #4a3d1b;
+    color: #ffe69c;
+}
+
 #ove-viewer.bp3-dark ~ .weaver-amplicon-panel .weaver-amplicon-dimer-chip,
 .bp3-dark.weaver-amplicon-panel .weaver-amplicon-dimer-chip,
 #ove-viewer.bp3-dark ~ .weaver-amplicon-panel .weaver-amplicon-partial-chip,

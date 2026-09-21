@@ -1406,6 +1406,15 @@ div#ove-viewer {
     margin-top: 0.2rem;
 }
 
+.weaver-amplicon-panel-summary.is-filter-fallback {
+    border: 1px solid #e0a800;
+    border-radius: 0.25rem;
+    background: #fff3cd;
+    color: #664d03;
+    font-weight: 600;
+    padding: 0.4rem 0.55rem;
+}
+
 .weaver-amplicon-panel-list {
     flex: 1 1 auto;
     min-height: 0;

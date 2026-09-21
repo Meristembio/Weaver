@@ -1857,6 +1857,39 @@ def amplicon_matches_any_primer_id(amplicon, primer_ids):
     return any(amplicon_matches_primer_id(amplicon, primer_id) for primer_id in primer_ids)
 
 
+def amplicon_matches_all_primer_ids(amplicon, primer_ids):
+    primer_ids = [str(primer_id).strip() for primer_id in primer_ids if str(primer_id).strip()]
+    if not primer_ids:
+        return True
+    return all(amplicon_matches_primer_id(amplicon, primer_id) for primer_id in primer_ids)
+
+
+def filter_amplicons_for_primer_ids(amplicons, primer_ids):
+    """Filter by an exact requested pair, falling back to either primer."""
+    primer_ids = tuple(dict.fromkeys(
+        str(primer_id).strip()
+        for primer_id in primer_ids
+        if str(primer_id).strip()
+    ))
+    if len(primer_ids) <= 1:
+        return [
+            amplicon for amplicon in amplicons
+            if amplicon_matches_any_primer_id(amplicon, primer_ids)
+        ], False
+
+    exact_matches = [
+        amplicon for amplicon in amplicons
+        if amplicon_matches_all_primer_ids(amplicon, primer_ids)
+    ]
+    if exact_matches:
+        return exact_matches, False
+
+    return [
+        amplicon for amplicon in amplicons
+        if amplicon_matches_any_primer_id(amplicon, primer_ids)
+    ], True
+
+
 @require_member_can_read_project_of_plasmid
 def api_plasmid_primer_matches(request, plasmid_id):
     try:
@@ -1972,11 +2005,12 @@ def api_plasmid_amplicon_matches(request, plasmid_id):
                 len(str(sequence[1])),
             )
         ]
+    primer_filter_fallback = False
     if primer_ids:
-        candidate_annotations = [
-            amplicon for amplicon in candidate_annotations
-            if amplicon_matches_any_primer_id(amplicon, primer_ids)
-        ]
+        candidate_annotations, primer_filter_fallback = filter_amplicons_for_primer_ids(
+            candidate_annotations,
+            primer_ids,
+        )
     non_overlapping = request.GET.get('non_overlapping', 'true').lower() not in ('0', 'false', 'no')
     annotations = select_non_overlapping_amplicons(
         candidate_annotations,
@@ -1988,6 +2022,7 @@ def api_plasmid_amplicon_matches(request, plasmid_id):
         'count': len(annotations),
         'candidate_count': len(candidate_annotations),
         'non_overlapping': non_overlapping,
+        'primer_filter_fallback': primer_filter_fallback,
         'filters': {
             'min_size': min_product_size,
             'max_size': max_product_size,
