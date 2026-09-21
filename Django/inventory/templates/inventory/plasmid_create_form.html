@@ -1,11 +1,7 @@
 {% extends "inventory/parts/base.html" %}
+{% block header_object_type %}Plasmid{% endblock %}
+{% block header_object_name %}Create - Form{% endblock %}
 {% block content %}
-<div id="header">
-    <div id="header-element">
-        <span class="badge text-dark fw-light fs-2 p-1 ps-0 m-0 align-middle">Plasmid / Create</span>
-    </div>
-</div>
-<div id="form-inventory">
-    {% include "inventory/parts/inventory_create_form.html" %}
-</div>
+{% url 'plasmids' as cancel_url %}
+{% include "inventory/parts/inventory_form_panel.html" with form_section_label="Plasmid" form_title="Create plasmid" form_description="Add a plasmid to the current project." form_icon="bi-plus-square" submit_label="Create plasmid" submit_icon="bi-plus-lg" cancel_url=cancel_url cancel_label="Back to plasmids" %}
 {% endblock %}

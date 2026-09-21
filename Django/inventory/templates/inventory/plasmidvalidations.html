@@ -7,8 +7,36 @@
 {% endblock %}
 
 {% block content %}
+<div class="plasmid-validations-page">
+<div class="validation-toolbar d-flex align-items-center justify-content-between gap-3 mb-3">
+    <p class="text-secondary small mb-0">Review and update plasmid validation status.</p>
+</div>
+{% if project_filters|length > 1 %}
+<div class="validation-project-filter mb-3">
+    <div class="validation-project-filter-heading">
+        <span><i class="bi bi-funnel me-1"></i> Filter by project</span>
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="toggle-validation-project-filter"
+                aria-expanded="false" aria-controls="validation-project-filter-options">
+            <i class="bi bi-chevron-down me-1"></i> Select projects
+        </button>
+    </div>
+    <div id="validation-project-filter-options" class="validation-project-filter-options d-none">
+        <label class="validation-project-option validation-project-option-all">
+            <input type="checkbox" class="form-check-input" id="validation-project-all" checked>
+            <span>All projects</span>
+        </label>
+        {% for project in project_filters %}
+        <label class="validation-project-option">
+            <input type="checkbox" class="form-check-input validation-project-checkbox"
+                   value="{{project.id}}" checked>
+            <span>{{project.name}}</span>
+        </label>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
 {% if plasmid_massive_action_results %}
-<div class="accordion mb-2 accordion-bg-success" id="plasmidActionResult">
+<div class="accordion mb-3 accordion-bg-success" id="plasmidActionResult">
 <div class="accordion-item">
     <h2 class="accordion-header">
       <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#plasmidActionResult-collapse" aria-expanded="true" aria-controls="plasmidActionResult-collapse">
@@ -30,68 +58,141 @@
 <div class="accordion" id="plasmidValidations">
   {% for k, list in lists.items %}
   {% if list.data %}
-  <div class="accordion-item">
+  <div class="accordion-item validation-section">
     <h2 class="accordion-header">
-      <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#{{k}}" aria-expanded="true" aria-controls="{{k}}">
+      <button class="accordion-button validation-section-title" type="button" data-bs-toggle="collapse" data-bs-target="#{{k}}" aria-expanded="true" aria-controls="{{k}}">
         {{list.name}} ({{list.data|length}} items)
+      </button>
+      {% if k == 'to_stock' %}
+      <span class="validation-batch-mode-button"
+              id="toggle-validation-print-mode" aria-pressed="false"
+              role="button" tabindex="0"
+              data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Prepare GS batch"
+              aria-label="Prepare GS batch">
+          <i class="bi bi-box-seam"></i>
+      </span>
+      {% endif %}
+      <button type="button" class="validation-accordion-toggle" data-bs-toggle="collapse"
+              data-bs-target="#{{k}}" aria-expanded="true" aria-controls="{{k}}"
+              aria-label="Toggle {{list.name}}">
+          <i class="bi bi-chevron-down"></i>
       </button>
     </h2>
     <div id="{{k}}" class="accordion-collapse collapse" data-bs-parent="#plasmidValidations">
+      {% if k == 'to_stock' %}
+      <div class="validation-batch-controls">
+        <div id="validation-print-toolbar" class="validation-print-toolbar d-none mb-2" aria-live="polite">
+          <div>
+              <strong><span id="validation-print-count">0</span> plasmids selected</strong>
+              <span class="text-secondary small ms-2">Selected plasmids will be assigned preliminary GS box positions.</span>
+          </div>
+          <button type="button" class="btn btn-primary btn-sm" id="print-selected-validation-labels" disabled>
+              <i class="bi bi-box-seam me-1"></i> Prepare selected
+          </button>
+        </div>
+        {% if level_filters %}
+        <div id="validation-level-filter" class="validation-level-filter-bar d-none mb-2" aria-live="polite">
+          <div class="validation-level-filter">
+              <strong>Prepare levels:</strong>
+              <div class="validation-level-options">
+                  <label class="validation-project-option validation-project-option-all">
+                      <input type="checkbox" class="form-check-input" id="validation-level-all">
+                      <span>All</span>
+                  </label>
+                  {% for level in level_filters %}
+                  <label class="validation-project-option">
+                      <input type="checkbox" class="form-check-input validation-level-checkbox"
+                             value="{{level.value}}">
+                      <span>{{level.name}}</span>
+                  </label>
+                  {% endfor %}
+              </div>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
       <div class="accordion-body">
         <form class="massiveActionForm default-style" method="POST">
-            <table class="table table-hover sortable">
+                <div class="validation-table-wrapper">
+        <table class="table table-hover sortable validation-table">
             <thead>
             <tr>
                 {% if k == 'waiting' or k == 'to_ligate' or k == 'to_colonypcr' or k == 'to_digest' or k == 'to_sequence' %}
-                <th>Select</th>
+                <th class="validation-select-column" data-defaultsort="disabled">Select</th>
                 {% endif %}
-                <th>Plasmid</th>
-                <th>Project</th>
+                <th class="validation-plasmid-column" data-defaultsort="disabled">
+                    <div class="validation-plasmid-header">
+                        <span>Plasmid</span>
+                        {% if k == 'to_stock' %}
+                        <button type="button" class="validation-select-all d-none" id="toggle-validation-selection"
+                                aria-pressed="false">
+                            <i class="bi bi-check2-square me-1"></i><span>Select all</span>
+                        </button>
+                        <button type="button" class="validation-sort-level" id="toggle-validation-level-sort"
+                                data-sort-direction="asc" aria-label="Sort To Stock by level ascending">
+                            <i class="bi bi-sort-down me-1"></i><span>Level</span>
+                        </button>
+                        {% endif %}
+                    </div>
+                </th>
+                <th class="validation-centered-column validation-project-column">Project</th>
                 {% if k == 'to_ligate' %}
-                <th>Ligation Priority</th>
+                <th class="validation-centered-column" data-defaultsort="disabled">Ligation Priority</th>
                 {% endif %}
-                <th>Actions</th>
+                <th class="validation-centered-column" data-defaultsort="disabled">Actions</th>
                 {% if k == 'to_sequence' or k == 'to_stock' %}
-                <th>Working colony</th>
+                <th class="validation-centered-column" data-defaultsort="disabled">Colony</th>
                 {% endif %}
                 {% if k == 'to_ligate' %}
-                <th>Ligation raw</th>
+                <th class="validation-centered-column" data-defaultsort="disabled">Ligation raw</th>
                 {% endif %}
                 {% if k == 'to_colonypcr' or k == 'to_digest' or k == 'to_sequence' or k == 'to_stock' %}
-                <th>cPCR</th>
+                <th class="validation-centered-column" data-defaultsort="disabled">cPCR</th>
                 {% endif %}
                 {% if k == 'to_digest' or k == 'to_sequence' or k == 'to_stock' %}
-                <th>Digestion</th>
+                <th class="validation-centered-column" data-defaultsort="disabled">Digestion</th>
                 {% endif %}
                 {% if k == 'to_digest' or k == 'to_sequence' or k == 'to_stock' %}
-                <th>Sequencing</th>
+                <th class="validation-centered-column" data-defaultsort="disabled">Sequencing</th>
                 {% endif %}
-                {% if k != 'references' %}
-                <th>Dependencies</th>
+                {% if k == 'to_colonypcr' or k == 'to_digest' or k == 'to_sequence' or k == 'to_stock' %}
+                <th class="validation-centered-column" data-defaultsort="disabled">Check date</th>
                 {% endif %}
             </tr>
             </thead>
             <tbody>
             {% for plasmid in list.data %}
-            <tr>
+            <tr data-validation-project-id="{{plasmid.project_id}}"
+                data-validation-level="{{plasmid.level|default_if_none:'999'}}"
+                data-validation-idx="{{plasmid.idx|default_if_none:'999999999'}}">
                 {% if k == 'waiting' or  k == 'to_ligate' or k == 'to_colonypcr' or k == 'to_digest' or k == 'to_sequence' %}
-                <th>
+                <th class="validation-select-column">
                     <input name="pidx-{{plasmid.idx}}" type="checkbox" data-plasmid_idx={{plasmid.idx}} data-action_id={{k}} type="checkbox" class="btn-check" id="{{k}}-pidx-{{plasmid.idx}}" autocomplete="off">
                     <label class="btn btn-outline-primary" for="{{k}}-pidx-{{plasmid.idx}}">
                         <i class="bi bi-check"></i>
                     </label>
                 </th>
                 {% endif %}
-                <td>
-                    {% with pr=plasmid extra_class="btn-success table-search-search_on" hide_validation_status=True %}
+                <td class="validation-plasmid-column">
+                    {% if k == 'to_stock' %}
+                    <span class="validation-print-checkbox-wrap">
+                        <input type="checkbox" class="form-check-input validation-print-checkbox"
+                               data-plasmid-idx="{{plasmid.idx}}"
+                               data-working-colony="{{plasmid.working_colony|default:''}}"
+                               id="print-plasmid-{{plasmid.idx}}">
+                        <label class="visually-hidden" for="print-plasmid-{{plasmid.idx}}">Select {{plasmid.name}}</label>
+                    </span>
+                    {% endif %}
+                    {% with pr=plasmid extra_class="btn-success table-search-search_on" hide_copy=True plasmid_badge_class="validation-plasmid-id" open_in_new_tab=True %}
                         {% include "inventory/parts/plasmid-button.html" %}
                     {% endwith %}
                 </td>
-                <td>
+                <td class="validation-centered-column validation-project-column">
                     {{plasmid.project}}
                 </td>
                 {% if k == 'to_ligate' %}
-                <td>
+                <td class="validation-centered-column">
                     {% if plasmid.ligation_state == 2%}
                     <span class="badge lh-base px-3 my-1 bg-secondary">LOW</span>
                     {% endif %}
@@ -103,92 +204,90 @@
                     {% endif %}
                 </td>
                 {% endif %}
-               <td>
-                    <button class="btn text-secondary text-secondary me-1 copy_clipboard-child" data-bs-toggle="tooltip" data-bs-placement="top" aria-label="Copy name"><i class="bi bi-clipboard copy_clipboard" data-cc="{{plasmid}}"></i></button>
-                    {% if not plasmid.reference_sequence %}
-                   <a href="{% url 'plasmid_validation_edit' plasmid_id=plasmid.id %}" class="btn text-info"
-                       role="button">
-                        <i class="bi bi-check2-square"></i>
-                    </a>
-                   {% endif %}
-                    {% if k == 'to_colonypcr' %}
-                    <a href="{% url 'plasmid_pcr' plasmid_id=plasmid.id %}" class="btn text-success"
-                               role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="PCR"><i class="bi bi-arrow-return-right"></i></a>
+               <td class="validation-centered-column validation-actions">
+                    {% if k == 'reference' %}
+                    <span class="text-secondary" aria-label="No actions">—</span>
+                    {% else %}
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button"
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-three-dots-vertical me-1"></i> Actions
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            {% if not plasmid.reference_sequence %}
+                            <li><a href="{% url 'plasmid_validation_edit' plasmid_id=plasmid.id %}" class="dropdown-item">
+                                <i class="bi bi-check2-square me-2"></i>Edit validation
+                            </a></li>
+                            {% endif %}
+                            {% if k == 'to_colonypcr' %}
+                            <li><a href="{% url 'plasmid_pcr' plasmid_id=plasmid.id %}" class="dropdown-item">
+                                <i class="bi bi-arrow-return-right me-2"></i>Colony PCR
+                            </a></li>
+                            {% endif %}
+                            {% if k == 'to_digest' %}
+                            <li><a href="{% url 'plasmid_digest' plasmid_id=plasmid.id %}" class="dropdown-item">
+                                <i class="bi bi-scissors me-2"></i>Digest
+                            </a></li>
+                            {% endif %}
+                            {% if k == 'to_stock' %}
+                            <li><a href="{% url 'glycerolstock_create_plasmid_defined' pid=plasmid.id %}" class="dropdown-item" target="_blank">
+                                <i class="bi bi-box-seam me-2"></i>Create GS
+                            </a></li>
+                            {% endif %}
+                        </ul>
+                    </div>
                     {% endif %}
-                    {% if k == 'to_digest' %}
-                    <a href="{% url 'plasmid_digest' plasmid_id=plasmid.id %}" class="btn text-secondary"
-                       role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Digest"><i class="bi bi-scissors"></i></a>
-                    {% endif %}
-                    {% if k == 'to_stock' %}
-                    <a href="{% url 'glycerolstock_create_plasmid_defined' pid=plasmid.id %}" class="btn texte-secondary"
-                       role="button" target="_blank">Create GS</a>
-                    {% endif %}
-                </td>
+               </td>
                 {% if k == 'to_sequence' or k == 'to_stock' %}
-                <td>{% if plasmid.working_colony %}{{plasmid.working_colony}}{% else %}Not set{% endif %}</td>
+                <td class="validation-centered-column validation-working-column">{{plasmid.colony_source_text}}</td>
                 {% endif %}
                 {% if k == 'to_ligate' %}
-                <td>
+                <td class="validation-centered-column">
                     <button class="btn text-secondary me-1 copy_clipboard-child" data-bs-toggle="tooltip" data-bs-placement="top" aria-label="Copy name"><i class="bi bi-clipboard copy_clipboard" data-cc="{{ ligation_raw }}"></i></button>
                 </td>
                 {% endif %}
                 {% if k == 'to_colonypcr' or k == 'to_digest' or k == 'to_sequence' or k == 'to_stock' %}
-                <td><strong>{{CHECK_STATES|get_element_by_key:plasmid.colonypcr_state}}</strong>{% if plasmid.colonypcr_date %} ({{plasmid.colonypcr_date|date:"d M, Y"}}){% endif %}{% if plasmid.colonypcr_observations %}: {{plasmid.colonypcr_observations}}{% endif %}</td>
+                <td class="validation-centered-column validation-status-cell"><span class="validation-status-line"><span class="validation-state validation-state-{{plasmid.colonypcr_state}}">{{CHECK_STATES|get_element_by_key:plasmid.colonypcr_state}}</span><span class="validation-info-slot">{% if plasmid.colonypcr_observations %}<button type="button" class="validation-info-icon" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-custom-class="custom-tooltip" data-bs-title="cPCR: {{plasmid.colonypcr_observations}}" aria-label="Show cPCR description"><i class="bi bi-info-circle"></i></button>{% endif %}</span></span></td>
                 {% endif %}
                 {% if k == 'to_digest' or k == 'to_sequence' or k == 'to_stock' %}
-                <td><strong>{{CHECK_STATES|get_element_by_key:plasmid.digestion_state}}</strong>{% if plasmid.digestion_date %} ({{plasmid.digestion_date|date:"d M, Y"}}){% endif %}{% if plasmid.digestion_observations %}: {{plasmid.digestion_observations}}{% endif %}</td>
+                <td class="validation-centered-column validation-status-cell"><span class="validation-status-line"><span class="validation-state validation-state-{{plasmid.digestion_state}}">{{CHECK_STATES|get_element_by_key:plasmid.digestion_state}}</span><span class="validation-info-slot">{% if plasmid.digestion_observations %}<button type="button" class="validation-info-icon" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-custom-class="custom-tooltip" data-bs-title="Digestion: {{plasmid.digestion_observations}}" aria-label="Show digestion description"><i class="bi bi-info-circle"></i></button>{% endif %}</span></span></td>
                 {% endif %}
                 {% if k == 'to_digest' or k == 'to_sequence' or k == 'to_stock' %}
-                <td><strong>{{CHECK_STATES|get_element_by_key:plasmid.sequencing_state}}</strong>{% if plasmid.sequencing_date %} ({{plasmid.sequencing_date|date:"d M, Y"}}){% endif %}{% if plasmid.sequencing_observations %}: {{plasmid.sequencing_observations}}{% endif %}</td>
+                <td class="validation-centered-column validation-status-cell"><span class="validation-status-line"><span class="validation-state validation-state-{{plasmid.sequencing_state}}">{{CHECK_STATES|get_element_by_key:plasmid.sequencing_state}}</span><span class="validation-info-slot">{% if plasmid.sequencing_observations %}<button type="button" class="validation-info-icon" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-custom-class="custom-tooltip" data-bs-title="Sequencing: {{plasmid.sequencing_observations}}" aria-label="Show sequencing description"><i class="bi bi-info-circle"></i></button>{% endif %}</span></span></td>
                 {% endif %}
-                {% if k != 'references' %}
-                <td>
-                    <button class="btn btn-outline-secondary me-1 prevent_default" data-bs-toggle="modal" data-bs-target="#modal-dependencies-{{plasmid.idx}}" aria-label="Show dependencies">Show</button>
-                    <div class="modal" id="modal-dependencies-{{plasmid.idx}}" tabindex="-1" aria-labelledby="modal_title-0" style="display: none;" aria-hidden="true">
-                        <div class="modal-dialog">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h1 class="modal-title fs-5" id="modal_title-0">Dependencies: {{plasmid}}</h1>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                </div>
-                                <div class="modal-body">
-                                    {% with pd=plasmid.backbone pd_title="Backbone" %}
-                                    {% include "inventory/parts/plasmid-dependency-table.html" %}
-                                    {% endwith %}
-                                    {% with pd=plasmid.inserts.all pd_title="Inserts" %}
-                                    {% include "inventory/parts/plasmid-dependency-table.html" %}
-                                    {% endwith %}
-                                    {% with pd=plasmid.get_backbone_of pd_title="Backbone of" %}
-                                    {% include "inventory/parts/plasmid-dependency-table.html" %}
-                                    {% endwith %}
-                                    {% with pd=plasmid.get_insert_of pd_title="Insert of" %}
-                                    {% include "inventory/parts/plasmid-dependency-table.html" %}
-                                    {% endwith %}
-                                </div>
-                            </div>
-                        </div>
+                {% if k == 'to_colonypcr' or k == 'to_digest' or k == 'to_sequence' or k == 'to_stock' %}
+                <td class="validation-centered-column validation-date-cell">
+                    <div class="validation-date-list">
+                        {% if plasmid.colonypcr_date %}<span><strong>cPCR</strong> {{plasmid.colonypcr_date|date:"d M, Y"}}</span>{% endif %}
+                        {% if plasmid.digestion_date %}<span><strong>Digest</strong> {{plasmid.digestion_date|date:"d M, Y"}}</span>{% endif %}
+                        {% if plasmid.sequencing_date %}<span><strong>Seq</strong> {{plasmid.sequencing_date|date:"d M, Y"}}</span>{% endif %}
+                        {% if not plasmid.colonypcr_date and not plasmid.digestion_date and not plasmid.sequencing_date %}<span class="text-secondary">—</span>{% endif %}
                     </div>
-                    {% if not plasmid.dependencies_validated %}
-                    <i class="bi bi-exclamation-diamond"></i>
-                    {% endif %}
                 </td>
                 {% endif %}
             </tr>
             {% endfor %}
             </tbody>
         </table>
+        </div>
             {% if k == 'waiting' or k == 'to_ligate' or k == 'to_colonypcr' or k == 'to_digest' or k == 'to_sequence' %}
             <div class="">
                 <label for="massive_action_form_action" class="form-label">Change {% if k == 'to_colonypcr' %}Colony PCR{% endif %}{% if k == 'to_digest' %}Digestion{% endif %}{% if k == 'to_sequence' %}Sequencing{% endif %}{% if k == 'waiting' or k == 'to_ligate' %}Ligation{% endif %} state for selected plasmids</label>
                 <select id="massive_action_form_action" name="massive_action_form_action">
                     {% if k == 'to_colonypcr' %}
-                    <option value="colony_pcr_correct">Colony PCR - Correct</option>
+                    <option value="colony_pcr-0">Colony PCR - Not required</option>
+                    <option value="colony_pcr-1">Colony PCR - Pending</option>
+                    <option value="colony_pcr-2">Colony PCR - Correct</option>
                     {% endif %}
                     {% if k == 'to_digest' %}
-                    <option value="digestion_correct">Digestion - Correct</option>
+                    <option value="digestion-0">Digestion - Not required</option>
+                    <option value="digestion-1">Digestion - Pending</option>
+                    <option value="digestion-2">Digestion - Correct</option>
                     {% endif %}
                     {% if k == 'to_sequence' %}
-                    <option value="sequencing_correct">Sequencing - Correct</option>
+                    <option value="sequencing-0">Sequencing - Not required</option>
+                    <option value="sequencing-1">Sequencing - Pending</option>
+                    <option value="sequencing-2">Sequencing - Correct</option>
                     {% endif %}
                     {% if k == 'to_ligate' %}
                     <option value="ligation_state-1">{{LIGATION_STATES|get_element_by_key:1}}</option>
@@ -213,4 +312,257 @@
   {% endif %}
   {% endfor %}
 </div>
+</div>
+<script>
+    $(function () {
+        var page = $('.plasmid-validations-page');
+        var toggleButton = $('#toggle-validation-print-mode');
+        var printToolbar = $('#validation-print-toolbar');
+        var levelFilter = $('#validation-level-filter');
+        var countElement = $('#validation-print-count');
+        var printButton = $('#print-selected-validation-labels');
+
+        function selectedRows() {
+            return $('.validation-print-checkbox:checked');
+        }
+
+        function visiblePrintCheckboxes() {
+            return $('.validation-print-checkbox').filter(function () {
+                return $(this).closest('tr').is(':visible');
+            });
+        }
+
+        function selectRowsForCurrentFilters() {
+            var allProjects = $('#validation-project-all');
+            var selectedProjects = $('.validation-project-checkbox:checked').map(function () {
+                return String($(this).val());
+            }).get();
+            var showAllProjects = !allProjects.length || allProjects.prop('checked');
+            var allLevels = $('#validation-level-all');
+            var selectedLevels = $('.validation-level-checkbox:checked');
+            var showAllLevels = !allLevels.length || allLevels.prop('checked');
+            var hasLevelSelection = !allLevels.length || showAllLevels || selectedLevels.length > 0;
+            var selectedLevelValues = selectedLevels.map(function () {
+                return String($(this).val());
+            }).get();
+
+            $('.validation-print-checkbox').each(function () {
+                var checkbox = $(this);
+                var row = checkbox.closest('tr');
+                var projectId = String(row.attr('data-validation-project-id'));
+                var level = String(row.attr('data-validation-level'));
+                var matchesProject = showAllProjects || selectedProjects.indexOf(projectId) !== -1;
+                var matchesLevel = showAllLevels || selectedLevelValues.indexOf(level) !== -1;
+                checkbox.prop('checked', hasLevelSelection && matchesProject && matchesLevel);
+            });
+            updatePrintSelection();
+        }
+
+        function updatePrintSelection() {
+            var selected = selectedRows();
+            countElement.text(selected.length);
+            printButton.prop('disabled', selected.length === 0);
+            var visible = visiblePrintCheckboxes();
+            var allSelected = visible.length > 0 && visible.filter(':checked').length === visible.length;
+            $('#toggle-validation-selection').attr('aria-pressed', allSelected ? 'true' : 'false');
+            $('#toggle-validation-selection span').text(allSelected ? 'Clear all' : 'Select all');
+            $('#toggle-validation-selection i').toggleClass('bi-check2-square', !allSelected).toggleClass('bi-x-square', allSelected);
+        }
+
+        function syncLevelControlsFromSelection() {
+            var levelCheckboxes = $('.validation-level-checkbox');
+            var visibleRows = $('#to_stock .validation-table tbody tr:visible');
+
+            levelCheckboxes.each(function () {
+                var levelValue = String($(this).val());
+                var levelRows = visibleRows.filter(function () {
+                    return String($(this).attr('data-validation-level')) === levelValue;
+                });
+                var allLevelRowsSelected = levelRows.length > 0 && levelRows.find('.validation-print-checkbox:checked').length === levelRows.length;
+                $(this).prop('checked', allLevelRowsSelected);
+            });
+
+            $('#validation-level-all').prop(
+                'checked',
+                levelCheckboxes.length > 0 && levelCheckboxes.filter(':checked').length === levelCheckboxes.length
+            );
+        }
+
+        function applyValidationFilters() {
+            var allProjects = $('#validation-project-all');
+            var selectedProjects = $('.validation-project-checkbox:checked').map(function () {
+                return String($(this).val());
+            }).get();
+            var showAllProjects = !allProjects.length || allProjects.prop('checked');
+
+            $('.validation-section').each(function () {
+                $(this).find('tbody tr').each(function () {
+                    var projectId = String($(this).attr('data-validation-project-id'));
+                    var matchesProject = showAllProjects || selectedProjects.indexOf(projectId) !== -1;
+                    $(this).toggle(matchesProject);
+                });
+            });
+            updatePrintSelection();
+        }
+
+        function syncAccordionIndicator(panel) {
+            var panelId = panel.attr('id');
+            var expanded = panel.hasClass('show');
+            var arrow = $('.validation-accordion-toggle[data-bs-target="#' + panelId + '"]');
+            var title = $('.validation-section-title[data-bs-target="#' + panelId + '"]');
+            arrow.attr('aria-expanded', expanded ? 'true' : 'false');
+            arrow.find('i').toggleClass('bi-chevron-up', expanded).toggleClass('bi-chevron-down', !expanded);
+            title.attr('aria-expanded', expanded ? 'true' : 'false').toggleClass('collapsed', !expanded);
+        }
+
+        $('#plasmidValidations .accordion-collapse').each(function () {
+            syncAccordionIndicator($(this));
+        }).on('shown.bs.collapse hidden.bs.collapse', function () {
+            syncAccordionIndicator($(this));
+        });
+
+        $('#toggle-validation-project-filter').on('click', function () {
+            var button = $(this);
+            var options = $('#validation-project-filter-options');
+            var expanded = button.attr('aria-expanded') === 'true';
+            options.toggleClass('d-none', expanded);
+            button.attr('aria-expanded', expanded ? 'false' : 'true');
+            button.find('i').toggleClass('bi-chevron-down', expanded).toggleClass('bi-chevron-up', !expanded);
+        });
+
+        $('#validation-project-all').on('change', function () {
+            $('.validation-project-checkbox').prop('checked', this.checked);
+            applyValidationFilters();
+        });
+
+        $(document).on('change', '.validation-project-checkbox', function () {
+            var individual = $('.validation-project-checkbox');
+            var checked = individual.filter(':checked');
+            $('#validation-project-all').prop('checked', checked.length === individual.length);
+            applyValidationFilters();
+        });
+
+        $('#validation-level-all').on('change', function () {
+            $('.validation-level-checkbox').prop('checked', this.checked);
+            applyValidationFilters();
+            selectRowsForCurrentFilters();
+            sortToStockRows(1);
+        });
+
+        $(document).on('change', '.validation-level-checkbox', function () {
+            var individual = $('.validation-level-checkbox');
+            var checked = individual.filter(':checked');
+            $('#validation-level-all').prop('checked', checked.length === individual.length);
+            applyValidationFilters();
+            selectRowsForCurrentFilters();
+            sortToStockRows(1);
+        });
+
+        toggleButton.on('click', function (event) {
+            event.stopPropagation();
+            var active = !page.hasClass('is-batch-print-mode');
+            page.toggleClass('is-batch-print-mode', active);
+            printToolbar.toggleClass('d-none', !active);
+            levelFilter.toggleClass('d-none', !active);
+            if (active) {
+                var toStockPanel = document.getElementById('to_stock');
+                if (toStockPanel && !toStockPanel.classList.contains('show')) {
+                    bootstrap.Collapse.getOrCreateInstance(toStockPanel, {toggle: false}).show();
+                }
+            }
+            toggleButton.attr('aria-pressed', active ? 'true' : 'false');
+            toggleButton.toggleClass('btn-primary', active).toggleClass('btn-outline-primary', !active);
+            toggleButton.find('i').toggleClass('bi-x-lg', active).toggleClass('bi-box-seam', !active);
+            $('#toggle-validation-selection').toggleClass('d-none', !active);
+            if (!active) {
+                $('.validation-print-checkbox').prop('checked', false);
+                $('#validation-level-all').prop('checked', false);
+                $('.validation-level-checkbox').prop('checked', false);
+                applyValidationFilters();
+            }
+            updatePrintSelection();
+        });
+
+        toggleButton.on('keydown', function (event) {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                event.stopPropagation();
+                toggleButton.trigger('click');
+            }
+        });
+
+        $(document).on('change', '.validation-print-checkbox', function () {
+            syncLevelControlsFromSelection();
+            updatePrintSelection();
+        });
+
+        $(document).on('click', '#toggle-validation-selection', function () {
+            var all = visiblePrintCheckboxes();
+            var selectAll = all.filter(':checked').length !== all.length;
+            all.prop('checked', selectAll);
+            syncLevelControlsFromSelection();
+            sortToStockRows(1);
+            updatePrintSelection();
+        });
+
+        function sortToStockRows(direction) {
+            var button = $('#toggle-validation-level-sort');
+            var tbody = $('#to_stock .validation-table tbody');
+            var rows = tbody.children('tr').get();
+
+            var selectedLevels = $('.validation-level-checkbox:checked').map(function () {
+                return String($(this).val());
+            }).get();
+
+            rows.sort(function (first, second) {
+                var firstRow = $(first);
+                var secondRow = $(second);
+                var firstLevelValue = String(firstRow.attr('data-validation-level'));
+                var secondLevelValue = String(secondRow.attr('data-validation-level'));
+                var firstIsSelected = selectedLevels.indexOf(firstLevelValue) !== -1;
+                var secondIsSelected = selectedLevels.indexOf(secondLevelValue) !== -1;
+                var firstLevel = parseInt(firstRow.attr('data-validation-level'), 10);
+                var secondLevel = parseInt(secondRow.attr('data-validation-level'), 10);
+                var firstIdx = parseInt(firstRow.attr('data-validation-idx'), 10);
+                var secondIdx = parseInt(secondRow.attr('data-validation-idx'), 10);
+
+                if (firstIsSelected !== secondIsSelected) {
+                    return firstIsSelected ? -1 : 1;
+                }
+                if (firstLevel !== secondLevel) {
+                    return (firstLevel - secondLevel) * direction;
+                }
+                return (firstIdx - secondIdx) * direction;
+            });
+
+            $.each(rows, function (_, row) {
+                tbody.append(row);
+            });
+
+            var nextDirection = direction === 1 ? 'desc' : 'asc';
+            button.attr('data-sort-direction', nextDirection);
+            button.attr('aria-label', 'Sort To Stock by level ' + (nextDirection === 'asc' ? 'ascending' : 'descending'));
+            button.find('i').toggleClass('bi-sort-down', direction === 1).toggleClass('bi-sort-up', direction === -1);
+        }
+
+        $('#toggle-validation-level-sort').on('click', function () {
+            var direction = $(this).attr('data-sort-direction') === 'desc' ? -1 : 1;
+            sortToStockRows(direction);
+        });
+
+        printButton.on('click', function () {
+            var form = $('<form>', {
+                method: 'post',
+                action: "{% url 'glycerolstock_batch_prepare' %}"
+            });
+            form.append($('<input>', {type: 'hidden', name: 'csrfmiddlewaretoken', value: '{{ csrf_token }}'}));
+            selectedRows().each(function () {
+                var checkbox = $(this);
+                form.append($('<input>', {type: 'hidden', name: 'plasmid_idx', value: checkbox.data('plasmid-idx')}));
+            });
+            $('body').append(form);
+            form[0].submit();
+        });
+    });
+</script>
 {% endblock %}

@@ -4,31 +4,33 @@
 
 {% block content %}
 {% if plasmid %}
-<div id="label" class="plasmid">
-    <div id="label-main">
-        <div id="label-info">
-            <p id="label-name">
+<div class="plasmid label mb-4">
+    <div class="label-main">
+        <div class="label-info">
+            <p class="label-id-colony">
+                <span class="label-value">
+                    ID {{plasmid.idx}} ~ c <span id="target-colony">-</span>
+                    {% if plasmid.is_validated %}
+                    <i class="bi bi-check-circle"></i>
+                    {% else %}
+                    <i class="bi bi-circle"></i>
+                    {% endif %}
+                </span>
+            </p>
+            <p class="label-name">
                 {{plasmid.name}}
             </p>
-            <p id="label-id">
-                <span class="label-name">ID</span>
-                <span class="label-value"># {{plasmid.idx}}</span>
-            </p>
-            <p id="label-created">
+            <p class="label-created">
                 <span class="label-name">Date</span>
                 <span class="label-value"><span id="target-date">-</span></span>
             </p>
-            <p id="label-colony">
-                <span class="label-name">Colony</span>
-                <span class="label-value"># <span id="target-colony">-</span></span>
+            <p class="label-conc-quantus">
+                 <span class="label-name">Conc</span>
+                <span class="label-value"><span id="target-concentration">-</span> [ng/ul]</span>
             </p>
-            <p id="label-size">
+            <p class="label-size">
                 <span class="label-name">Size</span>
                 <span class="label-value">{{plasmid.computed_size|intcomma}} bp</span>
-            </p>
-            <p id="label-conc-quantus">
-                 <span class="label-name">Conc (Q)</span>
-                <span class="label-value"><span id="target-concentration">-</span> [ng/ul]</span>
             </p>
         </div>
     </div>

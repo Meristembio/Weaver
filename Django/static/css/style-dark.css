@@ -12,10 +12,12 @@ html[data-bs-theme="dark"]{
     h5,
     h5.bp3-heading,
     h6,
-    h6.bp3-heading {
+    h6.bp3-heading,
+    .tab-pane {
         color: #fff !important;
     }
-    .plasmid-opts i {
+    .plasmid-opts i,
+    .select2-selection__choice__display{
         color: #484848 !important;
     }
     #ove-viewer{
@@ -35,4 +37,115 @@ html[data-bs-theme="dark"]{
     div#header-container {
         background: #444;
     }
+    .diagonal-box:before{
+        background: linear-gradient(to right bottom, rgb(33, 37, 41) 49%, transparent 50%);
+    }
+    .diagonal-box:after{
+        background: linear-gradient(to right bottom, transparent 49%, rgb(33, 37, 41) 50%);
+    }
+}
+#ove-viewer.bp3-dark ~ .weaver-amplicon-panel,
+.bp3-dark.weaver-amplicon-panel {
+    border-left-color: #41515c;
+    background: #263946;
+    color: #f3f7fa;
+}
+
+#ove-viewer.bp3-dark ~ .weaver-amplicon-panel .weaver-amplicon-panel-tab,
+.bp3-dark.weaver-amplicon-panel .weaver-amplicon-panel-tab,
+#ove-viewer.bp3-dark ~ .weaver-amplicon-panel .weaver-amplicon-item-meta span,
+.bp3-dark.weaver-amplicon-panel .weaver-amplicon-item-meta span {
+    border-color: #41515c;
+    background: #1f2f3a;
+    color: #f3f7fa;
+}
+
+#ove-viewer.bp3-dark ~ .weaver-amplicon-panel .weaver-amplicon-panel-header,
+.bp3-dark.weaver-amplicon-panel .weaver-amplicon-panel-header,
+#ove-viewer.bp3-dark ~ .weaver-amplicon-panel .weaver-amplicon-item,
+.bp3-dark.weaver-amplicon-panel .weaver-amplicon-item {
+    border-color: #41515c;
+}
+
+#ove-viewer.bp3-dark ~ .weaver-amplicon-panel .weaver-amplicon-panel-summary,
+.bp3-dark.weaver-amplicon-panel .weaver-amplicon-panel-summary {
+    color: #aebbc4;
+}
+
+#ove-viewer.bp3-dark ~ .weaver-amplicon-panel .weaver-amplicon-panel-summary.is-filter-fallback,
+.bp3-dark.weaver-amplicon-panel .weaver-amplicon-panel-summary.is-filter-fallback {
+    border-color: #d6a928;
+    background: #4a3d1b;
+    color: #ffe69c;
+}
+
+#ove-viewer.bp3-dark ~ .weaver-amplicon-panel .weaver-amplicon-dimer-chip,
+.bp3-dark.weaver-amplicon-panel .weaver-amplicon-dimer-chip,
+#ove-viewer.bp3-dark ~ .weaver-amplicon-panel .weaver-amplicon-partial-chip,
+.bp3-dark.weaver-amplicon-panel .weaver-amplicon-partial-chip,
+#ove-viewer.bp3-dark ~ .weaver-amplicon-panel .weaver-amplicon-item-warnings,
+.bp3-dark.weaver-amplicon-panel .weaver-amplicon-item-warnings,
+#ove-viewer.bp3-dark ~ .weaver-amplicon-panel .weaver-amplicon-dimer-label,
+.bp3-dark.weaver-amplicon-panel .weaver-amplicon-dimer-label {
+    color: #ffd27a;
+}
+
+#ove-viewer.bp3-dark ~ .weaver-amplicon-panel .weaver-amplicon-dimer-preview,
+.bp3-dark.weaver-amplicon-panel .weaver-amplicon-dimer-preview,
+#ove-viewer.bp3-dark ~ .weaver-amplicon-panel .weaver-digest-required-enzyme-chips,
+.bp3-dark.weaver-amplicon-panel .weaver-digest-required-enzyme-chips,
+#ove-viewer.bp3-dark ~ .weaver-amplicon-panel .weaver-digest-required-enzyme-list,
+.bp3-dark.weaver-amplicon-panel .weaver-digest-required-enzyme-list {
+    background: #1f2f3a;
+    border-color: #41515c;
+    color: #f3f7fa;
+}
+
+#ove-viewer.bp3-dark ~ .weaver-amplicon-panel .weaver-digest-required-enzyme-empty,
+.bp3-dark.weaver-amplicon-panel .weaver-digest-required-enzyme-empty,
+#ove-viewer.bp3-dark ~ .weaver-amplicon-panel .weaver-digest-enzyme-empty,
+.bp3-dark.weaver-amplicon-panel .weaver-digest-enzyme-empty {
+    color: #aebbc4;
+}
+
+#ove-viewer.bp3-dark ~ .weaver-amplicon-panel .weaver-digest-required-enzyme-chip,
+.bp3-dark.weaver-amplicon-panel .weaver-digest-required-enzyme-chip {
+    background: #143c63;
+    border-color: #2f78bd;
+    color: #d7ecff;
+}
+
+#ove-viewer.bp3-dark ~ .weaver-amplicon-panel .weaver-digest-enzyme-option,
+.bp3-dark.weaver-amplicon-panel .weaver-digest-enzyme-option {
+    color: #f3f7fa;
+}
+
+#ove-viewer.bp3-dark ~ .weaver-amplicon-panel .weaver-digest-enzyme-option:hover,
+#ove-viewer.bp3-dark ~ .weaver-amplicon-panel .weaver-digest-enzyme-option:focus,
+.bp3-dark.weaver-amplicon-panel .weaver-digest-enzyme-option:hover,
+.bp3-dark.weaver-amplicon-panel .weaver-digest-enzyme-option:focus {
+    background: #314858;
+}
+
+#ove-viewer.bp3-dark ~ .weaver-amplicon-panel .weaver-digest-enzyme-option.is-selected,
+.bp3-dark.weaver-amplicon-panel .weaver-digest-enzyme-option.is-selected {
+    background: #2f78bd;
+    color: #fff;
+}
+
+#ove-viewer.bp3-dark ~ .weaver-amplicon-panel .weaver-amplicon-dimer-detail,
+.bp3-dark.weaver-amplicon-panel .weaver-amplicon-dimer-detail {
+    border-left-color: #ffd27a;
+}
+
+#ove-viewer.bp3-dark ~ .weaver-amplicon-panel .weaver-amplicon-help,
+.bp3-dark.weaver-amplicon-panel .weaver-amplicon-help {
+    color: #aebbc4;
+}
+
+#ove-viewer.bp3-dark ~ .weaver-amplicon-panel .weaver-amplicon-help:hover,
+#ove-viewer.bp3-dark ~ .weaver-amplicon-panel .weaver-amplicon-help:focus,
+.bp3-dark.weaver-amplicon-panel .weaver-amplicon-help:hover,
+.bp3-dark.weaver-amplicon-panel .weaver-amplicon-help:focus {
+    color: #4fc3f7;
 }

@@ -2,6 +2,9 @@ import os
 import uuid
 from django.db import models
 import datetime
+from django.conf import settings
+from django.core.validators import MaxValueValidator
+from django.core.validators import MinValueValidator
 from shortuuidfield import ShortUUIDField
 import shortuuid
 from .custom.box import BOX_ROWS
@@ -22,6 +25,18 @@ RE_Choices = []
 for key in rest_dict:
     if not key.startswith("_"):
         RE_Choices.append((key, key))
+
+LEGACY_RESTRICTION_BUFFERS = (
+    ("activity_buffer_1_1", "NEB 1.1"),
+    ("activity_buffer_2_1", "NEB 2.1"),
+    ("activity_buffer_3_1", "NEB 3.1"),
+    ("activity_buffer_CS", "NEB CutSmart"),
+    ("activity_buffer_aari", "Thermo AarI"),
+)
+
+
+def generate_shortuuid():
+    return shortuuid.uuid()
 
 
 class Resistance(models.Model):
@@ -51,10 +66,27 @@ class PlasmidType(models.Model):
         return self.name
 
 
+class RestrictionBuffer(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=100, unique=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        ordering = ['name']
+
+
 class RestrictionEnzyme(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     # List https://github.com/biopython/biopython/blob/master/Bio/Restriction/Restriction_Dictionary.py
     name = models.CharField(choices=RE_Choices, max_length=20)
+    buffers = models.ManyToManyField(
+        RestrictionBuffer,
+        through='RestrictionEnzymeBuffer',
+        blank=True,
+        related_name='restriction_enzymes',
+    )
     activity_buffer_1_1 = models.IntegerField(blank=True, null=True)
     activity_buffer_2_1 = models.IntegerField(blank=True, null=True)
     activity_buffer_3_1 = models.IntegerField(blank=True, null=True)
@@ -109,6 +141,41 @@ class RestrictionEnzyme(models.Model):
             return suppliers_list
         return None
 
+    @property
+    def buffer_activities(self):
+        prefetched = getattr(self, '_prefetched_objects_cache', {})
+        if 'buffer_links' in prefetched:
+            links = prefetched['buffer_links']
+        else:
+            links = list(self.buffer_links.select_related('buffer').all())
+        return sorted(links, key=lambda link: link.buffer.name.lower())
+
+    @property
+    def buffer_activity_entries(self):
+        if self.buffer_activities:
+            return [
+                {
+                    'name': link.buffer.name,
+                    'activity_percent': link.activity_percent,
+                }
+                for link in self.buffer_activities
+            ]
+        legacy_entries = []
+        for legacy_field, buffer_name in LEGACY_RESTRICTION_BUFFERS:
+            activity = getattr(self, legacy_field, None)
+            if activity is not None:
+                legacy_entries.append({
+                    'name': buffer_name,
+                    'activity_percent': activity,
+                })
+        return legacy_entries
+
+    def buffer_activity_map(self):
+        return {
+            entry['name']: entry['activity_percent']
+            for entry in self.buffer_activity_entries
+        }
+
     def __str__(self):
         if self.hf_version:
             return self.name + "-HF"
@@ -117,6 +184,35 @@ class RestrictionEnzyme(models.Model):
 
     class Meta:
         ordering = ['name']
+
+
+class RestrictionEnzymeBuffer(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    restriction_enzyme = models.ForeignKey(
+        RestrictionEnzyme,
+        on_delete=models.CASCADE,
+        related_name='buffer_links',
+    )
+    buffer = models.ForeignKey(
+        RestrictionBuffer,
+        on_delete=models.CASCADE,
+        related_name='enzyme_links',
+    )
+    activity_percent = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+    )
+
+    def __str__(self):
+        return f"{self.restriction_enzyme} / {self.buffer} / {self.activity_percent}%"
+
+    class Meta:
+        ordering = ['buffer__name']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['restriction_enzyme', 'buffer'],
+                name='unique_restriction_enzyme_buffer',
+            ),
+        ]
 
 
 class Location(models.Model):
@@ -165,17 +261,22 @@ class Plasmid(models.Model):
     description = models.CharField(max_length=1000, blank=True, help_text="Allows markdown")
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
     created_on = models.DateField(auto_now_add=False, default=datetime.date.today)
+    assembly_metadata = models.JSONField(default=dict, blank=True)
 
     reference_sequence = models.BooleanField(blank=True, default=0)
     public_visibility = models.BooleanField(blank=True, default=0)
 
     ligation_state = models.IntegerField(choices=LIGATION_STATES, default=2)
 
-    qr_id = ShortUUIDField(default=shortuuid.uuid(), editable=False)
+    qr_id = ShortUUIDField(default=generate_shortuuid, editable=False)
 
     # validation
 
     working_colony = models.IntegerField(blank=True, null=True)
+    no_colony = models.BooleanField(
+        default=False,
+        help_text="Use when the construct is used directly or comes from synthesis.",
+    )
 
     colonypcr_state = models.IntegerField(choices=CHECK_STATES, blank=True, default=1)
     colonypcr_observations = models.CharField(max_length=1000, blank=True, null=True)
@@ -200,6 +301,8 @@ class Plasmid(models.Model):
     def working_colony_text_short(self):
         if self.reference_sequence:
             return "RS"
+        elif self.no_colony:
+            return "NC"
         elif self.ligation_state != 1:
             return "UC"
         elif self.is_validated():
@@ -216,6 +319,8 @@ class Plasmid(models.Model):
     def working_colony_text(self):
         if self.reference_sequence:
             return "Reference sequence"
+        elif self.no_colony:
+            return "No colony"
         elif self.ligation_state != 1:
             return "Under construction"
         elif self.is_validated():
@@ -228,6 +333,14 @@ class Plasmid(models.Model):
                 return str(self.working_colony) + " (Not validated)"
             else:
                 return "Not set"
+
+    def colony_source_text(self):
+        """Return the explicit colony status without validation state details."""
+        if self.no_colony:
+            return "No colony"
+        if self.working_colony is not None:
+            return "#" + str(self.working_colony)
+        return "Not set"
 
     def is_validated(self):
         if self.reference_sequence:
@@ -263,13 +376,34 @@ class Plasmid(models.Model):
     def get_backbone_of(self):
         return Plasmid.objects.filter(backbone=self)
 
-    def ligation_concentration(self):
+    @property
+    def detected_assembly(self):
+        return (self.assembly_metadata or {}).get("detected", {})
+
+    @property
+    def confirmed_assembly(self):
+        return (self.assembly_metadata or {}).get("confirmed", {})
+
+    @property
+    def assembly_detection_confidence_percent(self):
+        confidence = self.detected_assembly.get("confidence")
+        if confidence is None:
+            return None
+        return round(float(confidence) * 100, 1)
+
+    def ligation_concentration(self, units=True):
         if self.computed_size:
             if self.type:
                 if str(self.type) == "Insert":
-                    return str(round(self.computed_size / 100, 1)) + " ng / ul"
+                    result = str(round(self.computed_size / 100, 1))
+                    if units:
+                        result += " ng / ul"
+                    return result
                 elif str(self.type) == "Receiver":
-                    return str(round(self.computed_size / 300, 1)) + " ng / ul"
+                    result = str(round(self.computed_size / 300, 1))
+                    if units:
+                        result += " ng / ul"
+                    return result
                 else:
                     return "Plasmid type no formula"
             else:
@@ -277,9 +411,18 @@ class Plasmid(models.Model):
         else:
             return "No plasmid computed size"
 
-    def recommended_enzyme_for_create(self):
+    def ligation_concentration_no_units(self):
+        return self.ligation_concentration(units=False)
+
+    def recommended_enzyme_for_create(self, return_name=False):
         try:
-            return assembly_standards[self.project.assembly_standard]['enzymes'][self.level]
+            if return_name:
+                re = RestrictionEnzyme.objects.filter(
+                    name__iexact=assembly_standards[self.project.assembly_standard]['enzymes'][self.level]
+                ).order_by('hf_version', 'id').first()
+                return re.name
+            else:
+                return assembly_standards[self.project.assembly_standard]['enzymes'][self.level]
         except:
             return "No level set"
 
@@ -298,7 +441,9 @@ class Plasmid(models.Model):
         tab = "	"
         ligation_raw = self.__str__() + tab
         if self.backbone:
-            ligation_raw += self.backbone.__str__() + " [" + self.backbone.working_colony_text_short() + "]" + tab
+            ligation_raw += self.backbone.__str__() + " [" + self.backbone.working_colony_text_short() + "]"
+
+        ligation_raw += tab
 
         inserts = []
         for plasmid in self.inserts.all():
@@ -306,7 +451,7 @@ class Plasmid(models.Model):
 
         if self.level:
             ligation_raw = ligation_raw + " + ".join(inserts) + tab + tab +\
-                           self.recommended_enzyme_for_create() + tab +\
+                           self.recommended_enzyme_for_create(return_name=True) + tab +\
                            self.getPlasmidResistanceForLigation().upper()
         else:
             if self.level == 0:
@@ -375,6 +520,121 @@ def auto_delete_file_on_change(sender, instance, **kwargs):
         return False
 
 
+SANGER_AUTOMATED_STATES = (
+    ("PASS", "Verifica"),
+    ("REVIEW", "Requiere revisión"),
+    ("FAIL", "No verifica"),
+    ("NO_DATA", "Sin datos utilizables"),
+)
+
+SANGER_MANUAL_DECISIONS = (
+    ("", "Pending"),
+    ("VERIFIED", "Verified"),
+    ("REJECTED", "Not verified"),
+    ("INCONCLUSIVE", "Inconclusive"),
+    ("PENDING", "Pending"),
+)
+
+SANGER_READ_ORIENTATIONS = (
+    ("forward", "Forward"),
+    ("reverse", "Reverse complement"),
+    ("ambiguous", "Ambiguous"),
+    ("unmapped", "Unmapped"),
+)
+
+SANGER_FILE_FORMATS = (
+    ("ab1", "AB1"),
+    ("phd1", "PHD.1"),
+    ("seq", "SEQ"),
+)
+
+
+def sanger_read_file_upload_to(instance, filename):
+    return "uploads/sanger/{}/{}/{}".format(instance.read.run.plasmid_id, instance.read.run_id, filename)
+
+
+class SangerVerificationRun(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    plasmid = models.ForeignKey(Plasmid, on_delete=models.CASCADE, related_name="sanger_verification_runs")
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, blank=True, null=True, related_name="sanger_verification_runs")
+    created_at = models.DateTimeField(auto_now_add=True)
+    sequencing_datetime = models.DateTimeField(blank=True, null=True)
+    label = models.CharField(max_length=200, blank=True)
+    colony = models.CharField(max_length=100, blank=True)
+    sample = models.CharField(max_length=100, blank=True)
+    notes = models.TextField(blank=True)
+    parameters = models.JSONField(default=dict, blank=True)
+    automated_state = models.CharField(max_length=20, choices=SANGER_AUTOMATED_STATES, default="NO_DATA")
+    automated_reasons = models.JSONField(default=list, blank=True)
+    combined_metrics = models.JSONField(default=dict, blank=True)
+    manual_decision = models.CharField(max_length=20, choices=SANGER_MANUAL_DECISIONS, blank=True, default="")
+    manual_decision_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, blank=True, null=True, related_name="sanger_manual_decisions")
+    manual_decision_at = models.DateTimeField(blank=True, null=True)
+    manual_decision_effective_date = models.DateField(blank=True, null=True)
+    manual_decision_comment = models.TextField(blank=True)
+    clustal_file = models.FileField(upload_to="uploads/sequencing_clustal", blank=True, null=True, max_length=500, validators=[clustal_validate])
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        when = self.created_at.strftime("%Y-%m-%d %H:%M") if self.created_at else ""
+        return "{} Sanger {}".format(self.plasmid.name, when)
+
+
+class SangerRead(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    run = models.ForeignKey(SangerVerificationRun, on_delete=models.CASCADE, related_name="reads")
+    name = models.CharField(max_length=255)
+    detected_orientation = models.CharField(max_length=20, choices=SANGER_READ_ORIENTATIONS, default="unmapped")
+    forced_orientation = models.CharField(max_length=20, choices=SANGER_READ_ORIENTATIONS, blank=True, default="")
+    raw_sequence = models.TextField(blank=True)
+    trimmed_sequence = models.TextField(blank=True)
+    selected_source = models.CharField(max_length=20, blank=True)
+    parsing_result = models.JSONField(default=dict, blank=True)
+    quality_metrics = models.JSONField(default=dict, blank=True)
+    alignment_metrics = models.JSONField(default=dict, blank=True)
+    warnings = models.JSONField(default=list, blank=True)
+    is_usable = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+
+class SangerReadFile(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    read = models.ForeignKey(SangerRead, on_delete=models.CASCADE, related_name="files")
+    primer = models.ForeignKey("Primer", on_delete=models.SET_NULL, blank=True, null=True, related_name="sanger_read_files")
+    format = models.CharField(max_length=10, choices=SANGER_FILE_FORMATS)
+    original_name = models.CharField(max_length=255)
+    file = models.FileField(upload_to=sanger_read_file_upload_to, blank=True, max_length=500)
+    sha256 = models.CharField(max_length=64)
+    size = models.PositiveIntegerField(default=0)
+    metadata = models.JSONField(default=dict, blank=True)
+
+    class Meta:
+        ordering = ["format", "original_name"]
+
+
+class SangerVariant(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    run = models.ForeignKey(SangerVerificationRun, on_delete=models.CASCADE, related_name="variants")
+    read = models.ForeignKey(SangerRead, on_delete=models.CASCADE, related_name="variants", blank=True, null=True)
+    coordinate = models.PositiveIntegerField(help_text="0-based plasmid coordinate")
+    variant_type = models.CharField(max_length=20)
+    expected_base = models.CharField(max_length=20, blank=True)
+    observed_base = models.CharField(max_length=20, blank=True)
+    quality = models.IntegerField(blank=True, null=True)
+    evidence = models.JSONField(default=dict, blank=True)
+    flags = models.JSONField(default=list, blank=True)
+
+    class Meta:
+        ordering = ["coordinate", "variant_type"]
+
+
 class Strain(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=200, blank=True)
@@ -401,7 +661,7 @@ class GlycerolStock(models.Model):
     box_row = models.CharField(max_length=1, choices=BOX_ROWS, help_text="Click box position (below) to autocomplete")
     box_column = models.IntegerField(choices=BOX_COLUMNS, help_text="Click box position (below) to autocomplete")
     box = models.ForeignKey(Box, on_delete=models.CASCADE, help_text="Click box position (below) to autocomplete")
-    qr_id = ShortUUIDField(default=shortuuid.uuid(), editable=False)
+    qr_id = ShortUUIDField(default=generate_shortuuid, editable=False)
     details = models.CharField(max_length=1000, blank=True)
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
 
@@ -423,8 +683,7 @@ class Primer(models.Model):
                                   help_text="5' → 3' direction")
     fwd_or_rev = models.CharField(choices=FWD_OR_REV, max_length=1, blank=True)
     intended_use = models.CharField(max_length=1000, blank=True)
-    qr_id = ShortUUIDField(default=shortuuid.uuid(), editable=False)
-    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    qr_id = ShortUUIDField(default=generate_shortuuid, editable=False)
 
     def __str__(self):
         return self.name
@@ -443,3 +702,14 @@ class Stats(models.Model):
     plasmids_by_level = models.JSONField(null=True)
     gs_box_fill = models.JSONField(null=True)
     last_update = models.DateField(auto_now_add=False, default=datetime.date.today)
+
+
+class Experiment(models.Model):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=128, help_text="Experiment name")
+    description = models.CharField(max_length=500, help_text="Experiment description", null=True, blank=True)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, blank=True, null=True)
+    plasmids = models.ManyToManyField(Plasmid, blank=True, related_name='+')
+
+    def __str__(self):
+        return self.name

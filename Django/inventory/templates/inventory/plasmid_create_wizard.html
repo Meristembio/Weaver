@@ -1,0 +1,12 @@
+{% extends "inventory/parts/base.html" %}
+{% block header_object_type %}Plasmid{% endblock %}
+{% block header_object_name %}Create - Wizard{% endblock %}
+{% block content %}
+<div id="form-inventory">
+    <script>
+        window.create_url = "{{create_url}}"
+        window.next_url = "{{next_url}}"
+    </script>
+    <div id="root-assembly_wizard"></div>
+</div>
+{% endblock %}

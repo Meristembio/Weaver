@@ -1,0 +1,146 @@
+{% extends "inventory/parts/base.html" %}
+{% load humanize %}
+
+{% block header_object_name %}
+    PCR
+{% endblock %}
+
+{% block header_object_type %}
+    Services
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-4">
+        <form method="post" class="alert alert-light border">
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                {{ form.non_field_errors }}
+            </div>
+            {% endif %}
+            <div class="mb-3">
+                <label class="form-label" for="{{ form.primer_f.id_for_label }}">{{ form.primer_f.label }}</label>
+                {{ form.primer_f }}
+                {% for error in form.primer_f.errors %}
+                <div class="text-danger small">{{ error }}</div>
+                {% endfor %}
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="{{ form.primer_r.id_for_label }}">{{ form.primer_r.label }}</label>
+                {{ form.primer_r }}
+                {% for error in form.primer_r.errors %}
+                <div class="text-danger small">{{ error }}</div>
+                {% endfor %}
+            </div>
+            <div class="row">
+                <div class="col-sm-6 mb-3">
+                    <label class="form-label" for="{{ form.min_product_size.id_for_label }}">{{ form.min_product_size.label }}</label>
+                    {{ form.min_product_size }}
+                    {% for error in form.min_product_size.errors %}
+                    <div class="text-danger small">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                <div class="col-sm-6 mb-3">
+                    <label class="form-label" for="{{ form.max_product_size.id_for_label }}">{{ form.max_product_size.label }}</label>
+                    {{ form.max_product_size }}
+                    {% for error in form.max_product_size.errors %}
+                    <div class="text-danger small">{{ error }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Search plasmids</button>
+        </form>
+    </div>
+    <div class="col-lg-8">
+        {% if searched %}
+            <div class="alert alert-info border">
+                <strong>{{ results|length }}</strong> amplicon{{ results|length|pluralize }} found for
+                <strong>{{ primer_f }}</strong> + <strong>{{ primer_r }}</strong>.
+                {% if skipped %}
+                <span class="text-secondary">{{ skipped|length }} plasmid{{ skipped|length|pluralize }} skipped because no sequence could be read.</span>
+                {% endif %}
+            </div>
+            {% if primer_complementarity and primer_complementarity.severity != "none" %}
+            <div class="alert alert-warning border">
+                <strong>Primer complementarity: {{ primer_complementarity.severity }}</strong>
+                <div class="small">
+                    Longest match {{ primer_complementarity.max_contiguous }} bp;
+                    3' match {{ primer_complementarity.max_3prime_contiguous }} bp;
+                    both 3' ends {{ primer_complementarity.max_both_3prime_contiguous }} bp.
+                </div>
+                {% if primer_complementarity.warnings %}
+                <div class="small">
+                    {% for warning in primer_complementarity.warnings %}
+                    <div>{{ warning }}</div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% if primer_complementarity.alignment %}
+                <pre class="small mb-0 mt-2">{{ primer_complementarity.alignment.fwd }}
+{{ primer_complementarity.alignment.match }}
+{{ primer_complementarity.alignment.rev }}</pre>
+                {% endif %}
+            </div>
+            {% endif %}
+            {% if results %}
+            <table class="table table-striped table-hover sortable">
+                <thead>
+                <tr>
+                    <th scope="col">Plasmid</th>
+                    <th scope="col">Project</th>
+                    <th scope="col">Product</th>
+                    <th scope="col">Coordinates</th>
+                    <th scope="col">FWD hits</th>
+                    <th scope="col">REV hits</th>
+                    <th scope="col">Delta Tm</th>
+                    <th scope="col">Dimer</th>
+                    <th scope="col" data-defaultsort="disabled"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for result in results %}
+                <tr>
+                    <td><a href="{% url 'plasmid' plasmid_id=result.plasmid.id %}">{{ result.plasmid }}</a></td>
+                    <td>{{ result.project }}</td>
+                    <td>{{ result.amplicon.product_size|intcomma }} bp</td>
+                    <td>
+                        {{ result.amplicon.product_range }}
+                        {% if result.amplicon.circular %}
+                        <span class="badge text-bg-secondary">circular</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ result.amplicon.fwd_hit_count }}</td>
+                    <td>{{ result.amplicon.rev_hit_count }}</td>
+                    <td>{{ result.amplicon.tm_difference|floatformat:"1" }} °C</td>
+                    <td>
+                        {% with dimer=result.amplicon.primer3_dimer %}
+                        <span class="badge {% if dimer.risk == 'HIGH' %}text-bg-danger{% elif dimer.risk == 'MODERATE' %}text-bg-warning{% elif dimer.risk == 'CALCULATION_ERROR' %}text-bg-secondary{% else %}text-bg-light text-dark{% endif %}">
+                            {{ dimer.risk }}
+                        </span>
+                        <div class="small text-secondary">
+                            {% if dimer.dimer_tm_c is not None %}Tm {{ dimer.dimer_tm_c|floatformat:"1" }} °C{% endif %}
+                            {% if dimer.delta_g_kcal_mol is not None %} ΔG {{ dimer.delta_g_kcal_mol|floatformat:"2" }} kcal/mol{% endif %}
+                        </div>
+                        {% endwith %}
+                    </td>
+                    <td>
+                        <a href="{% url 'plasmid_pcr' plasmid_id=result.plasmid.id %}" class="btn btn-sm btn-outline-primary" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Open plasmid PCR">
+                            <i class="bi bi-box-arrow-up-right"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="alert alert-warning">No visible plasmids generated an amplicon with this primer pair.</div>
+            {% endif %}
+        {% else %}
+        <div class="alert alert-secondary border">
+            Select a forward and reverse primer to search all plasmids you can read.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

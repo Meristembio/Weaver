@@ -1,0 +1,11 @@
+{% extends "inventory/parts/primer-base.html" %}
+
+{% block content %}
+{% if primer %}
+<div id="form-inventory">
+    {% include "inventory/parts/inventory_delete_form.html" %}
+</div>
+{% else %}
+<div class="alert alert-warning">No primer found.</div>
+{% endif %}
+{% endblock %}

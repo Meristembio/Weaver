@@ -4,7 +4,6 @@
 {% block header_object_name %}Create{% endblock %}
 
 {% block content %}
-<div id="form-primer">
-    {% include "inventory/parts/inventory_create_form.html" %}
-</div>
+{% url 'primers' as cancel_url %}
+{% include "inventory/parts/inventory_form_panel.html" with form_section_label="Primer" form_title="Create primer" form_description="Add a primer to the global primer inventory." form_icon="bi-plus-square" submit_label="Create primer" submit_icon="bi-plus-lg" cancel_url=cancel_url cancel_label="Back to primers" %}
 {% endblock %}

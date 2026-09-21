@@ -1,0 +1,156 @@
+{% extends "inventory/parts/base.html" %}
+
+{% block header_object_type %}Plasmids{% endblock %}
+{% block header_object_name %}GenBank import{% endblock %}
+{% block header_object_links %}
+    <a href="{% url 'plasmids' %}" class="btn btn-outline-warning" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Return to plasmids"><i class="bi bi-arrow-return-left"></i></a>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-7">
+        <form method="post" enctype="multipart/form-data" class="alert alert-light border">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label class="form-label" for="{{ form.target_mode.id_for_label }}">{{ form.target_mode.label }}</label>
+                {{ form.target_mode }}
+            </div>
+            <div class="mb-3" id="existing-project-fields">
+                <label class="form-label" for="{{ form.project.id_for_label }}">{{ form.project.label }}</label>
+                {{ form.project }}
+                <div class="form-text">
+                    {% if current_project %}
+                    Current project: <strong>{{ current_project }}</strong>. It is selected by default when you can write to it.
+                    {% else %}
+                    Choose any project where you have write or admin access.
+                    {% endif %}
+                </div>
+                {% for error in form.project.errors %}
+                <div class="text-danger small">{{ error }}</div>
+                {% endfor %}
+            </div>
+            <div id="new-project-fields" class="alert alert-secondary border d-none">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <div class="fw-semibold">Create a new destination project</div>
+                        <div class="small text-muted">Provide the new project name and choose its cloning standard.</div>
+                    </div>
+                    <button type="button" class="btn-close" id="cancel-new-project" aria-label="Back to existing project selection"></button>
+                </div>
+                <div class="row">
+                    <div class="col-md-8 mb-3">
+                        <label class="form-label" for="{{ form.new_project_name.id_for_label }}">{{ form.new_project_name.label }}</label>
+                        {{ form.new_project_name }}
+                        {% for error in form.new_project_name.errors %}
+                        <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label" for="{{ form.new_project_assembly_standard.id_for_label }}">{{ form.new_project_assembly_standard.label }}</label>
+                        {{ form.new_project_assembly_standard }}
+                    </div>
+                </div>
+                <div class="form-check mb-0">
+                    {{ form.new_project_public }}
+                    <label class="form-check-label" for="{{ form.new_project_public.id_for_label }}">{{ form.new_project_public.label }}</label>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="{{ form.genbank_files.id_for_label }}">{{ form.genbank_files.label }}</label>
+                {{ form.genbank_files }}
+                <div class="form-text">Upload one or more `.gb`, `.gbk`, or `.genbank` files.</div>
+                {% for error in form.genbank_files.errors %}
+                <div class="text-danger small">{{ error }}</div>
+                {% endfor %}
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="{{ form.name_source.id_for_label }}">{{ form.name_source.label }}</label>
+                {{ form.name_source }}
+            </div>
+            <div class="form-check mb-2">
+                {{ form.update_existing }}
+                <label class="form-check-label" for="{{ form.update_existing.id_for_label }}">{{ form.update_existing.label }}</label>
+            </div>
+            <div class="form-check mb-2">
+                {{ form.reference_sequence }}
+                <label class="form-check-label" for="{{ form.reference_sequence.id_for_label }}">{{ form.reference_sequence.label }}</label>
+            </div>
+            <div class="form-check mb-2">
+                {{ form.public_visibility }}
+                <label class="form-check-label" for="{{ form.public_visibility.id_for_label }}">{{ form.public_visibility.label }}</label>
+            </div>
+            <div class="form-check mb-3">
+                {{ form.infer_ytk_metadata }}
+                <label class="form-check-label" for="{{ form.infer_ytk_metadata.id_for_label }}">{{ form.infer_ytk_metadata.label }}</label>
+            </div>
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                {{ form.non_field_errors }}
+            </div>
+            {% endif %}
+            <button type="submit" class="btn btn-primary"><i class="bi bi-upload"></i> Import plasmids</button>
+        </form>
+    </div>
+    <div class="col-lg-5">
+        <div class="alert alert-info border">
+            <h5>How it works</h5>
+            <p class="mb-2">Each GenBank file becomes one plasmid in the selected destination project.</p>
+            <p class="mb-2">Weaver stores the original GenBank file as the plasmid sequence file, so the plasmid viewer can render annotated features directly.</p>
+            <p class="mb-2">If you create a new project here, Weaver will switch your current project to it after import.</p>
+            <p class="mb-0">When YTK-like restriction site annotations are present, Weaver can infer a conservative subset of metadata such as resistance marker, type, and level.</p>
+        </div>
+    </div>
+</div>
+
+{% if result %}
+<div class="alert alert-success">
+    Created {{ result.created }}, updated {{ result.updated }}, skipped {{ result.skipped }}, errors {{ result.errors }}.
+</div>
+{% if result.messages %}
+<div class="alert alert-light border">
+    <h5>Import log</h5>
+    <div class="small">
+        {% for message in result.messages %}
+        <div class="text-{{ message.level }}">{{ message.text }}</div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% endif %}
+<script>
+    (function () {
+        const targetMode = document.getElementById("{{ form.target_mode.id_for_label }}");
+        const existingProjectFields = document.getElementById("existing-project-fields");
+        const newProjectFields = document.getElementById("new-project-fields");
+        const cancelNewProjectButton = document.getElementById("cancel-new-project");
+        const newProjectName = document.getElementById("{{ form.new_project_name.id_for_label }}");
+
+        if (!targetMode || !existingProjectFields || !newProjectFields) {
+            return;
+        }
+
+        function syncTargetMode(focusNewName) {
+            const useNewProject = targetMode.value === "new";
+            existingProjectFields.classList.toggle("d-none", useNewProject);
+            newProjectFields.classList.toggle("d-none", !useNewProject);
+
+            if (useNewProject && focusNewName && newProjectName) {
+                newProjectName.focus();
+            }
+        }
+
+        targetMode.addEventListener("change", function () {
+            syncTargetMode(targetMode.value === "new");
+        });
+
+        if (cancelNewProjectButton) {
+            cancelNewProjectButton.addEventListener("click", function () {
+                targetMode.value = "existing";
+                syncTargetMode(false);
+            });
+        }
+
+        syncTargetMode(false);
+    })();
+</script>
+{% endblock %}

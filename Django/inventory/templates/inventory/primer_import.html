@@ -1,0 +1,70 @@
+{% extends "inventory/parts/base.html" %}
+
+{% block header_object_type %}Primers{% endblock %}
+{% block header_object_name %}Batch upload{% endblock %}
+{% block header_object_links %}
+    <a href="{% url 'primers' %}" class="btn btn-outline-warning" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Return to primers"><i class="bi bi-arrow-return-left"></i></a>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-7">
+        <form method="post" enctype="multipart/form-data" class="alert alert-light border">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label class="form-label" for="{{ form.fasta_file.id_for_label }}">{{ form.fasta_file.label }}</label>
+                {{ form.fasta_file }}
+                {% for error in form.fasta_file.errors %}
+                <div class="text-danger small">{{ error }}</div>
+                {% endfor %}
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="{{ form.name_source.id_for_label }}">{{ form.name_source.label }}</label>
+                {{ form.name_source }}
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="{{ form.default_direction.id_for_label }}">{{ form.default_direction.label }}</label>
+                {{ form.default_direction }}
+                <div class="form-text">Use Forward when primer names do not include F or R.</div>
+            </div>
+            <div class="form-check mb-3">
+                {{ form.update_existing }}
+                <label class="form-check-label" for="{{ form.update_existing.id_for_label }}">{{ form.update_existing.label }}</label>
+            </div>
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                {{ form.non_field_errors }}
+            </div>
+            {% endif %}
+            <button type="submit" class="btn btn-primary"><i class="bi bi-upload"></i> Import primers</button>
+        </form>
+    </div>
+    <div class="col-lg-5">
+        <div class="alert alert-info border">
+            <h5>FASTA format</h5>
+            <p class="mb-2">Each FASTA record becomes one primer in the global primer inventory.</p>
+            <pre class="mb-0">&gt;1001-L0-P3a-ATR-F overhang=aaCGTCTCtctcc
+aaCGTCTCtctccTATGACTTCTGCTTTGTATGCATCAG
+&gt;1002-L0-P3a-ATR overhang=aaCGTCTCtctcc direction=F
+aaCGTCTCtctccTATGACTTCTGCTTTGTATGCATCAG</pre>
+            <div class="form-text">Supported header fields: overhang, direction, intended_use. When a declared overhang is present at the start of the FASTA sequence, Weaver stores it as the 5' overhang and imports the remaining bases as the hybridizing 3' sequence.</div>
+        </div>
+    </div>
+</div>
+
+{% if result %}
+<div class="alert alert-success">
+    Created {{ result.created }}, updated {{ result.updated }}, skipped {{ result.skipped }}, errors {{ result.errors }}.
+</div>
+{% if result.messages %}
+<div class="alert alert-light border">
+    <h5>Import log</h5>
+    <div class="small">
+        {% for message in result.messages %}
+        <div class="text-{{ message.level }}">{{ message.text }}</div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% endif %}
+{% endblock %}

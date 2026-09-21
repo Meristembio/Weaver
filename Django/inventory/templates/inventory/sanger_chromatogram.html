@@ -1,0 +1,532 @@
+{% extends "inventory/parts/plasmid-base.html" %}
+
+{% block content %}
+<style>
+    .chrom-viewer {
+        min-height: calc(100vh - 140px);
+    }
+    .chrom-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: .55rem;
+        margin: 1rem 0;
+    }
+    .chrom-toolbar .form-range {
+        width: 180px;
+    }
+    .chrom-toolbar #chrom-zoom {
+        border: 0;
+        padding: 0;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+    }
+    .chrom-toolbar #chrom-zoom:focus {
+        outline: 0;
+        box-shadow: none;
+    }
+    .chrom-panel {
+        position: relative;
+        height: 560px;
+        border: 1px solid #49525c;
+        border-radius: 8px;
+        background: #101214;
+        overflow: hidden;
+    }
+    .chrom-panel canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        cursor: grab;
+    }
+    .chrom-panel.is-dragging canvas {
+        cursor: grabbing;
+    }
+    .chrom-tooltip {
+        position: absolute;
+        display: none;
+        z-index: 5;
+        max-width: 320px;
+        padding: .35rem .5rem;
+        border: 1px solid #59636f;
+        border-radius: 6px;
+        background: rgba(20, 24, 28, .94);
+        color: #e7edf4;
+        font-size: .85rem;
+        pointer-events: none;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, .25);
+    }
+    .chrom-status {
+        color: #aeb9c5;
+        font-size: .9rem;
+    }
+    .chrom-base-a { color: #23d03f; }
+    .chrom-base-c { color: #7fa1ff; }
+    .chrom-base-g { color: #e6e6e6; }
+    .chrom-base-t { color: #ff3b30; }
+</style>
+
+<div class="chrom-viewer">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+        <div>
+            <h2 class="mb-1">Sanger chromatogram</h2>
+            <div class="text-muted">{{ source_file_name }}</div>
+            <div class="text-muted">{{ plasmid.name }} | {{ read_data.alignment.orientation|default:"unmapped" }}</div>
+        </div>
+        <a class="btn btn-outline-primary btn-sm" href="{% url 'sanger_run_detail' plasmid_id=plasmid.id run_id=run.id %}">Back to alignment</a>
+    </div>
+
+    <div class="chrom-toolbar">
+        <button class="btn btn-outline-primary btn-sm active" type="button" id="chrom-standard">Standard</button>
+        <button class="btn btn-outline-primary btn-sm" type="button" id="chrom-autoscale">Autoscaled</button>
+        <button class="btn btn-outline-primary btn-sm" type="button" id="chrom-left">&larr;</button>
+        <button class="btn btn-outline-primary btn-sm" type="button" id="chrom-right">&rarr;</button>
+        <label class="text-muted ms-2" for="chrom-zoom">Zoom</label>
+        <input type="range" class="form-range" min="20" max="300" value="80" id="chrom-zoom">
+        <span class="chrom-status" id="chrom-window-label"></span>
+        <label class="text-muted ms-2" for="chrom-base-jump">Base</label>
+        <input type="number" class="form-control form-control-sm" id="chrom-base-jump" min="1" style="width: 92px;">
+        <button class="btn btn-outline-primary btn-sm" type="button" id="chrom-jump">Go</button>
+    </div>
+
+    <div class="chrom-panel" id="chrom-panel">
+        <canvas id="chrom-canvas"></canvas>
+        <div class="chrom-tooltip" id="chrom-tooltip"></div>
+    </div>
+</div>
+
+<script>
+(function () {
+    const plasmidHeader = document.getElementById("header-container");
+    if (!plasmidHeader) return;
+    if ("scrollRestoration" in window.history) window.history.scrollRestoration = "manual";
+    let scrollAnimationFrame = null;
+    function scrollToPlasmidHeader() {
+        const targetTop = plasmidHeader.getBoundingClientRect().top + window.scrollY;
+        const startTop = window.scrollY;
+        const distance = Math.max(0, targetTop) - startTop;
+        if (Math.abs(distance) < 1) return;
+        if (scrollAnimationFrame) window.cancelAnimationFrame(scrollAnimationFrame);
+        const startTime = performance.now();
+        const duration = 500;
+        function animateScroll(now) {
+            const progress = Math.min(1, (now - startTime) / duration);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            window.scrollTo(0, startTop + distance * eased);
+            if (progress < 1) scrollAnimationFrame = window.requestAnimationFrame(animateScroll);
+            else scrollAnimationFrame = null;
+        }
+        scrollAnimationFrame = window.requestAnimationFrame(animateScroll);
+    }
+    function settleScroll() {
+        window.requestAnimationFrame(function () {
+            window.requestAnimationFrame(scrollToPlasmidHeader);
+        });
+    }
+    if (document.readyState === "complete") settleScroll();
+    else window.addEventListener("load", settleScroll, {once: true});
+    window.setTimeout(scrollToPlasmidHeader, 180);
+})();
+</script>
+
+<script>
+(function () {
+    const data = JSON.parse("{{ chromatogram_data|escapejs }}");
+    const chrom = data.chromatogram || {};
+    const canvas = document.getElementById("chrom-canvas");
+    const panel = document.getElementById("chrom-panel");
+    const tooltip = document.getElementById("chrom-tooltip");
+    const zoom = document.getElementById("chrom-zoom");
+    const label = document.getElementById("chrom-window-label");
+    const standardBtn = document.getElementById("chrom-standard");
+    const autoscaleBtn = document.getElementById("chrom-autoscale");
+    const leftBtn = document.getElementById("chrom-left");
+    const rightBtn = document.getElementById("chrom-right");
+    const jumpInput = document.getElementById("chrom-base-jump");
+    const jumpBtn = document.getElementById("chrom-jump");
+    const traces = [
+        ["aTrace", "#23d03f", "A"],
+        ["cTrace", "#7fa1ff", "C"],
+        ["gTrace", "#e6e6e6", "G"],
+        ["tTrace", "#ff3b30", "T"],
+    ];
+    const basePos = chrom.basePos || [];
+    const baseCalls = chrom.baseCalls || [];
+    const qualities = chrom.qualNums || [];
+    const traceLength = (chrom.aTrace || []).length;
+    if (!canvas || !panel || !traceLength || !basePos.length) return;
+
+    const minimumBaseSpacing = 18;
+    zoom.max = String(Math.max(20, Math.min(600, basePos.length)));
+    zoom.value = String(Math.min(100, Math.max(20, Math.floor(basePos.length / 8))));
+    jumpInput.max = String(basePos.length);
+
+    let startTrace = 0;
+    let autoscaled = false;
+    let selectedBaseIndex = null;
+    let dragging = false;
+    let dragStartX = 0;
+    let dragStartTrace = 0;
+    let animatedScaleMax = null;
+    let scaleAnimationFrame = null;
+
+    function medianSpacing() {
+        const spacings = [];
+        for (let i = 1; i < basePos.length; i += 1) {
+            const spacing = Number(basePos[i]) - Number(basePos[i - 1]);
+            if (spacing > 0) spacings.push(spacing);
+        }
+        spacings.sort((a, b) => a - b);
+        return spacings.length ? spacings[Math.floor(spacings.length / 2)] : Math.max(1, traceLength / Math.max(1, basePos.length));
+    }
+    const tracePerBase = medianSpacing();
+
+    function visibleTracePoints() {
+        return Math.max(80, Number(zoom.value) * tracePerBase);
+    }
+    function maxVisibleBases() {
+        const panelWidth = panel.getBoundingClientRect().width;
+        const spacingLimitedBases = Math.floor(panelWidth / minimumBaseSpacing);
+        return Math.max(20, Math.min(600, basePos.length, spacingLimitedBases));
+    }
+    function updateZoomBounds() {
+        const maximum = maxVisibleBases();
+        zoom.max = String(maximum);
+        if (Number(zoom.value) > maximum) zoom.value = String(maximum);
+    }
+    function clampStart(next) {
+        return Math.max(0, Math.min(Math.round(next), Math.max(0, traceLength - visibleTracePoints())));
+    }
+    function setStart(next) {
+        startTrace = clampStart(next);
+        draw();
+    }
+    function baseIndexAtTrace(tracePosition) {
+        let bestIndex = 0;
+        let bestDistance = Math.abs(Number(basePos[0]) - tracePosition);
+        for (let i = 1; i < basePos.length; i += 1) {
+            const distance = Math.abs(Number(basePos[i]) - tracePosition);
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                bestIndex = i;
+            }
+        }
+        return bestDistance <= Math.max(16, tracePerBase * .75) ? bestIndex : null;
+    }
+    function baseColor(base) {
+        if (base === "A") return "#23d03f";
+        if (base === "C") return "#7fa1ff";
+        if (base === "G") return "#e6e6e6";
+        if (base === "T") return "#ff3b30";
+        return "#aab4be";
+    }
+    function qualityColor(q) {
+        if (q === null || q === undefined) return "#aab4be";
+        if (q >= 30) return "#5bd475";
+        if (q >= 20) return "#ffc107";
+        return "#ff6b7a";
+    }
+    function qualityText(q) {
+        if (q === null || q === undefined) return "Q not available";
+        if (q >= 30) return `Q${q} high confidence`;
+        if (q >= 20) return `Q${q} usable`;
+        return `Q${q} low confidence`;
+    }
+    function regionForBase(baseIndex, level) {
+        const metrics = data.qualityMetrics || {};
+        const regions = level === "intermediate" ? (metrics.intermediate_confidence_regions || []) : (metrics.low_confidence_regions || []);
+        return regions.find((region) => baseIndex >= Number(region.start) && baseIndex <= Number(region.end));
+    }
+    function resize() {
+        const ratio = window.devicePixelRatio || 1;
+        const rect = panel.getBoundingClientRect();
+        canvas.width = Math.max(1, Math.floor(rect.width * ratio));
+        canvas.height = Math.max(1, Math.floor(rect.height * ratio));
+        canvas.style.width = `${rect.width}px`;
+        canvas.style.height = `${rect.height}px`;
+        updateZoomBounds();
+        const ctx = canvas.getContext("2d");
+        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    }
+    function maxSignal(start, end) {
+        let max = 1;
+        const rangeStart = autoscaled ? start : 0;
+        const rangeEnd = autoscaled ? end : traceLength;
+        traces.forEach(([key]) => {
+            const values = chrom[key] || [];
+            for (let i = rangeStart; i < rangeEnd && i < values.length; i += 1) {
+                if (values[i] > max) max = values[i];
+            }
+        });
+        return max;
+    }
+    function animateScale(fromScale) {
+        if (scaleAnimationFrame !== null) cancelAnimationFrame(scaleAnimationFrame);
+        const endTrace = Math.min(traceLength, startTrace + visibleTracePoints());
+        const targetScale = maxSignal(startTrace, endTrace);
+        const startScale = Number.isFinite(fromScale) ? fromScale : targetScale;
+        const duration = 280;
+        const animationStart = performance.now();
+        function frame(now) {
+            const rawProgress = Math.min(1, (now - animationStart) / duration);
+            const progress = rawProgress < .5
+                ? 2 * rawProgress * rawProgress
+                : 1 - Math.pow(-2 * rawProgress + 2, 2) / 2;
+            animatedScaleMax = startScale + (targetScale - startScale) * progress;
+            draw();
+            if (rawProgress < 1) {
+                scaleAnimationFrame = requestAnimationFrame(frame);
+            } else {
+                animatedScaleMax = null;
+                scaleAnimationFrame = null;
+            }
+        }
+        scaleAnimationFrame = requestAnimationFrame(frame);
+    }
+    function drawRegions(ctx, start, end, width) {
+        const metrics = data.qualityMetrics || {};
+        const indicatorTop = 0;
+        const indicatorHeight = 18;
+        function shade(regions, color, labelText) {
+            (regions || []).forEach((region) => {
+                const leftBase = Math.max(0, Number(region.start || 0));
+                const rightBase = Math.min(basePos.length - 1, Number(region.end || 0));
+                if (rightBase < leftBase) return;
+                const leftTrace = Number(basePos[leftBase]);
+                const rightTrace = Number(basePos[rightBase]);
+                if (rightTrace < start || leftTrace > end) return;
+                const x1 = Math.max(0, (leftTrace - start) / (end - start) * width);
+                const x2 = Math.min(width, (rightTrace - start) / (end - start) * width);
+                ctx.fillStyle = color;
+                ctx.fillRect(x1, indicatorTop, Math.max(4, x2 - x1), indicatorHeight);
+                if (labelText) {
+                    ctx.save();
+                    ctx.font = "10px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+                    const labelWidth = ctx.measureText(labelText).width;
+                    if (x2 - x1 >= labelWidth + 12) {
+                        const labelCenter = Math.max(
+                            x1 + labelWidth / 2 + 6,
+                            Math.min(x2 - labelWidth / 2 - 6, width / 2),
+                        );
+                        ctx.fillStyle = "#101214";
+                        ctx.textAlign = "center";
+                        ctx.textBaseline = "middle";
+                        ctx.fillText(labelText, labelCenter, indicatorTop + indicatorHeight / 2);
+                    }
+                    ctx.restore();
+                }
+            });
+        }
+        shade(metrics.intermediate_confidence_regions, "rgba(255, 209, 102, .75)", "");
+        shade(metrics.low_confidence_regions, "rgba(154, 161, 169, .85)", "Low confidence");
+    }
+    function draw() {
+        resize();
+        startTrace = clampStart(startTrace);
+        const ctx = canvas.getContext("2d");
+        const rect = panel.getBoundingClientRect();
+        const width = rect.width;
+        const height = rect.height;
+        const top = 98;
+        const bottom = 48;
+        const plotHeight = height - top - bottom;
+        const visible = visibleTracePoints();
+        const endTrace = Math.min(traceLength, startTrace + visible);
+        const scaleMax = animatedScaleMax === null
+            ? maxSignal(startTrace, endTrace)
+            : animatedScaleMax;
+
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = "#101214";
+        ctx.fillRect(0, 0, width, height);
+        drawRegions(ctx, startTrace, endTrace, width);
+
+        ctx.strokeStyle = "#303841";
+        ctx.fillStyle = "#8fa0b2";
+        ctx.font = "12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+        for (let i = Math.ceil(startTrace / 100) * 100; i < endTrace; i += 100) {
+            const x = (i - startTrace) / visible * width;
+            ctx.beginPath();
+            ctx.moveTo(x, top - 46);
+            ctx.lineTo(x, height - bottom + 18);
+            ctx.stroke();
+            ctx.fillText(String(i), x + 4, height - 14);
+        }
+
+        ctx.font = "15px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+        for (let i = 0; i < basePos.length; i += 1) {
+            const pos = Number(basePos[i]);
+            if (pos < startTrace || pos > endTrace) continue;
+            const x = (pos - startTrace) / visible * width;
+            const base = baseCalls[i] || "";
+            ctx.fillStyle = baseColor(base);
+            ctx.fillText(base, x - 4, 38);
+            if (qualities[i] !== undefined) {
+                ctx.fillStyle = qualityColor(qualities[i]);
+                ctx.fillRect(x - 3, 48, 6, 4);
+            }
+        }
+
+        traces.forEach(([key, color]) => {
+            const values = chrom[key] || [];
+            const baseline = top + plotHeight;
+            let firstX = null;
+            let lastX = null;
+            ctx.beginPath();
+            let started = false;
+            for (let i = startTrace; i <= endTrace && i < values.length; i += 1) {
+                const x = (i - startTrace) / visible * width;
+                const y = top + plotHeight - (values[i] / scaleMax * plotHeight);
+                if (!started) {
+                    ctx.moveTo(x, baseline);
+                    ctx.lineTo(x, y);
+                    firstX = x;
+                    started = true;
+                } else {
+                    ctx.lineTo(x, y);
+                }
+                lastX = x;
+            }
+            if (started) {
+                ctx.lineTo(lastX, baseline);
+                ctx.lineTo(firstX, baseline);
+                ctx.closePath();
+                ctx.fillStyle = color;
+                ctx.globalAlpha = .12;
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 1.35;
+            ctx.beginPath();
+            started = false;
+            for (let i = startTrace; i <= endTrace && i < values.length; i += 1) {
+                const x = (i - startTrace) / visible * width;
+                const y = top + plotHeight - (values[i] / scaleMax * plotHeight);
+                if (!started) {
+                    ctx.moveTo(x, y);
+                    started = true;
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            ctx.stroke();
+        });
+
+        if (selectedBaseIndex !== null && basePos[selectedBaseIndex] >= startTrace && basePos[selectedBaseIndex] <= endTrace) {
+            const x = (Number(basePos[selectedBaseIndex]) - startTrace) / visible * width;
+            ctx.fillStyle = "rgba(13, 110, 253, .34)";
+            ctx.fillRect(x - 10, top - 44, 20, plotHeight + 58);
+            ctx.strokeStyle = "#0d6efd";
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(x, top - 48);
+            ctx.lineTo(x, height - bottom + 20);
+            ctx.stroke();
+        }
+
+        ctx.strokeStyle = "#7d8895";
+        ctx.beginPath();
+        ctx.moveTo(0, top + plotHeight);
+        ctx.lineTo(width, top + plotHeight);
+        ctx.stroke();
+
+        const leftBase = Math.max(1, (baseIndexAtTrace(startTrace) || 0) + 1);
+        const rightBaseIndex = baseIndexAtTrace(endTrace) || basePos.length - 1;
+        label.textContent = `bases ${leftBase}..${rightBaseIndex + 1} | ${Number(zoom.value)} bases visible | ${autoscaled ? "autoscaled" : "standard scale"}`;
+    }
+    function showTooltip(event) {
+        const rect = panel.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const tracePosition = startTrace + x / Math.max(1, rect.width) * visibleTracePoints();
+        const baseIndex = baseIndexAtTrace(tracePosition);
+        if (baseIndex === null) {
+            tooltip.style.display = "none";
+            return;
+        }
+        const base = baseCalls[baseIndex] || "";
+        const q = qualities[baseIndex];
+        const lowRegion = regionForBase(baseIndex, "low");
+        const midRegion = regionForBase(baseIndex, "intermediate");
+        const region = lowRegion || midRegion;
+        const regionText = region ? ` | ${region.level}: ${region.start_display}..${region.end_display}` : "";
+        tooltip.innerHTML = `Base ${baseIndex + 1}: <span class="chrom-base-${String(base).toLowerCase()}">${base}</span> | ${qualityText(q)}${regionText}`;
+        tooltip.style.display = "block";
+        tooltip.style.left = `${Math.min(rect.width - tooltip.offsetWidth - 8, Math.max(8, x + 12))}px`;
+        tooltip.style.top = `${Math.max(8, event.clientY - rect.top - 36)}px`;
+    }
+    panel.addEventListener("pointerdown", function (event) {
+        dragging = true;
+        dragStartX = event.clientX;
+        dragStartTrace = startTrace;
+        panel.classList.add("is-dragging");
+        panel.setPointerCapture(event.pointerId);
+    });
+    panel.addEventListener("pointermove", function (event) {
+        if (dragging) {
+            const dx = event.clientX - dragStartX;
+            setStart(dragStartTrace - dx / panel.getBoundingClientRect().width * visibleTracePoints());
+            return;
+        }
+        showTooltip(event);
+    });
+    panel.addEventListener("pointerup", function () {
+        dragging = false;
+        panel.classList.remove("is-dragging");
+    });
+    panel.addEventListener("pointerleave", function () {
+        dragging = false;
+        panel.classList.remove("is-dragging");
+        tooltip.style.display = "none";
+    });
+    panel.addEventListener("click", function (event) {
+        if (Math.abs(event.clientX - dragStartX) > 3) return;
+        const rect = panel.getBoundingClientRect();
+        const tracePosition = startTrace + (event.clientX - rect.left) / Math.max(1, rect.width) * visibleTracePoints();
+        const clickedBaseIndex = baseIndexAtTrace(tracePosition);
+        if (clickedBaseIndex === selectedBaseIndex) {
+            selectedBaseIndex = null;
+            jumpInput.value = "";
+        } else {
+            selectedBaseIndex = clickedBaseIndex;
+            if (selectedBaseIndex !== null) jumpInput.value = String(selectedBaseIndex + 1);
+        }
+        draw();
+    });
+    panel.addEventListener("wheel", function (event) {
+        event.preventDefault();
+        const delta = event.deltaX !== 0 ? event.deltaX : event.deltaY;
+        setStart(startTrace + delta / Math.max(1, panel.getBoundingClientRect().width) * visibleTracePoints());
+    }, { passive: false });
+    leftBtn.addEventListener("click", function () { setStart(startTrace - visibleTracePoints() * .5); });
+    rightBtn.addEventListener("click", function () { setStart(startTrace + visibleTracePoints() * .5); });
+    zoom.addEventListener("input", draw);
+    standardBtn.addEventListener("click", function () {
+        const endTrace = Math.min(traceLength, startTrace + visibleTracePoints());
+        const fromScale = animatedScaleMax === null ? maxSignal(startTrace, endTrace) : animatedScaleMax;
+        autoscaled = false;
+        standardBtn.classList.add("active");
+        autoscaleBtn.classList.remove("active");
+        animateScale(fromScale);
+    });
+    autoscaleBtn.addEventListener("click", function () {
+        const endTrace = Math.min(traceLength, startTrace + visibleTracePoints());
+        const fromScale = animatedScaleMax === null ? maxSignal(startTrace, endTrace) : animatedScaleMax;
+        autoscaled = true;
+        autoscaleBtn.classList.add("active");
+        standardBtn.classList.remove("active");
+        animateScale(fromScale);
+    });
+    jumpBtn.addEventListener("click", function () {
+        const baseIndex = Number(jumpInput.value) - 1;
+        if (Number.isNaN(baseIndex) || baseIndex < 0 || baseIndex >= basePos.length) return;
+        selectedBaseIndex = baseIndex;
+        setStart(Number(basePos[baseIndex]) - visibleTracePoints() / 2);
+    });
+    window.addEventListener("resize", draw);
+    draw();
+})();
+</script>
+{% endblock %}

@@ -50,6 +50,7 @@ function onReady(){
     /* select2 */
     var select2_ids = '#id_backbone, #id_inserts, #id_parent, #id_plasmid, #id_primer_f, #id_primer_r';
     $(select2_ids).select2();
+    /* plasmid table massive actions */
     /* tooltips bootstrap */
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
     var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
@@ -76,7 +77,11 @@ function onReady(){
     /* filters */
     var filter_buttons = $('.pe-table-filter-button');
     var filter_items = $('.filter-item');
-    filter_buttons.click(function(){
+    function resetTableFilters() {
+        filter_buttons.removeClass('active');
+        filter_items.removeClass('filter-hide');
+    }
+    filter_buttons.off("click").on("click", function(){
         filter_buttons.removeClass('active');
         $(this).addClass('active');
         var filter_id = $(this).attr('data-target');
@@ -98,6 +103,13 @@ function onReady(){
             }
         });
     });
+    $('#pe-table-filter-clear').off("click").on("click", function(){
+        resetTableFilters();
+        filter_buttons.filter('[data-target="all"]').first().addClass('active');
+    });
+    if (filter_buttons.length && !filter_buttons.filter('.active').length) {
+        filter_buttons.filter('[data-target="all"]').first().addClass('active');
+    }
     /* show_from_all_projects */
     $('#show_from_all_projects').click(function(){
         $(this).parent().submit();
@@ -124,11 +136,11 @@ function saveOVE(sequenceDataToSave) {
 }
 
 function expandName(){
-    var elements = $('#plasmids-table td a:first-child span.plasmid_list-name');
+    var elements = $('#plasmids-table td a:first-child button.plasmid_list-name');
     if($('#table_search-expand').is(":checked")){
         elements.each(function(){
             $(this).attr('data-short', $(this).html())
-            $(this).html($(this).parent().parent().attr('data-name'))
+            $(this).html($(this).parent().attr('data-name'))
         })
     } else {
         elements.each(function(){

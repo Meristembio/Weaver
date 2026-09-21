@@ -2,22 +2,27 @@
 
 {% block content %}
 {% if glycerolstock %}
-<div id="form-inventory">
-    {% include "inventory/parts/inventory_update_form.html" %}
+{% url 'glycerolstock' glycerolstock_id=glycerolstock.id as cancel_url %}
+<div class="glycerolstock-edit-page">
+    {% include "inventory/parts/inventory_form_panel.html" with form_section_label="Stock" form_title="Edit glycerol stock" form_description="Update the strain, plasmid and storage details." form_icon="bi-box-seam" submit_label="Save glycerol stock" submit_icon="bi-check-lg" cancel_url=cancel_url cancel_label="Back to stock" %}
+
+    <section class="glycerolstock-create-boxes">
+        <div class="glycerolstock-create-section-heading">
+            <div>
+                <span class="glycerolstock-create-kicker">Storage</span>
+                <h2>GS boxes</h2>
+            </div>
+            <span class="text-secondary small">Select a position to update the form.</span>
+        </div>
+        {% if collection.locations %}
+        {% for location in collection.locations %}
+            {% include "./glycerolstock_render_boxes.html" %}
+        {% endfor %}
+        {% else %}
+        <div class="alert alert-warning">No storage locations found.</div>
+        {% endif %}
+    </section>
 </div>
-<div class="extra_header">
-    <h1>GS Boxes</h1>
-</div>
-{% if collection.locations %}
-<div class="alert alert-info">
-    <p>Click box position to autocomplete form</p>
-</div>
-{% for location in collection.locations %}
-    {% include "./glycerolstock_render_boxes.html" %}
-{% endfor %}
-{% else %}
-<div class="alert alert-warning">No locations found.</div>
-{% endif %}
 {% else %}
 <div class="alert alert-warning">No Glycerol stock found.</div>
 {% endif %}

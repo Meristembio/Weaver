@@ -88,14 +88,15 @@
                 <a href="{% url 'plasmid_pcr' plasmid_id=plasmid.id %}" class="btn btn-outline-success"
                            role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="PCR"><i class="bi bi-arrow-return-right"></i></a>
                 <div class="dropdown dropdown-align" data-bs-toggle="tooltip" data-bs-placement="top" title="Align">
-                    <button type="button" class="btn btn-outline-warning dropdown-toggle" id="dropdownAlign" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-list-nested"></i>
+                    <button type="button" class="btn btn-outline-warning dropdown-toggle" id="dropdownAlign" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-list-nested"></i>
                     </button>
-                    <div class="dropdown-menu p-2 fw-light " aria-labelledby="dropdownAlign">
+                    <div class="dropdown-menu p-2 fw-light" aria-labelledby="dropdownAlign">
                         <div class="dropdown-menu-header">Choose type</div>
                         <hr class="m-1"/>
                         <div class="dropdown-menu-body pt-1">
-                            <a href="{% url 'plasmid_align_fasta' plasmid_id=plasmid.id %}" class="btn btn-outline-primary btn-sm me-1" role="button" >Fasta</a>
-                            <a href="{% url 'plasmid_align_sanger' plasmid_id=plasmid.id %}" class="btn btn-outline-primary btn-sm me-1" role="button" >Sanger</a>
+                            <a href="{% url 'plasmid_align_fasta' plasmid_id=plasmid.id %}" class="btn btn-outline-primary btn-sm me-1" role="button">Fasta</a>
+                            <a href="{% url 'plasmid_align_sanger' plasmid_id=plasmid.id %}" class="btn btn-outline-primary btn-sm me-1" role="button">Sanger</a>
                         </div>
                     </div>
                 </div>
@@ -190,9 +191,22 @@
     <tr>
         <th scope="row">Insert of</th>
         <td>
-            {% for pr in plasmid.insert_of %}
-                {% include "inventory/parts/plasmid-button.html" %}
-            {% endfor %}
+            <div class="accordion" id="accordionInsertOf">
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseInsertOf" aria-expanded="true" aria-controls="collapseInsertOf">
+                        Insert of
+                        </button>
+                    </h2>
+                    <div id="collapseInsertOf" class="accordion-collapse collapse" data-bs-parent="#accordionInsertOf">
+                        <div class="accordion-body">
+                            {% for pr in plasmid.insert_of %}
+                                {% include "inventory/parts/plasmid-button.html" %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
         </td>
     </tr>
     {% endif %}
@@ -200,25 +214,89 @@
     <tr>
         <th scope="row">Backbone of</th>
         <td>
-            {% for pr in plasmid.backbone_of %}
-                {% include "inventory/parts/plasmid-button.html" %}
-            {% endfor %}
+            <div class="accordion" id="accordionBackboneOf">
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBackboneOf" aria-expanded="true" aria-controls="collapseBackboneOf">
+                        Backbone of
+                        </button>
+                    </h2>
+                    <div id="collapseBackboneOf" class="accordion-collapse collapse" data-bs-parent="#accordionBackboneOf">
+                        <div class="accordion-body">
+                            {% for pr in plasmid.backbone_of %}
+                                {% include "inventory/parts/plasmid-button.html" %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
         </td>
     </tr>
     {% endif %}
     <tr>
-        <th scope="row">Ligation</th>
+        <th scope="row">Assembly</th>
         <td>
             <table class="table table-hover">
                 <tbody>
                 <tr>
-                    <th>Text</th>
+                    <th>Working stock concentration</th>
+                    <td>
+                        {{plasmid.ligation_concentration}}
+                    </td>
+                </tr>
+                <tr>
+                    <th>Text for spreadsheet</th>
                     <td><i class="bi bi-clipboard copy_clipboard" data-cc="{{ plasmid.ligation_raw }}" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-custom-class="custom-tooltip" data-bs-title="Copy ligation data"></i></td>
                 </tr>
                 <tr>
-                    <th>Working concentration</th>
+                    <th scope="row">Parts table</th>
                     <td>
-                        {{plasmid.ligation_concentration}}
+                        <div class="accordion" id="accordionPartsTable">
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePartsTable" aria-expanded="true" aria-controls="collapsePartsTable">
+                                    Parts table
+                                    </button>
+                                </h2>
+                                <div id="collapsePartsTable" class="accordion-collapse collapse" data-bs-parent="#accordionPartsTable">
+                                    <div class="accordion-body">
+                                        <table class="table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Role</th>
+                                                    <th>Plasmid ID</th>
+                                                    <th>Plasmid name</th>
+                                                    <th>Colony</th>
+                                                    <th>WS conc (ng/ul)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                            {% if plasmid.backbone %}
+                                                {% with pr=plasmid.backbone %}
+                                                    <tr>
+                                                        <td>Backbone</td>
+                                                        <td><span>{{plasmid.idx}}</span></td>
+                                                        <td><span class="pe-2">{{plasmid.name}}</span><a href="{% url 'plasmid' plasmid_id=plasmid.backbone.id %}"><i class="bi bi-box-arrow-up-right"></i></a></td>
+                                                        <td>{{pr.working_colony_text}}</td>
+                                                        <td>{{pr.ligation_concentration_no_units}}</td>
+                                                    </tr>
+                                                {% endwith %}
+                                            {% endif %}
+                                            {% for pr in plasmid.inserts.all %}
+                                                <tr>
+                                                    <td>Insert</td>
+                                                    <td><span class="pe-2">{{pr.idx}}</span></td>
+                                                    <td><span class="pe-2">{{pr.name}}</span><a href="{% url 'plasmid' plasmid_id=pr.id %}"><i class="bi bi-box-arrow-up-right"></i></a></td>
+                                                    <td>{{pr.working_colony_text}}</td>
+                                                    <td>{{pr.ligation_concentration_no_units}}</td>
+                                                </tr>
+                                            {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </td>
                 </tr>
                 </tbody>
@@ -241,6 +319,56 @@
             {{plasmid.level}}
         </td>
     </tr>
+    {% if plasmid.detected_assembly %}
+    <tr>
+        <th scope="row">Assembly classification</th>
+        <td>
+            <div><strong>{{ plasmid.detected_assembly.part_name|default:"Detected assembly" }}</strong></div>
+            <div class="small text-muted">
+                {{ plasmid.detected_assembly.standard_name }} {{ plasmid.detected_assembly.standard_version }}
+                {% if plasmid.detected_assembly.part_type_key %}| {{ plasmid.detected_assembly.part_type_key }}{% endif %}
+                {% if plasmid.detected_assembly.assembly_level %}| {{ plasmid.detected_assembly.assembly_level }}{% endif %}
+                {% if plasmid.detected_assembly.plasmid_role %}| {{ plasmid.detected_assembly.plasmid_role }}{% endif %}
+            </div>
+            <div class="small">
+                {% if plasmid.detected_assembly.enzyme_name %}<span class="me-2"><strong>Enzyme:</strong> {{ plasmid.detected_assembly.enzyme_name }}</span>{% endif %}
+                {% if plasmid.detected_assembly.upstream_overhang %}<span class="me-2"><strong>OH5:</strong> {{ plasmid.detected_assembly.upstream_overhang }}</span>{% endif %}
+                {% if plasmid.detected_assembly.downstream_overhang %}<span class="me-2"><strong>OH3:</strong> {{ plasmid.detected_assembly.downstream_overhang }}</span>{% endif %}
+            </div>
+            <div class="small">
+                {% if plasmid.assembly_detection_confidence_percent != None %}
+                <span class="me-2"><strong>Confidence:</strong> {{ plasmid.assembly_detection_confidence_percent }}% ({{ plasmid.detected_assembly.confidence_band }})</span>
+                {% endif %}
+                {% if plasmid.detected_assembly.source %}
+                <span class="me-2"><strong>Source:</strong> {{ plasmid.detected_assembly.source }}</span>
+                {% endif %}
+                {% if plasmid.detected_assembly.classifier_version %}
+                <span><strong>Classifier:</strong> {{ plasmid.detected_assembly.classifier_version }}</span>
+                {% endif %}
+            </div>
+            {% if plasmid.detected_assembly.evidence %}
+            <div class="mt-2">
+                <strong class="small">Evidence</strong>
+                <ul class="mb-1">
+                    {% for item in plasmid.detected_assembly.evidence %}
+                    <li class="small">{{ item }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            {% if plasmid.detected_assembly.warnings %}
+            <div class="mt-2">
+                <strong class="small text-warning">Warnings</strong>
+                <ul class="mb-1">
+                    {% for item in plasmid.detected_assembly.warnings %}
+                    <li class="small text-warning">{{ item }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </td>
+    </tr>
+    {% endif %}
     <tr>
         <th scope="row">Description</th>
         <td>{{plasmid.description | markdown | safe }}</td>
@@ -300,7 +428,7 @@
                 <tr>
                     <th>Working colony</th>
                     <td>-</td>
-                    <td>{% if plasmid.working_colony %}#{{plasmid.working_colony}}{% else %}None{% endif %}</td>
+                    <td>{{plasmid.colony_source_text}}</td>
                 </tr>
                 <tr>
                     <th>Validation status</th>
@@ -373,12 +501,42 @@
                 <tr>
                     <td></td>
                     <td>Date</td>
-                    <td>{{plasmid.equencing_date|date:"d M, Y"}}</td>
+                    <td>{{plasmid.sequencing_date|date:"d M, Y"}}</td>
                 </tr>
                 <tr>
                     <td></td>
                     <td>Observations</td>
                     <td>{{plasmid.sequencing_observations}}</td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td>Sanger alignments</td>
+                    <td>
+                        <a href="{% if plasmid.idx %}{% url 'plasmid_seq_verification_entry' weaver_id=plasmid.idx %}{% else %}{% url 'plasmid_seq_verification_entry_uuid' plasmid_id=plasmid.id %}{% endif %}" class="btn btn-outline-warning btn-sm me-1" role="button">Open</a>
+                        {% with latest_sanger_run=plasmid.sanger_verification_runs.first %}
+                            {% if latest_sanger_run %}
+                            <a href="{% url 'sanger_run_detail' plasmid_id=plasmid.id run_id=latest_sanger_run.id %}" class="btn btn-outline-primary btn-sm me-1" role="button">Latest alignment</a>
+                            <span class="text-muted">{{ latest_sanger_run.created_at|date:"d M, Y H:i" }} - {{ latest_sanger_run.get_manual_decision_display }}</span>
+                            {% else %}
+                            <span class="text-muted">No Sanger runs yet</span>
+                            {% endif %}
+                        {% endwith %}
+                        {% for sanger_run in plasmid.sanger_verification_runs.all|slice:":6" %}
+                            {% if forloop.first %}
+                            <div class="mt-2 small">
+                                <strong>Decision history</strong>
+                            {% endif %}
+                                <div>
+                                    <a href="{% url 'sanger_run_detail' plasmid_id=plasmid.id run_id=sanger_run.id %}">{{ sanger_run.created_at|date:"d M, Y H:i" }}</a>
+                                    - {{ sanger_run.get_manual_decision_display }}
+                                    {% if sanger_run.manual_decision_effective_date %}effective {{ sanger_run.manual_decision_effective_date|date:"d M, Y" }}{% endif %}
+                                    {% if sanger_run.manual_decision_by %}by {{ sanger_run.manual_decision_by }}{% endif %}
+                                </div>
+                            {% if forloop.last %}
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    </td>
                 </tr>
                 {% if plasmid.sequencing_clustal_file %}
                 <tr>

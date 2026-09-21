@@ -1,0 +1,316 @@
+.weaver-flow-shell {
+  border: 1px solid rgba(135, 152, 171, 0.45);
+  border-radius: 6px;
+  overflow: hidden;
+  background: #14191d;
+}
+
+.weaver-flow-shell.is-archived {
+  border-color: rgba(108, 117, 125, 0.7);
+}
+
+.weaver-flow-archived-badge {
+  color: #ced4da;
+  background: #495057;
+}
+
+.weaver-flow-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-bottom: 1px solid rgba(135, 152, 171, 0.35);
+  background: #20272d;
+}
+
+.weaver-flow-stats > span,
+.weaver-flow-stat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-height: 28px;
+  padding: 0.25rem 0.55rem;
+  border: 1px solid rgba(135, 152, 171, 0.35);
+  border-radius: 4px;
+  color: #dce7f1;
+  background: #2c343b;
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.weaver-flow-stat-chip {
+  cursor: pointer;
+}
+
+.weaver-flow-stat-chip:nth-of-type(1) {
+  border-color: rgba(173, 181, 189, 0.65);
+}
+
+.weaver-flow-stat-chip:nth-of-type(2) {
+  border-color: rgba(1, 146, 86, 0.85);
+}
+
+.weaver-flow-stat-chip:nth-of-type(3) {
+  border-color: rgba(13, 110, 253, 0.85);
+}
+
+.weaver-flow-stat-chip:nth-of-type(4) {
+  border-color: rgba(255, 234, 0, 0.9);
+}
+
+.weaver-flow-stat-chip:nth-of-type(5) {
+  border-color: rgba(220, 53, 69, 0.85);
+}
+
+.weaver-flow-stat-chip:hover,
+.weaver-flow-stat-chip.is-active {
+  border-color: #80b7ff;
+  color: #fff;
+  background: #0d3f78;
+}
+
+.weaver-flow-stat-panel {
+  border-bottom: 1px solid rgba(135, 152, 171, 0.35);
+  background: #192025;
+}
+
+.weaver-flow-stat-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.65rem 0.75rem 0.4rem;
+  color: #dce7f1;
+  font-size: 0.9rem;
+}
+
+.weaver-flow-stat-panel-close {
+  display: inline-flex;
+  width: 26px;
+  height: 26px;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  padding: 0;
+  border: 1px solid rgba(135, 152, 171, 0.35);
+  border-radius: 4px;
+  color: #dce7f1;
+  background: #2c343b;
+}
+
+.weaver-flow-stat-list {
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 0 0.75rem 0.75rem;
+}
+
+.weaver-flow-stat-group + .weaver-flow-stat-group {
+  margin-top: 0.45rem;
+}
+
+.weaver-flow-stat-group-title {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 0.35rem 0.45rem;
+  border-bottom: 1px solid rgba(135, 152, 171, 0.28);
+  color: #ffea00;
+  background: #192025;
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.weaver-flow-stat-row {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto auto;
+  gap: 0.5rem;
+  align-items: center;
+  width: 100%;
+  min-height: 34px;
+  padding: 0.35rem 0.45rem;
+  border-top: 1px solid rgba(135, 152, 171, 0.18);
+  border-right: 0;
+  border-bottom: 0;
+  border-left: 0;
+  color: #dce7f1;
+  background: transparent;
+  text-decoration: none;
+  text-align: left;
+}
+
+.weaver-flow-stat-row:hover,
+.weaver-flow-stat-row.is-selected {
+  color: #fff;
+  background: #24313a;
+}
+
+.weaver-flow-stat-status,
+.weaver-flow-stat-colony {
+  display: inline-flex;
+  justify-content: center;
+  padding: 0.15rem 0.35rem;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.weaver-flow-stat-status.status-v {
+  background: #019256;
+}
+
+.weaver-flow-stat-status.status-uc {
+  background: #0d6efd;
+}
+
+.weaver-flow-stat-status.status-nv {
+  background: #6f42c1;
+}
+
+.weaver-flow-stat-status.status-rs {
+  background: #6c757d;
+}
+
+.weaver-flow-stat-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.weaver-flow-stat-id {
+  color: #fff;
+}
+
+.weaver-flow-stat-colony {
+  color: #20272d;
+  background: #ced4da;
+}
+
+.weaver-flow-stat-empty {
+  padding: 0.75rem;
+  color: #adb5bd;
+}
+
+.weaver-flow-canvas {
+  height: 500px;
+  min-height: 500px;
+}
+
+.weaver-flow-map-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 30px;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid rgba(135, 152, 171, 0.55);
+  border-radius: 4px;
+  color: #dce7f1;
+  background: rgba(32, 39, 45, 0.92);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.22);
+  font-size: 0.78rem;
+  line-height: 1;
+}
+
+.weaver-flow-map-button:hover {
+  border-color: #80b7ff;
+  color: #fff;
+  background: #0d3f78;
+}
+
+.weaver-flow-state {
+  display: flex;
+  min-height: 180px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(135, 152, 171, 0.45);
+  border-radius: 6px;
+  color: #dce7f1;
+  background: #20272d;
+}
+
+.weaver-flow-node {
+  position: relative;
+  display: flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+}
+
+.weaver-flow-label {
+  padding: 0 4px;
+  line-height: 1.08;
+  word-break: break-word;
+}
+
+.weaver-flow-node-meta {
+  margin-bottom: 0.2rem;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.weaver-flow-node-name {
+  font-size: 0.72rem;
+}
+
+.weaver-flow-ref-button,
+.weaver-flow-copy-button,
+.weaver-flow-colony-badge {
+  position: absolute;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #c4ccd4;
+  border-radius: 3px;
+  background: #fff;
+  color: #333;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+  text-decoration: none;
+}
+
+.weaver-flow-ref-button {
+  top: -5px;
+  right: -9px;
+  width: 15px;
+  height: 15px;
+  font-size: 10px;
+}
+
+.weaver-flow-copy-button {
+  top: -5px;
+  left: -9px;
+  width: 15px;
+  height: 15px;
+  padding: 0;
+  font-size: 9px;
+  line-height: 1;
+}
+
+.weaver-flow-colony-badge {
+  right: -10px;
+  bottom: -6px;
+  min-width: 22px;
+  height: 17px;
+  padding: 0 4px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.weaver-flow-ref-button:hover,
+.weaver-flow-copy-button:hover {
+  color: #019256;
+  transform: scale(1.1);
+}
+
+.weaver-flow-copy-button.is-copied {
+  border-color: #019256;
+  color: #019256;
+}
+
+.weaver-flow-canvas .react-flow__attribution {
+  background: rgba(255, 255, 255, 0.75);
+  font-size: 9px;
+}

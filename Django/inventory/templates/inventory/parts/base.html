@@ -5,7 +5,7 @@
       {% if request.COOKIES.dark_mode == 'true' %}data-bs-theme="dark"{% endif%}
 >
 <head>
-{% with version="?version=29" %}
+{% with version="?version=14" %}
     <meta charset="UTF-8">
     <link href="{% static 'css/googleapis-css2.css' %}{{version}}" rel="stylesheet">
     <title>Weaver</title>
@@ -41,6 +41,10 @@
     <script defer type="text/javascript" src="{% static 'js/l0d.2.js' %}{{version}}"></script>
     <script defer type="text/javascript" src="{% static 'js/l0d.js' %}{{version}}"></script>
     <link rel="stylesheet" type="text/css" media="all" href="{% static 'css/l0d.css' %}{{version}}"/>
+    {% endif %}
+    {% if request.path == "/inventory/experiments" %}
+    <script defer type="module" src="{% static 'experiments-reactflow/experiments-flow.js' %}{{version}}"></script>
+    <link rel="stylesheet" type="text/css" media="all" href="{% static 'experiments-reactflow/experiments-flow.css' %}{{version}}"/>
     {% endif %}
     <!-- /JS -->
 
@@ -102,26 +106,27 @@
                         <i class="bi bi-moon{% if request.COOKIES.dark_mode == 'true' %}-fill{% endif%}"></i>
                     </button>
                     <div class="btn-group me-2 dropdown-center">
-                        <button role="button" class="btn btn-primary border border-light opacity-50">{% with request.COOKIES.current_project_id as cpi %}
-                          {% if cpi %}
-                          <a class="text-light" href="{% url 'project' project_id=request.COOKIES.current_project_id %}">{{cpi|get_project_name}}</a>
+                        <button role="button" class="btn btn-primary border border-light opacity-50">{% with request.COOKIES.current_project_id as cpi %}{% with cpi|get_project_name as current_project_name %}
+                          {% if cpi and current_project_name %}
+                          <a class="text-light" href="{% url 'project' project_id=request.COOKIES.current_project_id %}">{{current_project_name}}</a>
                           {% else %}
                           No project set
                           {% endif %}
-                          {% endwith %}</button>
+                          {% endwith %}{% endwith %}</button>
                         <button type="button" class="btn btn-primary opacity-75 dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
                             <span class="visually-hidden">Toggle Dropdown</span>
                         </button>
                         <ul class="dropdown-menu">
-                          {% for m in user.membership_set.all %}
-                          <li><a class="dropdown-item text-center small" href="{% url 'project_set_current' pk=m.project.id %}?next={{request.get_full_path}}">{{m.project}}</a></li>
-                          {% endfor %}
-                          <li><hr class="dropdown-divider"></li>
+                            {% for m in user.membership_set.all %}
+                            <li><a class="dropdown-item text-center small" href="{% url 'project_set_current' pk=m.project.id %}?next={{request.get_full_path}}">{{m.project}}</a></li>
+                            {% endfor %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-center small" href="{% url 'projects' %}">All Projects</a></li>
+                            <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item text-center small" href="{% url 'project_create' %}">+ Create</a></li>
                         </ul>
                     </div>
-                    <a href="{% url 'projects' %}" class="btn btn-primary me-2 btn-sm" role="button">All Projects</a>
-                    <a href="{% url 'profile' %}" class="btn btn-outline-secondary me-2 btn-sm" role="button">Profile / {{ user.get_username }}</a>
+                    <a href="{% url 'profile' %}" class="btn btn-outline-secondary me-2 btn-sm" role="button">{{ user.get_username }}</a>
                     <form method="post" action="{% url 'logout_view' %}" id="logout_form">{% csrf_token %}
                         <button type="submit" class="btn btn-outline-secondary btn-sm" role="button" id="logout">
                             Logout <i class="bi bi-box-arrow-right"></i>
@@ -147,12 +152,9 @@
                 <span class="badge text-dark fw-light fs-2 p-1 m-0 align-middle">
                     {% block header_object_name %}{% endblock %}
                 </span>
-                <span class="badge text-bg-light border fw-normal p-1 fs-3 fw-light m-0 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-custom-class="custom-tooltip" data-bs-title="Part ID">
-                    {% block header_object_id %}{% endblock %}
-                </span>
-                <span class="badge text-dark fw-light fs-6 p-1 m-0 align-middle">
-                    {% block header_object_adds %}{% endblock %}{% endblock %}
-                </span>
+                {% block header_object_id %}{% endblock %}
+                {% block header_object_adds %}{% endblock %}
+                {% endblock %}
             </div>
             <div id="header-links">
                 {% block header_object_links %}{% endblock %}

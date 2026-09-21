@@ -4,15 +4,65 @@
 {% block header_object_name %}Create{% endblock %}
 
 {% block content %}
-<div id="form-glycerolstock">
-    {% include "inventory/parts/inventory_create_form.html" %}
+<div class="glycerolstock-create-page">
+    <div id="form-glycerolstock" class="glycerolstock-create-panel">
+        <form method="post" enctype="multipart/form-data" class="default-style glycerolstock-create-form">
+            {% csrf_token %}
+            <div class="glycerolstock-create-intro">
+                <div>
+                    <span class="glycerolstock-create-kicker">Stock</span>
+                    <h2>Create glycerol stock</h2>
+                    <p>Register a glycerol stock and assign its storage position.</p>
+                </div>
+                <i class="bi bi-box-seam glycerolstock-create-intro-icon" aria-hidden="true"></i>
+            </div>
+
+            {% if form.non_field_errors %}
+            <div class="alert alert-warning glycerolstock-create-errors">
+                {{ form.non_field_errors }}
+            </div>
+            {% endif %}
+
+            {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
+            <div class="glycerolstock-create-fields">
+                {% for field in form.visible_fields %}
+                <div class="glycerolstock-create-field glycerolstock-create-field-{{field.name}}">
+                    <label for="{{field.id_for_label}}">
+                        {{field.label}}{% if field.field.required %}<span class="glycerolstock-required" aria-hidden="true">*</span>{% endif %}
+                    </label>
+                    {{field}}
+                    {% if field.help_text %}<div class="glycerolstock-field-help">{{field.help_text|safe}}</div>{% endif %}
+                    {% for error in field.errors %}<div class="invalid-feedback d-block">{{error}}</div>{% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="glycerolstock-create-form-footer">
+                <a href="{% url 'glycerolstocks' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> Back to stocks
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-plus-lg me-1"></i> Create glycerol stock
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <section class="glycerolstock-create-boxes">
+        <div class="glycerolstock-create-section-heading">
+            <div>
+                <span class="glycerolstock-create-kicker">Storage</span>
+                <h2>GS boxes</h2>
+            </div>
+            <span class="text-secondary small">Select a free position to fill the form.</span>
+        </div>
+        {% for location in collection.locations %}
+            {% include "./glycerolstock_render_boxes.html" %}
+        {% empty %}
+            <div class="alert alert-warning">No storage locations found.</div>
+        {% endfor %}
+    </section>
 </div>
-<div class="extra_header">
-    <h1>GS Boxes</h1>
-</div>
-{% for location in collection.locations %}
-    {% include "./glycerolstock_render_boxes.html" %}
-{% endfor %}
 <script>
     var createglycerolstockPID="{{plasmid_id}}";
 </script>

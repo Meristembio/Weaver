@@ -2,13 +2,20 @@
 
 {% if primer %}
 {% block header_object_type %}Primer{% endblock %}
-{% block header_object_name %}{{primer}}{% endblock %}
+{% block header_object_name %}{{primer.display_name|default:primer.name}}{% endblock %}
+{% block header_object_id %}
+        {% if primer.display_idx %}
+        <span class="badge text-bg-light border fw-normal p-1 fs-3 fw-light m-0 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-custom-class="custom-tooltip" data-bs-title="Primer ID">
+                {{primer.display_idx}}
+        </span>
+        {% endif %}
+{% endblock %}
 {% block header_object_links %}
         {% if user_can_edit_primer %}
         <a href="{% url 'primer_edit' pk=primer.id %}" class="btn btn-outline-secondary" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit"><i class="bi bi-pencil"></i></a>
         <a href="{% url 'primer_delete' pk=primer.id %}" class="btn btn-outline-danger" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Trash"><i
                 class="bi bi-trash"></i></a>
         {% endif %}
-        <a href="{% url 'primer' primer_id=primer.id %}" class="btn btn-outline-warning" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Return"><i class="bi bi-arrow-return-left"></i></a>
+        <a href="{% url 'primers' %}" class="btn btn-outline-warning" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Return"><i class="bi bi-arrow-return-left"></i></a>
 {% endblock %}
 {% endif %}

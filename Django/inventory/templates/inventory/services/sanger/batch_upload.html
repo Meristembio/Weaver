@@ -1,0 +1,70 @@
+{% extends "inventory/parts/base.html" %}
+
+{% block header_object_type %}Sanger sequencing{% endblock %}
+{% block header_object_name %}Batch upload{% endblock %}
+{% block header_object_links %}
+    <a href="{% url 'services-sanger' %}" class="btn btn-outline-warning" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Return to Sanger"><i class="bi bi-arrow-return-left"></i></a>
+{% endblock %}
+
+{% block content %}
+{% if batch_upload_done %}
+<div class="alert alert-success">{{ batch_upload_done }}</div>
+{% endif %}
+{% if batch_errors %}
+<div class="alert alert-danger border">
+    <div class="fw-semibold mb-1">The batch was not uploaded.</div>
+    <ul class="mb-0">
+        {% for error in batch_errors %}<li>{{ error }}</li>{% endfor %}
+    </ul>
+</div>
+{% endif %}
+{% if batch_warnings %}
+<div class="alert alert-warning border">
+    {% for warning in batch_warnings %}<div>{{ warning }}</div>{% endfor %}
+</div>
+{% endif %}
+
+<div class="row">
+    <div class="col-lg-7">
+        <form method="post" enctype="multipart/form-data" class="alert alert-light border">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label class="form-label" for="{{ upload_form.ab1_files.id_for_label }}">{{ upload_form.ab1_files.label }}</label>
+                {{ upload_form.ab1_files }}
+                <div class="form-text">Select multiple AB1 files. Files mapped to the same plasmid become one Sanger run.</div>
+                {% for error in upload_form.ab1_files.errors %}
+                <div class="text-danger small">{{ error }}</div>
+                {% endfor %}
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="{{ upload_form.mapping_csv.id_for_label }}">{{ upload_form.mapping_csv.label }}</label>
+                {{ upload_form.mapping_csv }}
+                {% for error in upload_form.mapping_csv.errors %}
+                <div class="text-danger small">{{ error }}</div>
+                {% endfor %}
+            </div>
+            <div class="form-check mb-3">
+                {{ upload_form.replace_existing }}
+                <label class="form-check-label" for="{{ upload_form.replace_existing.id_for_label }}">{{ upload_form.replace_existing.label }}</label>
+                <div class="form-text">If unchecked, duplicate AB1 files are warned about and skipped individually; the rest of the batch is still uploaded.</div>
+            </div>
+            {% if upload_form.non_field_errors %}
+            <div class="alert alert-danger">
+                {{ upload_form.non_field_errors }}
+            </div>
+            {% endif %}
+            <button type="submit" class="btn btn-primary"><i class="bi bi-upload"></i> Upload AB1 batch</button>
+        </form>
+    </div>
+    <div class="col-lg-5">
+        <div class="alert alert-info border">
+            <h5>CSV format</h5>
+            <p class="mb-2">Use one row per AB1 file. The plasmid ID can be the Weaver numeric ID or UUID. The optional primer ID can be the numeric ID from the primer name, its UUID, or its QR ID; leave it blank or omit the column to save the read as No primer.</p>
+            <pre class="mb-0">ab1_file,plasmid_id,primer_id
+forward-01.ab1,505,1001
+reverse-01.ab1,505,1002
+sample-02.ab1,506,1003</pre>
+        </div>
+    </div>
+</div>
+{% endblock %}

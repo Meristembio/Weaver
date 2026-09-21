@@ -1,0 +1,14 @@
+{% extends "inventory/parts/base.html" %}
+
+{% block header_object_name %}Delete experiment{% endblock %}
+
+{% block content %}
+<div class="alert alert-warning">
+    Delete experiment <strong>{{ experiment.name }}</strong>? This removes only the experiment and its plasmid assignments; plasmids are not deleted.
+</div>
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Delete experiment</button>
+    <a href="{% url 'experiments' %}" class="btn btn-outline-secondary">Cancel</a>
+</form>
+{% endblock %}

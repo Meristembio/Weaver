@@ -8,8 +8,10 @@
     <li><a class="dropdown-item text-center small" href="{% url 'plasmid_create_wizard' %}"><span class="text-secondary">+ Create </span> Wizard</a></li>
     <li><a class="dropdown-item text-center small" href="{% url 'services-l0d' %}"><span class="text-secondary">+ Create </span> L0 designer</a></li>
     <li><a class="dropdown-item text-center small" href="{% url 'plasmid_create' %}"><span class="text-secondary">+ Create </span> Form</a></li>
+    <li><a class="dropdown-item text-center small" href="{% url 'plasmid_import' %}"><span class="text-secondary">+ Import </span> GenBank</a></li>
       <li><hr class="dropdown-divider"></li>
     <li><a class="dropdown-item text-center small" href="{% url 'plasmid_validations' %}">Validation</a></li>
+    <li><a class="dropdown-item text-center small" href="{% url 'experiments' %}">Experiments</a></li>
   </ul>
 </div>
 <div class="btn-group me-2 dropdown-center">
@@ -44,7 +46,10 @@
   <button class="btn {{btn_class}} border dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Services</button>
   <ul class="dropdown-menu">
       <li><a class="dropdown-item text-center small" href="{% url 'services-l0d' %}">L0 Designer</a></li>
+      <li><a class="dropdown-item text-center small" href="{% url 'services-pcr' %}">PCR</a></li>
+      <li><a class="dropdown-item text-center small" href="{% url 'services-sanger' %}">Sanger sequencing</a></li>
       <li><a class="dropdown-item text-center small" href="{% url 'services-blast' %}">Blast</a></li>
+      <li><a class="dropdown-item text-center small" href="{% url 'services-batch-prints' %}">Batch Prints</a></li>
       <li><a class="dropdown-item text-center small" href="{% url 'services-stats' %}">Stats</a></li>
   </ul>
 </div>

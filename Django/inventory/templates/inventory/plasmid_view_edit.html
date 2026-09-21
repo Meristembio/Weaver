@@ -10,14 +10,170 @@
     {% endif %}
     {% if sequence_file_contents %}
         <!-- OVE -->
+        <div class="weaver-ove-workspace">
         {% if request.COOKIES.dark_mode == 'true' %}
             <div id="ove-viewer" class="bp3-dark"></div>
         {% else %}
             <div id="ove-viewer"></div>
         {% endif %}
+            <aside id="ove-amplicon-panel" class="weaver-amplicon-panel is-collapsed" aria-label="Possible amplicons">
+                <button id="ove-amplicon-panel-tab" type="button" class="weaver-amplicon-panel-tab" title="Possible amplicons" aria-label="Possible amplicons">
+                    <i class="bi bi-bezier2"></i>
+                </button>
+                <div class="weaver-amplicon-panel-body">
+                    <div class="weaver-amplicon-panel-header">
+                        <div>
+                            <div class="weaver-amplicon-panel-title-row">
+                                <div class="weaver-amplicon-panel-title">Primer pairs</div>
+                                <button type="button" class="weaver-amplicon-help" title="Recommended annealing temperature: Ta Opt = 0.3 x Tm of the less stable primer + 0.7 x Tm of the PCR product - 14.9." aria-label="How Ta is calculated">
+                                    <i class="bi bi-question-circle"></i>
+                                </button>
+                            </div>
+                            <div id="ove-amplicon-panel-summary" class="weaver-amplicon-panel-summary">No candidates loaded.</div>
+                        </div>
+                        <button id="ove-amplicon-panel-close" type="button" class="btn btn-sm btn-outline-secondary" title="Minimize panel" aria-label="Minimize panel">
+                            <i class="bi bi-chevron-bar-right"></i>
+                        </button>
+                    </div>
+                    <div class="weaver-amplicon-panel-actions">
+                        <select id="ove-polymerase-select" class="form-select form-select-sm weaver-polymerase-select" aria-label="Polymerase"></select>
+                        <button id="ove-amplicon-panel-clear-map" type="button" class="btn btn-sm btn-outline-secondary" title="Clear amplicons from map">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+                    <button id="amplicon-parameters-toggle" type="button" class="weaver-digest-parameters-toggle" aria-expanded="true">
+                        <span>Filters</span>
+                        <i class="bi bi-chevron-up"></i>
+                    </button>
+                    <div id="amplicon-parameters-body" class="weaver-digest-parameters-body">
+                        <div class="weaver-digest-controls weaver-amplicon-filter-controls">
+                            <label class="form-label" for="amplicon-min-size">Product size</label>
+                            <div class="weaver-digest-fragment-range weaver-amplicon-filter-range">
+                                <input id="amplicon-min-size" class="form-control form-control-sm" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Min" aria-label="Minimum product size">
+                                <input id="amplicon-max-size" class="form-control form-control-sm" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Max" aria-label="Maximum product size">
+                            </div>
+
+                            <label class="form-label" for="amplicon-primer-id-1">Primer IDs</label>
+                            <div class="weaver-digest-fragment-range weaver-amplicon-filter-range">
+                                <input id="amplicon-primer-id-1" class="form-control form-control-sm" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="ID 1" aria-label="First primer ID">
+                                <input id="amplicon-primer-id-2" class="form-control form-control-sm" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="ID 2" aria-label="Second primer ID">
+                            </div>
+                        </div>
+                        <div class="weaver-digest-region-header">
+                            <span>Required amplicon regions</span>
+                            <button id="amplicon-add-region" type="button" class="btn btn-sm btn-outline-secondary" title="Add region">
+                                <i class="bi bi-plus-lg"></i>
+                            </button>
+                        </div>
+                        <div id="amplicon-regions" class="weaver-digest-regions"></div>
+                        <div class="weaver-digest-region-header">
+                            <span>Allowed FWD 3' binding zones</span>
+                            <button id="amplicon-add-fwd-binding-region" type="button" class="btn btn-sm btn-outline-secondary" title="Add FWD binding zone">
+                                <i class="bi bi-plus-lg"></i>
+                            </button>
+                        </div>
+                        <div class="small text-secondary">The FWD primer 3' end must fall in one of these zones.</div>
+                        <div id="amplicon-fwd-binding-regions" class="weaver-digest-regions"></div>
+                        <div class="weaver-digest-region-header">
+                            <span>Allowed REV 3' binding zones</span>
+                            <button id="amplicon-add-rev-binding-region" type="button" class="btn btn-sm btn-outline-secondary" title="Add REV binding zone">
+                                <i class="bi bi-plus-lg"></i>
+                            </button>
+                        </div>
+                        <div class="small text-secondary">The REV primer 3' end must fall in one of these zones.</div>
+                        <div id="amplicon-rev-binding-regions" class="weaver-digest-regions"></div>
+                    </div>
+                    <div class="weaver-amplicon-panel-actions">
+                        <button id="amplicon-run-search" type="button" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-play-fill"></i>
+                            Search
+                        </button>
+                    </div>
+                    <div id="ove-amplicon-panel-list" class="weaver-amplicon-panel-list"></div>
+                </div>
+            </aside>
+            <aside id="ove-digest-panel" class="weaver-amplicon-panel weaver-digest-panel is-collapsed" aria-label="Restriction digests">
+                <button id="ove-digest-panel-tab" type="button" class="weaver-amplicon-panel-tab weaver-digest-panel-tab" title="Restriction digests" aria-label="Restriction digests">
+                    <i class="bi bi-scissors"></i>
+                </button>
+                <div class="weaver-amplicon-panel-body">
+                    <div class="weaver-amplicon-panel-header">
+                        <div>
+                            <div class="weaver-amplicon-panel-title">Restriction digests</div>
+                            <div id="ove-digest-panel-summary" class="weaver-amplicon-panel-summary">No digest search run.</div>
+                        </div>
+                        <button id="ove-digest-panel-close" type="button" class="btn btn-sm btn-outline-secondary" title="Minimize panel" aria-label="Minimize panel">
+                            <i class="bi bi-chevron-bar-right"></i>
+                        </button>
+                    </div>
+                    <button id="digest-parameters-toggle" type="button" class="weaver-digest-parameters-toggle" aria-expanded="true">
+                        <span>Parameters</span>
+                        <i class="bi bi-chevron-up"></i>
+                    </button>
+                    <div id="digest-parameters-body" class="weaver-digest-parameters-body">
+                        <div class="weaver-digest-controls">
+                            <label class="form-label" for="digest-min-fragments">Fragment range</label>
+                            <div class="weaver-digest-fragment-range">
+                                <input id="digest-min-fragments" class="form-control form-control-sm" type="number" min="1" value="2" aria-label="Minimum fragments">
+                                <input id="digest-max-fragments" class="form-control form-control-sm" type="number" min="1" value="3" aria-label="Maximum fragments">
+                            </div>
+
+                            <label class="form-label" for="digest-min-band-difference">Minimum band size difference</label>
+                            <input id="digest-min-band-difference" class="form-control form-control-sm" type="number" min="0" value="500" title="Absolute minimum bp difference between every pair of fragment sizes expected as separate bands.">
+
+                            <label class="form-label" for="digest-min-fragment-size">Minimum fragment size</label>
+                            <input id="digest-min-fragment-size" class="form-control form-control-sm" type="number" min="0" value="500">
+
+                            <label class="form-label" for="digest-max-enzymes">Maximum enzymes</label>
+                            <input id="digest-max-enzymes" class="form-control form-control-sm" type="number" min="1" max="2" value="2">
+
+                            <label class="form-label" for="digest-required-enzyme-list">Required enzyme</label>
+                            <div id="digest-required-enzymes" class="weaver-digest-required-enzyme-picker">
+                                <div class="weaver-digest-required-enzyme-bar">
+                                    <div id="digest-required-enzyme-chips" class="weaver-digest-required-enzyme-chips"></div>
+                                    <button id="digest-required-enzyme-toggle" type="button" class="btn btn-sm btn-outline-secondary" aria-expanded="false" aria-controls="digest-required-enzyme-list" title="Select required enzymes">
+                                        <i class="bi bi-chevron-down"></i>
+                                        Add
+                                    </button>
+                                </div>
+                                <div id="digest-required-enzyme-list" class="weaver-digest-required-enzyme-list is-collapsed" role="listbox" aria-label="Required restriction enzymes" aria-multiselectable="true">
+                                    {% for enzyme in RESTRICTION_ENZYMES %}
+                                        <button type="button" class="weaver-digest-enzyme-option" data-enzyme="{{ enzyme.name }}" role="option" aria-selected="false">{{ enzyme }}</button>
+                                    {% empty %}
+                                        <div class="weaver-digest-enzyme-empty">No available enzymes cut this plasmid.</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="weaver-digest-region-header">
+                            <span>Required cut regions</span>
+                            <button id="digest-add-region" type="button" class="btn btn-sm btn-outline-secondary" title="Add region">
+                                <i class="bi bi-plus-lg"></i>
+                            </button>
+                        </div>
+                        <div id="digest-regions" class="weaver-digest-regions"></div>
+                    </div>
+                    <div class="weaver-amplicon-panel-actions">
+                        <button id="digest-run-search" type="button" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-play-fill"></i>
+                            Search
+                        </button>
+                        <button id="digest-clear-map" type="button" class="btn btn-sm btn-outline-secondary" title="Clear digest annotations">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+                    <div id="ove-digest-panel-list" class="weaver-digest-panel-list"></div>
+                </div>
+            </aside>
+        </div>
         <script>
             var sequence_file_contents = `{{sequence_file_contents}}`;
             var save_ove_path = '{% url 'plasmid_view_edit' plasmid_id=plasmid.id %}';
+            var plasmid_pcr_design_path = '{% url 'plasmid_pcr' plasmid_id=plasmid.id %}';
+            var plasmid_primer_matches_path = '{% url 'api-plasmid-primer-matches' plasmid_id=plasmid.id %}';
+            var plasmid_amplicon_matches_path = '{% url 'api-plasmid-amplicon-matches' plasmid_id=plasmid.id %}';
+            var plasmid_restriction_digest_path = '{% url 'api-plasmid-restriction-digests' plasmid_id=plasmid.id %}';
+            var services_blast_path = '{% url 'services-blast' %}';
         </script>
         <!-- <script type="text/javascript" src="https://unpkg.com/@teselagen/ove/index.umd.js{{version}}"></script> -->
         <script type="text/javascript" src="{% static 'js/open-vector-editor.js' %}{{version}}"></script>

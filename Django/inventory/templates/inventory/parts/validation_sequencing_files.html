@@ -1,0 +1,41 @@
+<div class="inventory-form-field validation-sequencing-files">
+    <label>Sequencing Files</label>
+    <div class="inventory-form-help">Previously uploaded Sanger files. Download a source file or review its alignment/trace.</div>
+    {% if sanger_runs %}
+    <div class="validation-sequencing-files-list">
+        {% for run in sanger_runs %}
+        <div class="validation-sequencing-run{% if not forloop.last %} is-separated{% endif %}">
+            <div class="validation-sequencing-run-heading d-flex flex-wrap justify-content-between align-items-center gap-2 mb-1">
+                <strong>{{ run.created_at|date:"d M Y H:i" }}</strong>
+                <span class="small text-muted">{{ run.get_manual_decision_display }}</span>
+                <a class="btn btn-outline-primary btn-sm" href="{% url 'sanger_run_detail' plasmid_id=plasmid.id run_id=run.id %}">Review alignment</a>
+            </div>
+            {% for read in run.reads.all %}
+                {% for source_file in read.files.all %}
+                <div class="validation-sequencing-file d-flex flex-wrap justify-content-between align-items-center gap-2 small">
+                    <span class="font-monospace">{{ source_file.original_name }}{% if source_file.primer %} <span class="text-muted">(primer: <a href="{% url 'primer' primer_id=source_file.primer.id %}">{{ source_file.primer.name }}</a>)</span>{% endif %}</span>
+                    <span class="validation-sequencing-actions d-flex gap-2">
+                        {% if source_file.file %}
+                        <a href="{% url 'sanger_read_file_download' plasmid_id=plasmid.id run_id=run.id read_id=read.id file_id=source_file.id %}" download>Download</a>
+                        {% endif %}
+                        {% if source_file.format == "ab1" %}
+                        <a href="{% url 'sanger_read_chromatogram' plasmid_id=plasmid.id run_id=run.id read_id=read.id %}">Review trace</a>
+                        {% endif %}
+                    </span>
+                </div>
+                {% empty %}
+                <div class="small text-muted">{{ read.name }}: source file unavailable</div>
+                {% endfor %}
+            {% empty %}
+                <div class="small text-muted">No sequencing files recorded for this run.</div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="validation-sequencing-files-empty">No sequencing files uploaded yet.</div>
+    {% endif %}
+    <div class="mt-2">
+        <a href="{% url 'plasmid_align_sanger' plasmid_id=plasmid.id %}">Upload or manage Sanger files</a>
+    </div>
+</div>

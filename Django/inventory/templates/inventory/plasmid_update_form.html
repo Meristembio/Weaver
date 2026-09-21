@@ -2,9 +2,8 @@
 
 {% block content %}
 {% if plasmid %}
-<div id="form-inventory">
-    {% include "inventory/parts/inventory_update_form.html" %}
-</div>
+{% url 'plasmid' plasmid_id=plasmid.id as cancel_url %}
+{% include "inventory/parts/inventory_form_panel.html" with form_section_label="Plasmid" form_title="Edit plasmid" form_description="Update the plasmid information and assembly metadata." form_icon="bi-pencil-square" submit_label="Save plasmid" submit_icon="bi-check-lg" cancel_url=cancel_url cancel_label="Back to plasmid" %}
 {% else %}
 <div class="alert alert-warning">No plasmid found.</div>
 {% endif %}

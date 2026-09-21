@@ -1,0 +1,31 @@
+# Local Weaver data. This can contain confidential sequences, uploaded
+# plasmids/primers/Sanger reads, SQLite rows, and local exports.
+/local_data/
+/local_backups/
+/uploads/
+/db.sqlite3
+/data.json
+
+# Environment, agent instructions, and machine-local config.
+/.venv/
+/.env
+/.env.*
+/AGENTS.md
+/.agents/
+/.codex/
+
+# Python/Django generated files.
+__pycache__/
+*.py[cod]
+*$py.class
+*.sqlite3
+
+# Node/build artifacts.
+node_modules/
+dist/
+build/
+
+# Local editor/OS files.
+.DS_Store
+*.swp
+*.swo

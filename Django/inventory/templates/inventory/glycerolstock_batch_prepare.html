@@ -1,0 +1,245 @@
+{% extends "inventory/parts/base.html" %}
+
+{% block header_object_type %}Stock{% endblock %}
+{% block header_object_name %}Prepare GS batch{% endblock %}
+
+{% block content %}
+<div class="plasmid-validations-page glycerolstock-batch-prepare">
+    <div class="alert alert-info d-flex align-items-center justify-content-between gap-3">
+        <div>
+            <strong>{{created_count|default:0}}/{{selected_count|default:0}} GS created.</strong>
+            Plasmids are ordered by ID and assigned to free positions from A1 to I9 within their level boxes.
+            Positions remain available until each glycerol stock is saved.
+        </div>
+    {% if all_created %}
+        <a class="btn btn-primary text-nowrap" href="{{print_url}}">
+            <i class="bi bi-printer me-1"></i> Print GS labels
+        </a>
+    {% endif %}
+    </div>
+
+    {% if selection_error %}
+    <div class="alert alert-warning">{{selection_error}}</div>
+    {% endif %}
+
+    {% if batch_error %}
+    <div class="alert alert-warning">{{batch_error}}</div>
+    {% endif %}
+
+    {% if batch_created_count %}
+    <div class="alert alert-success">{{batch_created_count}} GS created successfully.</div>
+    {% endif %}
+
+    {% if suggestions %}
+    {% if not all_created %}
+    <form method="post" id="glycerolstock-batch-create-form" class="glycerolstock-batch-create-panel mb-3">
+        {% csrf_token %}
+        <input type="hidden" name="batch_create_gs" value="1">
+        {% for suggestion in suggestions %}
+        <input type="hidden" name="batch_plasmid_idx" value="{{suggestion.plasmid.idx}}">
+        {% endfor %}
+        <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <span class="text-secondary small">Library strain:</span>
+                <strong>{% if batch_strain %}E. coli {{batch_strain}}{% else %}Not configured{% endif %}</strong>
+                <button type="submit" class="btn btn-primary btn-sm" id="glycerolstock-batch-create"
+                        data-primary-strain-available="{% if batch_strain %}true{% else %}false{% endif %}" disabled{% if not batch_strain %} title="No primary library strain is configured"{% endif %}>
+                    <i class="bi bi-box-seam me-1"></i> Create selected GS
+                </button>
+            </div>
+        </div>
+    {% endif %}
+    <div class="table-responsive">
+        <table class="table table-hover align-middle validation-table glycerolstock-batch-table">
+            <thead>
+                <tr>
+                    <th class="glycerolstock-batch-plasmid-column">Plasmid</th>
+                    <th class="glycerolstock-batch-box-column">Box</th>
+                    <th class="glycerolstock-batch-position-column">Position</th>
+                    <th class="glycerolstock-batch-status-column">Status</th>
+                    <th class="glycerolstock-batch-prepare-column">
+                        {% if not all_created %}
+                        <div class="glycerolstock-batch-select-header">
+                            <span>Select</span>
+                            <button type="button" class="glycerolstock-batch-select-all"
+                                    id="glycerolstock-batch-select-all" aria-pressed="false"
+                                    data-bs-toggle="tooltip" data-bs-placement="top"
+                                    title="Select all available plasmids" aria-label="Select all available plasmids">
+                                <i class="bi bi-check2-square"></i>
+                            </button>
+                        </div>
+                        {% else %}
+                        Open
+                        {% endif %}
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for suggestion in suggestions %}
+                <tr>
+                    <td class="validation-plasmid-column glycerolstock-batch-plasmid glycerolstock-batch-plasmid-column">
+                        {% with pr=suggestion.plasmid extra_class="btn-success table-search-search_on" hide_copy=True plasmid_badge_class="validation-plasmid-id" open_in_new_tab=True %}
+                            {% include "inventory/parts/plasmid-button.html" %}
+                        {% endwith %}
+                    </td>
+                    <td class="glycerolstock-batch-box-column">
+                        {% if not suggestion.created and suggestion.available %}
+                        <select class="form-select form-select-sm glycerolstock-batch-box"
+                                name="box_id-{{suggestion.plasmid.idx}}"
+                                data-plasmid-idx="{{suggestion.plasmid.idx}}">
+                            {% for option in suggestion.box_options %}
+                            <option value="{{option.value}}"
+                                    {% if option.value == suggestion.default_box_id %}selected{% endif %}>
+                                {{option.label}}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="glycerolstock-batch-new-location d-none"
+                             data-plasmid-idx="{{suggestion.plasmid.idx}}">
+                            <label class="visually-hidden" for="new-box-location-{{suggestion.plasmid.idx}}">New box location</label>
+                            <select class="form-select form-select-sm mt-1"
+                                    name="new_box_location-{{suggestion.plasmid.idx}}"
+                                    id="new-box-location-{{suggestion.plasmid.idx}}">
+                                {% for location in locations %}
+                                <option value="{{location.id}}"{% if location.id|stringformat:"s" == suggestion.default_location_id %} selected{% endif %}>{{location.name}}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% elif suggestion.box %}
+                        <span>{{suggestion.box.name}}</span>
+                        {% else %}
+                        <span class="text-secondary">—</span>
+                        {% endif %}
+                    </td>
+                    <td class="glycerolstock-batch-position-column">
+                        {% if not suggestion.created and suggestion.available %}
+                        <select class="form-select form-select-sm glycerolstock-batch-position"
+                                name="position-{{suggestion.plasmid.idx}}"
+                                data-plasmid-idx="{{suggestion.plasmid.idx}}">
+                            {% for option in suggestion.box_options %}
+                                {% for position in option.positions %}
+                                <option value="{{position}}" data-box-id="{{option.value}}"
+                                        {% if option.value == suggestion.default_box_id and position == suggestion.default_position %}selected{% endif %}>
+                                    {{position}}
+                                </option>
+                                {% endfor %}
+                            {% endfor %}
+                        </select>
+                        {% elif suggestion.position %}
+                        <span>{{suggestion.position}}</span>
+                        {% else %}
+                        <span class="text-secondary">—</span>
+                        {% endif %}
+                    </td>
+                    <td class="glycerolstock-batch-status-column">
+                        {% if suggestion.created %}
+                        <span class="badge text-bg-success">GS created</span>
+                        {% elif suggestion.available %}
+                        <span class="badge text-bg-warning">Pending GS</span>
+                        {% else %}
+                        <span class="badge text-bg-warning">{{suggestion.message}}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if suggestion.created %}
+                        <a class="btn btn-sm btn-outline-success"
+                           href="{% url 'glycerolstock' glycerolstock_id=suggestion.glycerolstock.id %}">
+                            View GS
+                        </a>
+                        {% elif suggestion.available %}
+                        <input type="checkbox" class="form-check-input glycerolstock-batch-select"
+                               name="plasmid_idx" value="{{suggestion.plasmid.idx}}"
+                               aria-label="Select {{suggestion.plasmid.name}}">
+                        {% else %}
+                        <a class="btn btn-sm btn-outline-secondary"
+                           href="{% url 'glycerolstock_create_plasmid_defined' pid=suggestion.plasmid.id %}?{{batch_create_query}}">
+                            Choose manually
+                        </a>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if not all_created %}</form>{% endif %}
+    {% if not all_created %}
+    <div class="text-secondary small">
+        Once all rows show <strong>GS created</strong>, the button to print their labels will be enabled.
+    </div>
+    {% endif %}
+    {% endif %}
+</div>
+<script>
+    $(function () {
+        var selectAll = $('#glycerolstock-batch-select-all');
+        var selections = $('.glycerolstock-batch-select');
+        var createButton = $('#glycerolstock-batch-create');
+        var primaryStrainAvailable = createButton.attr('data-primary-strain-available') === 'true';
+        var boxSelectors = $('.glycerolstock-batch-box');
+        var positionSelectors = $('.glycerolstock-batch-position');
+
+        function updateAllocationControls() {
+            var assignments = {};
+            selections.filter(':checked').each(function () {
+                var row = $(this).data('plasmid-idx');
+                var box = $('.glycerolstock-batch-box[data-plasmid-idx="' + row + '"]').val();
+                var position = $('.glycerolstock-batch-position[data-plasmid-idx="' + row + '"]').val();
+                if (box && position) {
+                    assignments[box + ':' + position] = String(row);
+                }
+            });
+
+            boxSelectors.each(function () {
+                var box = $(this);
+                var row = box.data('plasmid-idx');
+                $('.glycerolstock-batch-new-location[data-plasmid-idx="' + row + '"]').toggleClass('d-none', box.val() !== 'new');
+            });
+
+            positionSelectors.each(function () {
+                var position = $(this);
+                var row = String(position.data('plasmid-idx'));
+                var box = $('.glycerolstock-batch-box[data-plasmid-idx="' + row + '"]').val();
+                position.find('option').each(function () {
+                    var option = $(this);
+                    var optionBox = String(option.data('box-id'));
+                    var optionPosition = String(option.val());
+                    var owner = assignments[optionBox + ':' + optionPosition];
+                    var available = optionBox === String(box) && (!owner || owner === row);
+                    option.prop('hidden', !available).prop('disabled', !available);
+                });
+
+                var current = position.find('option:selected');
+                if (!current.length || current.prop('disabled')) {
+                    var firstAvailable = position.find('option:not(:disabled)').first();
+                    if (firstAvailable.length) {
+                        position.val(firstAvailable.val());
+                    }
+                }
+            });
+        }
+
+        function updateBatchCreationState() {
+            var selected = selections.filter(':checked').length;
+            var allSelected = selections.length > 0 && selected === selections.length;
+            selectAll.attr('aria-pressed', allSelected ? 'true' : 'false');
+            selectAll.attr('title', allSelected ? 'Clear selection' : 'Select all available plasmids');
+            selectAll.attr('aria-label', allSelected ? 'Clear selection' : 'Select all available plasmids');
+            selectAll.find('i').toggleClass('bi-check2-square', !allSelected).toggleClass('bi-x-square', allSelected);
+            createButton.prop('disabled', selected === 0 || !primaryStrainAvailable);
+            updateAllocationControls();
+        }
+
+        selectAll.on('click', function () {
+            var allSelected = selections.length > 0 && selections.filter(':checked').length === selections.length;
+            selections.prop('checked', !allSelected);
+            updateBatchCreationState();
+        });
+
+        selections.on('change', updateBatchCreationState);
+        boxSelectors.on('change', updateBatchCreationState);
+        positionSelectors.on('change', updateAllocationControls);
+        updateBatchCreationState();
+    });
+</script>
+{% endblock %}

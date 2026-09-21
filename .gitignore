@@ -1,0 +1,7 @@
+# Local helper scripts are not part of the Weaver source tree.
+/scripts/
+/.deployment_logs/
+
+# Local agent instructions and context are machine-local.
+/AGENTS.md
+/docs/agent-context/

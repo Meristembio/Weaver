@@ -15,17 +15,22 @@ import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+WEAVER_DATA_DIR = Path(os.environ.get('WEAVER_DATA_DIR', BASE_DIR / 'local_data'))
+WEAVER_DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '3kaqgjcur0e7^%5fzt_0qewi^s=kz9clj68qsgtg4^_kwxo==2'
+SECRET_KEY = os.environ.get('WEAVER_SECRET_KEY', 'django-insecure-local-dev-key-change-me')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['192.168.1.64', '127.0.0.1', '192.168.200.178']
+ALLOWED_HOSTS = os.environ.get(
+    'WEAVER_ALLOWED_HOSTS',
+    'weaver.sticta.com,weaver.local',
+).split(',')
 
 # Application definition
 
@@ -86,7 +91,7 @@ WSGI_APPLICATION = 'Weaver.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': WEAVER_DATA_DIR / 'db.sqlite3',
     }
 }
 
@@ -132,7 +137,10 @@ STATICFILES_DIRS = [
    os.path.join(BASE_DIR, "static"),
 ]
 
-CORS_ALLOWED_ORIGINS = [
-    "http://192.168.1.64:3000",
-    "http://localhost:3000",
-]
+MEDIA_ROOT = WEAVER_DATA_DIR
+MEDIA_URL = '/media/'
+
+# Sanger batch uploads may contain hundreds of AB1 files plus the mapping CSV.
+# Keep a finite multipart file-count limit while allowing the batch workflow
+# to exceed Django's conservative default.
+DATA_UPLOAD_MAX_NUMBER_FILES = 1000

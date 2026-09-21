@@ -47,50 +47,14 @@
         </td>
     </tr>
     <tr>
-        <th scope="row">Activity buffer 1.1 (NEB)</th>
+        <th scope="row">Buffer compatibility</th>
         <td>
-            {% if restrictionenzyme.activity_buffer_1_1 %}
-            {{restrictionenzyme.activity_buffer_1_1}} %
-            {% else %}
-            -
-            {% endif %}
-        </td>
-    </tr>
-    <tr>
-        <th scope="row">Activity buffer 2.1 (NEB)</th>
-        <td>
-            {% if restrictionenzyme.activity_buffer_2_1 %}
-            {{restrictionenzyme.activity_buffer_2_1}} %
-            {% else %}
-            -
-            {% endif %}
-        </td>
-    </tr>
-    <tr>
-        <th scope="row">Activity buffer 3.1 (NEB)</th>
-        <td>
-            {% if restrictionenzyme.activity_buffer_3_1 %}
-            {{restrictionenzyme.activity_buffer_3_1}} %
-            {% else %}
-            -
-            {% endif %}
-        </td>
-    </tr>
-    <tr>
-        <th scope="row">Activity buffer CS (NEB)</th>
-        <td>
-            {% if restrictionenzyme.activity_buffer_CS %}
-            {{restrictionenzyme.activity_buffer_CS}} %
-            {% else %}
-            -
-            {% endif %}
-        </td>
-    </tr>
-    <tr>
-        <th scope="row">Activity buffer AarI (Thermo)</th>
-        <td>
-            {% if restrictionenzyme.activity_buffer_aari %}
-            {{restrictionenzyme.activity_buffer_aari}} %
+            {% if restrictionenzyme.buffer_activity_entries %}
+            <ul class="list-unstyled mb-0">
+                {% for buffer_entry in restrictionenzyme.buffer_activity_entries %}
+                <li>{{ buffer_entry.name }}: {{ buffer_entry.activity_percent }} %</li>
+                {% endfor %}
+            </ul>
             {% else %}
             -
             {% endif %}

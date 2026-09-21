@@ -1,0 +1,250 @@
+{% extends "inventory/parts/base.html" %}
+{% load humanize %}
+
+{% block header_object_type %}Services{% endblock %}
+{% block header_object_name %}Batch Prints{% endblock %}
+
+{% block content %}
+<div class="batch-prints-page">
+
+{% if batch_from_gs %}
+<div class="batch-print-actions">
+    <div class="batch-print-actions-copy">
+        <span class="batch-print-kicker">Glycerol stocks</span>
+        <strong>GS label batch</strong>
+        <span class="text-secondary small">Review the generated labels before printing.</span>
+    </div>
+    <div class="batch-print-actions-buttons">
+        {% if batch_return_url %}
+        <a class="btn btn-outline-secondary text-nowrap" href="{{batch_return_url}}"><i class="bi bi-arrow-left"></i> Back to GS preparation</a>
+        {% endif %}
+        <button id="label-print-button" type="button" class="btn btn-primary text-nowrap" onclick="window.print();return false;">
+            <i class="bi bi-printer"></i> Print GS labels
+        </button>
+    </div>
+</div>
+{% else %}
+<form method="post" id="label-inputs" class="batch-print-form">
+    {% csrf_token %}
+    <div class="batch-print-form-header">
+        <div>
+            <span class="batch-print-kicker">Services</span>
+            <h2>Build print batch</h2>
+            <p>Enter identifiers and preview the labels before printing.</p>
+        </div>
+        <i class="bi bi-printer batch-print-form-icon" aria-hidden="true"></i>
+    </div>
+    <div class="batch-print-table-wrapper">
+        <table class="table table-sm batch-print-table">
+            <thead>
+                <tr>
+                    <th scope="col">Print type</th>
+                    <th scope="col">ID / code / QR / name</th>
+                    <th scope="col">Colony</th>
+                    <th scope="col">Concentration</th>
+                    <th scope="col">Date</th>
+                    <th scope="col" data-defaultsort="disabled"></th>
+                </tr>
+            </thead>
+            <tbody id="batch-print-rows">
+                {% for row in rows %}
+                <tr class="batch-print-row">
+                    <td>
+                        <select name="label_type" class="form-select form-select-sm batch-type">
+                            {% for value, label in label_types %}
+                            <option value="{{ value }}"{% if value == row.label_type %} selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                    <td>
+                        <input name="identifier" type="text" class="form-control form-control-sm batch-identifier" value="{{ row.identifier }}" required>
+                    </td>
+                    <td>
+                        <input name="colony" type="text" class="form-control form-control-sm batch-colony" value="{{ row.colony }}" placeholder="#">
+                    </td>
+                    <td>
+                        <input name="concentration" type="text" inputmode="decimal" class="form-control form-control-sm batch-concentration" value="{{ row.concentration }}">
+                    </td>
+                    <td>
+                        <input name="date" type="date" class="form-control form-control-sm batch-date" value="{{ row.date|default:today }}">
+                    </td>
+                    <td class="text-end">
+                        <button type="button" class="btn btn-sm btn-outline-danger batch-remove-row" title="Remove row"><i class="bi bi-trash"></i></button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="batch-print-form-footer">
+        <div class="batch-print-add-actions" aria-label="Add label entry">
+            <button type="button" class="btn btn-outline-secondary batch-add-entry" data-label-type="plasmids">
+                <i class="bi bi-plus"></i> Add plasmid entry
+            </button>
+            <button type="button" class="btn btn-outline-secondary batch-add-entry" data-label-type="glycerolstocks">
+                <i class="bi bi-plus"></i> Add GS entry
+            </button>
+        </div>
+        <div class="batch-print-form-actions">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Preview batch</button>
+            {% if labels %}
+            <button id="label-print-button" type="button" class="btn btn-info" onclick="window.print();return false;"><i class="bi bi-printer"></i> Print batch</button>
+            {% endif %}
+        </div>
+    </div>
+</form>
+{% endif %}
+
+{% if missing %}
+<div class="alert alert-warning batch-print-alert">
+    Not found or not visible: {{ missing|join:", " }}
+</div>
+{% endif %}
+
+{% if searched and not labels %}
+<div class="alert alert-secondary batch-print-alert">No labels to print.</div>
+{% endif %}
+
+{% if labels %}
+<div class="batch-print-sheet">
+    {% for label in labels %}
+    <div class="batch-print-page">
+        {% if label.kind == "plasmids" %}
+            {% with plasmid=label.object %}
+            <div class="plasmid label mb-4">
+                <div class="label-main">
+                    <div class="label-info">
+                        <p class="label-id-colony">
+                            <span class="label-value">
+                                ID {{ plasmid.idx }} ~ {% if label.colony %}c{{ label.colony }}{% else %}{{ plasmid.working_colony_text_short }}{% endif %}
+                                {% if plasmid.is_validated %}
+                                <i class="bi bi-check-circle"></i>
+                                {% else %}
+                                <i class="bi bi-circle"></i>
+                                {% endif %}
+                            </span>
+                        </p>
+                        <p class="label-name">
+                            {{ plasmid.name }}
+                        </p>
+                        <p class="label-created">
+                            <span class="label-name">Date</span>
+                            <span class="label-value">{{ label.date|date:"d.M.Y" }}</span>
+                        </p>
+                        {% if label.concentration %}
+                        <p class="label-conc-quantus">
+                            <span class="label-name">Conc</span>
+                            <span class="label-value">{{ label.concentration }} [ng/ul]</span>
+                        </p>
+                        {% endif %}
+                        <p class="label-size">
+                            <span class="label-name">Size</span>
+                            <span class="label-value">{{ plasmid.computed_size|intcomma }} bp</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            {% endwith %}
+        {% elif label.kind == "glycerolstocks" %}
+            {% with glycerolstock=label.object %}
+            <div class="glycerolstock label mb-4">
+                <div class="label-main">
+                    <div class="label-info">
+                        {% if glycerolstock.plasmid %}
+                        <p class="label-id-colony">
+                            <span class="label-name">ID</span>
+                            <span class="label-value">{{ glycerolstock.plasmid.idx }}</span>
+                            ~ <span class="label-value">{{ glycerolstock.plasmid.working_colony_text_short }}</span>
+                        </p>
+                        {% endif %}
+                        <p id="label-name">
+                            {% if glycerolstock.plasmid %}{{ glycerolstock.plasmid.name }}{% endif %}
+                        </p>
+                        <p id="label-strain">
+                            {{ glycerolstock.strain }}
+                        </p>
+                        <p id="label-resistance">
+                            {% if glycerolstock.resistantes_strain_human %}
+                            <span class="label-name">Strain Marker</span>
+                            <span class="label-value">{{ glycerolstock.resistantes_strain_human }}</span><br/>
+                            {% endif %}
+                            {% if glycerolstock.resistantes_human %}
+                            <span class="label-name">Plasmid Marker</span>
+                            <span class="label-value">{{ glycerolstock.resistantes_human }}</span><br/>
+                            {% endif %}
+                        </p>
+                        <p id="label-box">
+                            <span class="label-value">{% if glycerolstock.box_column and glycerolstock.box_row %}{{ glycerolstock.box_row }}{{ glycerolstock.box_column }} @ {% endif %}{{ glycerolstock.box.name }}</span>
+                        </p>
+                        <p id="label-location">
+                            <span class="label-value">{{ glycerolstock.box.location }}</span>
+                        </p>
+                        <p id="label-created">
+                            <span class="label-value">{{ glycerolstock.created_on }}</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            {% endwith %}
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<script>
+    $(document).ready(function(){
+        var today = "{{ today }}";
+
+        function refreshConcentrationState(row) {
+            var type = row.find(".batch-type").val();
+            var concentration = row.find(".batch-concentration");
+            if (type === "glycerolstocks") {
+                concentration.val("");
+                concentration.prop("readonly", true);
+                concentration.attr("placeholder", "N/A");
+            } else {
+                concentration.prop("readonly", false);
+                concentration.attr("placeholder", "ng/ul");
+            }
+        }
+
+        function bindRow(row) {
+            refreshConcentrationState(row);
+            row.find(".batch-type").off("change").on("change", function(){
+                refreshConcentrationState(row);
+            });
+            row.find(".batch-remove-row").off("click").on("click", function(){
+                if ($("#batch-print-rows .batch-print-row").length > 1) {
+                    row.remove();
+                } else {
+                    row.find(".batch-identifier").val("");
+                    row.find(".batch-colony").val("");
+                    row.find(".batch-date").val(today);
+                    row.find(".batch-concentration").val("");
+                    row.find(".batch-type").val("plasmids");
+                    refreshConcentrationState(row);
+                }
+            });
+        }
+
+        $("#batch-print-rows .batch-print-row").each(function(){
+            bindRow($(this));
+        });
+
+        $(".batch-add-entry").on("click", function(){
+            var template = $("#batch-print-rows .batch-print-row:first").clone();
+            template.find(".batch-type").val($(this).data("label-type"));
+            template.find(".batch-identifier").val("");
+            template.find(".batch-colony").val("");
+            template.find(".batch-date").val(today);
+            template.find(".batch-concentration").val("");
+            $("#batch-print-rows").append(template);
+            bindRow(template);
+            template.find(".batch-identifier").focus();
+        });
+
+    });
+</script>
+</div>
+{% endblock %}

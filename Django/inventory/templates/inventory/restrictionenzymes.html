@@ -2,6 +2,9 @@
 {% load re_extras %}
 
 {% block header_object_name %}Restriction enzymes{% endblock %}
+{% block header_object_links %}
+<a href="{% url 'restrictionenzyme_create' %}" class="btn btn-primary" role="button"><i class="bi bi-plus"></i> Create</a>
+{% endblock %}
 
 {% block content %}
 {% include "./form_results.html" %}
@@ -11,10 +14,7 @@
     <tr>
         <th scope="col">Restriction enzyme</th>
         <th scope="col">Recognition site</th>
-        <th scope="col">1.1</th>
-        <th scope="col">2.1</th>
-        <th scope="col">3.1</th>
-        <th scope="col">CS</th>
+        <th scope="col">Buffers</th>
         <th scope="col">HF</th>
     </tr>
     </thead>
@@ -31,29 +31,10 @@
             {{re_render_seq|safe}}
         </td>
         <td>
-            {% if restrictionenzyme.activity_buffer_1_1 %}
-            {{restrictionenzyme.activity_buffer_1_1}} %
-            {% else %}
-            -
-            {% endif %}
-        </td>
-        <td>
-            {% if restrictionenzyme.activity_buffer_2_1 %}
-            {{restrictionenzyme.activity_buffer_2_1}} %
-            {% else %}
-            -
-            {% endif %}
-        </td>
-        <td>
-            {% if restrictionenzyme.activity_buffer_3_1 %}
-            {{restrictionenzyme.activity_buffer_3_1}} %
-            {% else %}
-            -
-            {% endif %}
-        </td>
-        <td>
-            {% if restrictionenzyme.activity_buffer_CS %}
-            {{restrictionenzyme.activity_buffer_CS}} %
+            {% if restrictionenzyme.buffer_activity_entries %}
+                {% for buffer_entry in restrictionenzyme.buffer_activity_entries %}
+                <span class="badge text-bg-light border me-1 mb-1">{{ buffer_entry.name }}: {{ buffer_entry.activity_percent }}%</span>
+                {% endfor %}
             {% else %}
             -
             {% endif %}
@@ -66,10 +47,12 @@
             {% endif %}
         </td>
     </tr>
-    {% endfor %}
+{% endfor %}
     </tbody>
 </table>
 {% else %}
-<div class="alert alert-warning">No Restriction Enzymes found.</div>
+<div class="alert alert-warning">
+    No Restriction Enzymes found. <a href="{% url 'restrictionenzyme_create' %}" class="btn btn-primary btn-sm ms-2" role="button">Create one</a>
+</div>
 {% endif %}
 {% endblock %}

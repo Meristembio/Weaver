@@ -7,7 +7,10 @@ register = template.Library()
 
 @register.filter
 def get_project_name(project_id):
-    return Project.objects.get(pk=project_id).name
+    try:
+        return Project.objects.get(pk=project_id).name
+    except (Project.DoesNotExist, ValueError, TypeError):
+        return ""
 
 
 @register.filter

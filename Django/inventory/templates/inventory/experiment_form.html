@@ -1,0 +1,365 @@
+{% extends "inventory/parts/base.html" %}
+
+{% block header_object_name %}{{ title }}{% endblock %}
+
+{% block content %}
+<style>
+    .experiment-form-card {
+        border-color: var(--bs-border-color);
+    }
+
+    .experiment-form-plasmids {
+        border-left: 1px solid var(--bs-border-color);
+    }
+
+    .experiment-form-plasmids select {
+        min-height: 14rem;
+    }
+
+    .experiment-selected-targets {
+        max-height: 12rem;
+        overflow-y: auto;
+        border: 1px solid var(--bs-border-color);
+        border-radius: var(--bs-border-radius);
+        padding: 0.35rem 0.75rem;
+        background-color: var(--bs-tertiary-bg);
+    }
+
+    .experiment-selected-targets .list-group-item {
+        border-color: var(--bs-border-color);
+        background-color: transparent;
+        line-height: 1.25;
+    }
+
+    .experiment-selected-targets .list-group-item:last-child {
+        border-bottom: 0;
+    }
+
+    .experiment-target-feedback {
+        margin-bottom: 0.75rem;
+        padding: 0.45rem 0.65rem;
+    }
+
+    .experiment-level-counts {
+        display: inline-flex;
+        flex-wrap: wrap;
+        gap: 0.3rem;
+    }
+
+    .experiment-components-details {
+        border: 1px solid var(--bs-border-color);
+        border-radius: var(--bs-border-radius);
+    }
+
+    .experiment-components-details summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        padding: 0.65rem 0.75rem;
+        color: var(--bs-secondary-color);
+        cursor: pointer;
+        font-size: 0.875rem;
+        font-weight: 600;
+        list-style-position: inside;
+    }
+
+    .experiment-components-details[open] summary {
+        border-bottom: 1px solid var(--bs-border-color);
+    }
+
+    .experiment-components-details > ul {
+        max-height: 14rem;
+        margin-bottom: 0;
+        overflow-y: auto;
+    }
+
+    @media (max-width: 767.98px) {
+        .experiment-form-plasmids {
+            border-top: 1px solid var(--bs-border-color);
+            border-left: 0;
+            padding-top: 1.5rem;
+        }
+    }
+</style>
+
+<div class="card experiment-form-card">
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+
+            <div class="row g-4">
+                <div class="col-md-4">
+                    {% for field in form %}
+                    {% if field.name != 'plasmids' %}
+                    <div class="mb-3">
+                        <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% for error in field.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+
+                    <div class="d-flex flex-wrap gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary">{{ submit_label }}</button>
+                        <a href="{% url 'experiments' %}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </div>
+
+                <div class="col-md-8 experiment-form-plasmids">
+                    <div class="mb-3">
+                        <h2 class="h5 mb-1">Target plasmids</h2>
+                        <p class="small text-muted mb-0">Select only the final plasmids. Their backbone and inserts are included automatically.</p>
+                    </div>
+
+                    <label class="form-label" for="{{ form.plasmids.id_for_label }}">{{ form.plasmids.label }}</label>
+                    <input type="search" class="form-control mb-2" data-plasmid-filter placeholder="Filter by name or Weaver ID">
+                    <div class="btn-group btn-group-sm mb-2" role="group" aria-label="Filter plasmids by level">
+                        <button type="button" class="btn btn-outline-secondary active" data-level-filter="all">All</button>
+                        <button type="button" class="btn btn-outline-secondary" data-level-filter="0">L0</button>
+                        <button type="button" class="btn btn-outline-secondary" data-level-filter="1">L1</button>
+                        <button type="button" class="btn btn-outline-secondary" data-level-filter="2">L2</button>
+                        {% if form.has_level_3 %}<button type="button" class="btn btn-outline-secondary" data-level-filter="3">L3</button>{% endif %}
+                        {% if form.has_level_4 %}<button type="button" class="btn btn-outline-secondary" data-level-filter="4">L4</button>{% endif %}
+                        {% if form.has_unidentified_level %}<button type="button" class="btn btn-outline-secondary" data-level-filter="none">Unidentified Level</button>{% endif %}
+                    </div>
+                    {{ form.plasmids }}
+                    <div class="mt-2">
+                        <button type="button" class="btn btn-sm btn-outline-primary" data-add-target>
+                            <i class="bi bi-plus-lg" aria-hidden="true"></i> Add selected target
+                        </button>
+                    </div>
+                    {% if form.plasmids.help_text %}<div class="form-text">{{ form.plasmids.help_text }}</div>{% endif %}
+                    {% for error in form.plasmids.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+
+                    <div class="d-flex align-items-center justify-content-between gap-2 mt-4 mb-2">
+                        <div class="small fw-semibold">Selected target plasmids</div>
+                        <div class="experiment-level-counts small" data-target-counts><span class="text-muted">No targets</span></div>
+                    </div>
+                    <div class="alert alert-info d-none experiment-target-feedback" data-target-feedback role="status"></div>
+                    <ul class="list-group list-group-flush small mb-3 experiment-selected-targets" data-selected-targets>
+                        <li class="list-group-item px-0 text-muted">No targets selected.</li>
+                    </ul>
+
+                    <details class="experiment-components-details" data-components-details>
+                        <summary>
+                            <span>Automatically included components</span>
+                            <span class="experiment-level-counts" data-component-counts><span class="text-muted">No components</span></span>
+                        </summary>
+                        <ul class="list-group list-group-flush small" data-auto-components>
+                            <li class="list-group-item px-3 text-muted">Select target plasmids to preview their components.</li>
+                        </ul>
+                    </details>
+
+                    {{ form.plasmid_dependencies|json_script:"plasmid-dependencies" }}
+                    {{ form.plasmid_labels|json_script:"plasmid-labels" }}
+                    {{ form.plasmid_levels|json_script:"plasmid-levels" }}
+                    {{ form.plasmid_urls|json_script:"plasmid-urls" }}
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+const levelFilterButtons = document.querySelectorAll('[data-level-filter]');
+const levelOrder = ['L4', 'L3', 'L2', 'L1', 'L0', 'Unidentified Level'];
+const plasmidSelect = document.querySelector('#id_plasmids');
+const componentsList = document.querySelector('[data-auto-components]');
+const componentCounts = document.querySelector('[data-component-counts]');
+const targetCounts = document.querySelector('[data-target-counts]');
+const dependencies = JSON.parse(document.getElementById('plasmid-dependencies').textContent);
+const labels = JSON.parse(document.getElementById('plasmid-labels').textContent);
+const plasmidLevels = JSON.parse(document.getElementById('plasmid-levels').textContent);
+const plasmidUrls = JSON.parse(document.getElementById('plasmid-urls').textContent);
+const selectedTargetsList = document.querySelector('[data-selected-targets]');
+const targetFeedback = document.querySelector('[data-target-feedback]');
+let selectedLevel = 'all';
+const applyPlasmidFilters = () => {
+    const query = document.querySelector('[data-plasmid-filter]')?.value.toLowerCase() || '';
+    document.querySelectorAll('#id_plasmids option').forEach((option) => {
+        const optionLevel = plasmidLevels[option.value] || 'Unidentified Level';
+        const levelMatch = selectedLevel === 'all'
+            || (selectedLevel === 'none' && optionLevel === 'Unidentified Level')
+            || optionLevel === `L${selectedLevel}`;
+        option.hidden = !levelMatch || !option.textContent.toLowerCase().includes(query);
+    });
+};
+document.querySelector('[data-plasmid-filter]')?.addEventListener('input', applyPlasmidFilters);
+levelFilterButtons.forEach((button) => button.addEventListener('click', () => {
+    selectedLevel = button.dataset.levelFilter;
+    levelFilterButtons.forEach((item) => item.classList.toggle('active', item === button));
+    applyPlasmidFilters();
+}));
+applyPlasmidFilters();
+
+const selectedTargets = new Set(Array.from(plasmidSelect.selectedOptions).map((option) => option.value));
+
+const levelNumber = (id) => {
+    const match = (plasmidLevels[id] || '').match(/^L(\d+)$/);
+    return match ? Number(match[1]) : -1;
+};
+
+const includesDependency = (plasmidId, dependencyId, visited = new Set()) => {
+    if (visited.has(plasmidId)) return false;
+    visited.add(plasmidId);
+    return (dependencies[plasmidId] || []).some((candidateId) => (
+        candidateId === dependencyId || includesDependency(candidateId, dependencyId, visited)
+    ));
+};
+
+const showTargetFeedback = (messages) => {
+    if (!messages.length) {
+        targetFeedback.classList.add('d-none');
+        targetFeedback.textContent = '';
+        return;
+    }
+    targetFeedback.textContent = messages.join(' ');
+    targetFeedback.classList.remove('d-none');
+};
+
+const createPlasmidLink = (id) => {
+    const link = document.createElement('a');
+    link.href = plasmidUrls[id] || '#';
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.title = 'Saltar a la página del plasmidio';
+    link.appendChild(document.createTextNode(labels[id] || id));
+    const icon = document.createElement('i');
+    icon.className = 'bi bi-box-arrow-up-right ms-1';
+    icon.setAttribute('aria-hidden', 'true');
+    link.appendChild(icon);
+    return link;
+};
+
+const renderLevelCounts = (container, ids, emptyText, badgeClass = 'text-bg-light border text-dark') => {
+    container.replaceChildren();
+    const counts = new Map();
+    ids.forEach((id) => {
+        const level = plasmidLevels[id] || 'Unidentified Level';
+        counts.set(level, (counts.get(level) || 0) + 1);
+    });
+    const orderedLevels = Array.from(counts.keys()).sort((a, b) => levelOrder.indexOf(a) - levelOrder.indexOf(b));
+    if (!orderedLevels.length) {
+        const empty = document.createElement('span');
+        empty.className = 'text-muted';
+        empty.textContent = emptyText;
+        container.appendChild(empty);
+        return;
+    }
+    orderedLevels.forEach((level) => {
+        const badge = document.createElement('span');
+        badge.className = `badge ${badgeClass}`;
+        badge.textContent = `${level}: ${counts.get(level)}`;
+        container.appendChild(badge);
+    });
+};
+
+const renderTargets = () => {
+    selectedTargetsList.replaceChildren();
+    const targetIds = Array.from(selectedTargets);
+    renderLevelCounts(targetCounts, targetIds, 'No targets', 'text-bg-dark border border-secondary');
+    if (!targetIds.length) {
+        const empty = document.createElement('li');
+        empty.className = 'list-group-item px-0 text-muted';
+        empty.textContent = 'No targets selected.';
+        selectedTargetsList.appendChild(empty);
+        return;
+    }
+    targetIds.forEach((id) => {
+        const item = document.createElement('li');
+        item.className = 'list-group-item d-flex align-items-center justify-content-between gap-2 px-0';
+        const label = createPlasmidLink(id);
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'btn btn-sm btn-outline-danger';
+        remove.textContent = 'Remove';
+        remove.addEventListener('click', () => {
+            selectedTargets.delete(id);
+            const option = Array.from(plasmidSelect.options).find((candidate) => candidate.value === id);
+            if (option) option.selected = false;
+            renderTargets();
+            updateComponents();
+        });
+        item.append(label, remove);
+        selectedTargetsList.appendChild(item);
+    });
+};
+
+document.querySelector('[data-add-target]')?.addEventListener('click', () => {
+    const messages = [];
+    const candidates = Array.from(plasmidSelect.selectedOptions)
+        .map((option) => option.value)
+        .sort((a, b) => levelNumber(b) - levelNumber(a));
+    candidates.forEach((candidateId) => {
+        if (selectedTargets.has(candidateId)) return;
+
+        const containingTarget = Array.from(selectedTargets).find((targetId) => (
+            includesDependency(targetId, candidateId)
+        ));
+        if (containingTarget) {
+            messages.push(`${labels[candidateId] || candidateId} is already included in ${labels[containingTarget] || containingTarget}; it was not added as a separate target.`);
+            const option = Array.from(plasmidSelect.options).find((item) => item.value === candidateId);
+            if (option) option.selected = false;
+            return;
+        }
+
+        const coveredTargets = Array.from(selectedTargets).filter((targetId) => (
+            includesDependency(candidateId, targetId)
+        ));
+        coveredTargets.forEach((targetId) => {
+            selectedTargets.delete(targetId);
+            messages.push(`${labels[targetId] || targetId} was moved to Automatically included components because it is included in ${labels[candidateId] || candidateId}.`);
+        });
+        selectedTargets.add(candidateId);
+    });
+    Array.from(plasmidSelect.options).forEach((option) => {
+        option.selected = selectedTargets.has(option.value);
+    });
+    showTargetFeedback(messages);
+    renderTargets();
+    updateComponents();
+});
+plasmidSelect?.addEventListener('change', () => updateComponents());
+
+const updateComponents = () => {
+    const included = new Set();
+    const visit = (id) => {
+        (dependencies[id] || []).forEach((dependencyId) => {
+            if (included.has(dependencyId)) return;
+            included.add(dependencyId);
+            visit(dependencyId);
+        });
+    };
+    Array.from(selectedTargets).forEach((id) => visit(id));
+    selectedTargets.forEach((id) => included.delete(id));
+    const includedIds = Array.from(included).sort((a, b) => {
+        const levelDifference = levelOrder.indexOf(plasmidLevels[a] || 'Unidentified Level') - levelOrder.indexOf(plasmidLevels[b] || 'Unidentified Level');
+        return levelDifference || (labels[a] || a).localeCompare(labels[b] || b);
+    });
+    renderLevelCounts(componentCounts, includedIds, 'No components', 'text-bg-dark border border-secondary');
+    componentsList.replaceChildren();
+    if (!includedIds.length) {
+        const empty = document.createElement('li');
+        empty.className = 'list-group-item px-3 text-muted';
+        empty.textContent = 'Select target plasmids to preview their components.';
+        componentsList.appendChild(empty);
+        return;
+    }
+    includedIds.forEach((id) => {
+        const item = document.createElement('li');
+        item.className = 'list-group-item px-3';
+        const link = createPlasmidLink(id);
+        item.appendChild(link);
+        componentsList.appendChild(item);
+    });
+};
+
+Array.from(plasmidSelect.options).forEach((option) => {
+    option.selected = selectedTargets.has(option.value);
+});
+renderTargets();
+updateComponents();
+</script>
+{% endblock %}

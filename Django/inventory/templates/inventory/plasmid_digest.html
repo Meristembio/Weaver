@@ -39,10 +39,7 @@
         <thead>
         <tr>
             <th scope="col">Enzyme</th>
-            <th scope="col">1.1</th>
-            <th scope="col">2.1</th>
-            <th scope="col">3.1</th>
-            <th scope="col">CS</th>
+            <th scope="col">Buffers</th>
         </tr>
         </thead>
         <tbody>
@@ -52,29 +49,10 @@
                 {{restrictionenzyme}}
             </td>
             <td>
-                {% if restrictionenzyme.activity_buffer_1_1 %}
-                {{restrictionenzyme.activity_buffer_1_1}} %
-                {% else %}
-                -
-                {% endif %}
-            </td>
-            <td>
-                {% if restrictionenzyme.activity_buffer_2_1 %}
-                {{restrictionenzyme.activity_buffer_2_1}} %
-                {% else %}
-                -
-                {% endif %}
-            </td>
-            <td>
-                {% if restrictionenzyme.activity_buffer_3_1 %}
-                {{restrictionenzyme.activity_buffer_3_1}} %
-                {% else %}
-                -
-                {% endif %}
-            </td>
-            <td>
-                {% if restrictionenzyme.activity_buffer_CS %}
-                {{restrictionenzyme.activity_buffer_CS}} %
+                {% if restrictionenzyme.buffer_activity_entries %}
+                    {% for buffer_entry in restrictionenzyme.buffer_activity_entries %}
+                    <span class="badge text-bg-light border me-1 mb-1">{{ buffer_entry.name }}: {{ buffer_entry.activity_percent }}%</span>
+                    {% endfor %}
                 {% else %}
                 -
                 {% endif %}
@@ -93,10 +71,7 @@
         <thead>
         <tr>
             <th scope="col">Enzyme</th>
-            <th scope="col">1.1</th>
-            <th scope="col">2.1</th>
-            <th scope="col">3.1</th>
-            <th scope="col">CS</th>
+            <th scope="col">Buffers</th>
             <th scope="col">Cuts</th>
             <th scope="col">Cut positions</th>
             <th scope="col">Fragments</th>
@@ -113,29 +88,10 @@
                     <i class="bi bi-clipboard copy_clipboard" data-cc="{{plasmid}} / {{restrictionenzyme}} / {% for ref in restrictionenzyme.fragments %}{% if forloop.counter0 %} - {% endif %}{{ref}}{% endfor %}"></i>
                 </td>
                 <td>
-                    {% if restrictionenzyme.activity_buffer_1_1 %}
-                    {{restrictionenzyme.activity_buffer_1_1}} %
-                    {% else %}
-                    -
-                    {% endif %}
-                </td>
-                <td>
-                    {% if restrictionenzyme.activity_buffer_2_1 %}
-                    {{restrictionenzyme.activity_buffer_2_1}} %
-                    {% else %}
-                    -
-                    {% endif %}
-                </td>
-                <td>
-                    {% if restrictionenzyme.activity_buffer_3_1 %}
-                    {{restrictionenzyme.activity_buffer_3_1}} %
-                    {% else %}
-                    -
-                    {% endif %}
-                </td>
-                <td>
-                    {% if restrictionenzyme.activity_buffer_CS %}
-                    {{restrictionenzyme.activity_buffer_CS}} %
+                    {% if restrictionenzyme.buffer_activity_entries %}
+                        {% for buffer_entry in restrictionenzyme.buffer_activity_entries %}
+                        <span class="badge text-bg-light border me-1 mb-1">{{ buffer_entry.name }}: {{ buffer_entry.activity_percent }}%</span>
+                        {% endfor %}
                     {% else %}
                     -
                     {% endif %}

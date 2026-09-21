@@ -25,7 +25,7 @@
                             title="{% if render_mod == 'n'  %}{{g_element}}{% else %}Not available{% endif %}"
                         >
                             {% if render_mod == "n"  %}
-                            <a href="{% url 'glycerolstock' glycerolstock_id=g_element.id %}" class="text-dark">{{box_row.1}}{{box_column.1}}</a>
+                            <a href="{% url 'glycerolstock' glycerolstock_id=g_element.id %}?return_to_box={{box.id}}" class="text-dark">{{box_row.1}}{{box_column.1}}</a>
                             {% else %}
                             {{box_row.1}}{{box_column.1}}
                             {% endif %}

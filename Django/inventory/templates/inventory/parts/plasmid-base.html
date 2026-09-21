@@ -3,14 +3,20 @@
 {% if plasmid %}
 {% block header_object_type %}Plasmid{% endblock %}
 {% block header_object_name %}{{plasmid.name}}{% endblock %}
-{% block header_object_id %}{{plasmid.idx}}{% endblock %}
+{% block header_object_id %}
+        <span class="badge text-bg-light border fw-normal p-1 fs-3 fw-light m-0 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-custom-class="custom-tooltip" data-bs-title="Part ID">
+                {{plasmid.idx}}
+        </span>
+{% endblock %}
 {% block header_object_adds %}
-    {% with get_check_state=plasmid.get_check_state %}
-    <span>
-        <i class="bi {% if get_check_state == 'r' %}bi-bookmarks{% elif get_check_state == 'v' %}bi-check-circle{% else %}bi bi-hammer{% endif %}" data-bs-toggle="tooltip" data-bs-placement="top" aria-label="{% if get_check_state == 'r' %}Reference{% elif get_check_state == 'v' %}Validated{% else %}Under construction{% endif %}" data-bs-original-title="{% if get_check_state == 'r' %}Reference{% elif get_check_state == 'v' %}Validated{% else %}Under construction{% endif %}"></i>
+    <span class="badge text-dark fw-light fs-6 p-1 m-0 align-middle">
+        {% with get_check_state=plasmid.get_check_state %}
+        <span>
+            <i class="bi {% if get_check_state == 'r' %}bi-bookmarks{% elif get_check_state == 'v' %}bi-check-circle{% else %}bi bi-hammer{% endif %}" data-bs-toggle="tooltip" data-bs-placement="top" aria-label="{% if get_check_state == 'r' %}Reference{% elif get_check_state == 'v' %}Validated{% else %}Under construction{% endif %}" data-bs-original-title="{% if get_check_state == 'r' %}Reference{% elif get_check_state == 'v' %}Validated{% else %}Under construction{% endif %}"></i>
+        </span>
+        {% endwith %}
+        <i class="bi bi-clipboard copy_clipboard" data-cc="{{plasmid}}" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-custom-class="custom-tooltip" data-bs-title="Copy name & ID"></i>
     </span>
-    {% endwith %}
-    <i class="bi bi-clipboard copy_clipboard" data-cc="{{plasmid}}" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-custom-class="custom-tooltip" data-bs-title="Copy name & ID"></i>
 {% endblock %}
 {% block header_object_links %}
 

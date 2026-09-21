@@ -1,0 +1,63 @@
+import React, {Component} from 'react';
+
+
+
+class Elsele extends Component {
+  constructor(props) {
+    super(props);
+  }
+
+  render() {
+    if(this.props.standard == 1){
+      return <select name="oh5" onChange={this.props.handler}>
+        <option value="1a">1a</option>
+        <option value="1b">1b</option>
+      </select>;
+    }
+      if(this.props.standard == 2){
+        return <select name="oh5" onChange={this.props.handler}>
+          <option value="2a">2a</option>
+          <option value="2b">2b</option>
+        </select>;
+      }
+    return <select name="oh5" onChange={this.props.handler}>
+      <option value="3a">3a</option>
+      <option value="3b">3b</option>
+    </select>;
+  }
+}
+
+class L0D extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      standard: 1,
+      oh5: 'init_oh5'
+    };
+    this.handleStandardChange = this.handleStandardChange.bind(this);
+    this.handleOH5Change = this.handleOH5Change.bind(this);
+  }
+
+  handleStandardChange(event) {
+    this.setState({standard: event.target.value});
+  }
+
+  handleOH5Change(event) {
+    this.setState({oh5: event.target.value});
+  }
+
+  render() {
+    return <form>
+            <select name="standard" onChange={this.handleStandardChange}>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+            </select>
+            <Elsele standard={this.state.standard} handler={this.handleOH5Change} />
+            <div>{this.state.standard}</div>
+            <div>{this.state.oh5}</div>
+          </form>;
+  }
+}
+
+export default L0D;

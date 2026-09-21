@@ -10,6 +10,79 @@
     {% if show_new_PCR %}
     <a href="{% url 'plasmid_pcr' plasmid_id=plasmid.id %}" class="btn btn-outline-primary" role="button"><i class="bi bi-plus-circle-dotted"></i> New PCR</a>
     {% endif %}
+    {% if pcr_design %}
+        <div class="alert alert-light border">
+            <h4>PCR suggestions</h4>
+            <p>
+                Selection {{pcr_design.start_display}}..{{pcr_design.end_display}},
+                margin {{pcr_design.margin}} bp,
+                max ΔTm {{pcr_design.max_tm_difference|floatformat:"1"}} °C.
+            </p>
+            {% if pcr_design.suggestions %}
+            <table class="table table-striped table-hover sortable">
+                <thead>
+                    <tr>
+                        <th scope="col">Type</th>
+                        <th scope="col">FWD</th>
+                        <th scope="col">REV</th>
+                        <th scope="col">Product</th>
+                        <th scope="col">Coordinates</th>
+                        <th scope="col">Coverage</th>
+                        <th scope="col">Extra</th>
+                        <th scope="col">Tm 3'</th>
+                        <th scope="col">ΔTm</th>
+                        <th scope="col" data-defaultsort='disabled'>Warnings</th>
+                        <th scope="col" data-defaultsort='disabled'></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for suggestion in pcr_design.suggestions %}
+                    <tr>
+                        <td>{{suggestion.category}}</td>
+                        <td>
+                            {% if suggestion.fwd.display_id %}
+                            <span class="badge text-bg-light border fw-light p-1 m-0 me-1 align-middle">{{suggestion.fwd.display_id}}</span>
+                            {% endif %}
+                            {{suggestion.fwd.name}}
+                        </td>
+                        <td>
+                            {% if suggestion.rev.display_id %}
+                            <span class="badge text-bg-light border fw-light p-1 m-0 me-1 align-middle">{{suggestion.rev.display_id}}</span>
+                            {% endif %}
+                            {{suggestion.rev.name}}
+                        </td>
+                        <td>{{suggestion.product_size}} bp</td>
+                        <td>{{suggestion.product_range}}</td>
+                        <td>{{suggestion.selection_coverage}}/{{suggestion.selection_length}} bp ({{suggestion.coverage_percent|floatformat:"0"}}%)</td>
+                        <td>{{suggestion.extra_left}} / {{suggestion.extra_right}} bp</td>
+                        <td>{{suggestion.fwd.tm_3|floatformat:"1"}} / {{suggestion.rev.tm_3|floatformat:"1"}} °C</td>
+                        <td>{{suggestion.tm_difference|floatformat:"1"}} °C</td>
+                        <td>
+                            {% if suggestion.warnings %}
+                            {% for warning in suggestion.warnings %}
+                                <div class="small text-warning">{{warning}}</div>
+                            {% endfor %}
+                            {% endif %}
+                        </td>
+                        <td>
+                            <form action="" method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="primer_f" value="{{suggestion.fwd_id}}">
+                                <input type="hidden" name="primer_r" value="{{suggestion.rev_id}}">
+                                <input type="hidden" name="primer_f_seq" value="">
+                                <input type="hidden" name="primer_r_seq" value="">
+                                <button type="submit" class="btn btn-sm btn-dark">PCR</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="alert alert-warning">No primer pairs found for this selection and margin.</div>
+            {% endif %}
+        </div>
+    {% endif %}
     {% if pcr_form %}
         <div id="digest-emnzymes-header">Choose primers to design PCR with:</div>
         <form id="pcr" action="" method="post">

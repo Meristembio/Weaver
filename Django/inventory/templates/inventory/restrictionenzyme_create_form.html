@@ -1,0 +1,214 @@
+{% extends "inventory/parts/base.html" %}
+
+{% block header_object_type %}Restriction Enzyme{% endblock %}
+{% block header_object_name %}{% if is_edit %}Edit {{ restrictionenzyme }}{% else %}Create{% endif %}{% endblock %}
+{% block header_object_links %}
+<a href="{% if is_edit %}{% url 'restrictionenzyme' restrictionenzyme_id=restrictionenzyme.id %}{% else %}{% url 'restrictionenzymes' %}{% endif %}" class="btn btn-outline-warning" role="button"><i class="bi bi-arrow-return-left"></i></a>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <form method="post" enctype="multipart/form-data" class="border alert alert-light">
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                {{ form.non_field_errors }}
+            </div>
+            {% endif %}
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0">Lab enzyme record</h5>
+                <input type="submit" value="{% if is_edit %}Save changes{% else %}Create{% endif %}" class="btn btn-primary">
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-md-8">
+                    <label for="{{ form.name.id_for_label }}" class="form-label">{{ form.name.label }}</label>
+                    {{ form.name }}
+                    {% if form.name.errors %}<div class="text-danger small mt-1">{{ form.name.errors }}</div>{% endif %}
+                </div>
+                <div class="col-md-4">
+                    <div class="form-check mt-md-4 pt-md-2">
+                        {{ form.hf_version }}
+                        <label for="{{ form.hf_version.id_for_label }}" class="form-check-label">{{ form.hf_version.label }}</label>
+                    </div>
+                    {% if form.hf_version.errors %}<div class="text-danger small mt-1">{{ form.hf_version.errors }}</div>{% endif %}
+                </div>
+                <div class="col-12">
+                    <label for="{{ form.link_datasheet.id_for_label }}" class="form-label">{{ form.link_datasheet.label }}</label>
+                    {{ form.link_datasheet }}
+                    {% if form.link_datasheet.errors %}<div class="text-danger small mt-1">{{ form.link_datasheet.errors }}</div>{% endif %}
+                </div>
+                <div class="col-12">
+                    <label for="{{ form.description.id_for_label }}" class="form-label">{{ form.description.label }}</label>
+                    {{ form.description }}
+                    {% if form.description.errors %}<div class="text-danger small mt-1">{{ form.description.errors }}</div>{% endif %}
+                </div>
+            </div>
+
+            <div class="border rounded p-3 bg-body-tertiary">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div>
+                        <h6 class="mb-1">Buffer compatibility</h6>
+                        <p class="text-secondary small mb-0">Reuse a known buffer or create a new one, then record the activity percentage for this enzyme.</p>
+                    </div>
+                    <button type="button" id="add-buffer-row" class="btn btn-outline-primary btn-sm">Add buffer</button>
+                </div>
+
+                {{ buffer_formset.management_form }}
+                {% if buffer_formset.non_form_errors %}
+                <div class="alert alert-danger mt-3">
+                    {{ buffer_formset.non_form_errors }}
+                </div>
+                {% endif %}
+
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0" id="restriction-buffer-formset">
+                        <thead>
+                        <tr>
+                            <th scope="col">Buffer</th>
+                            <th scope="col">Activity %</th>
+                            <th scope="col" class="text-end">Action</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for buffer_form in buffer_formset %}
+                        <tr class="buffer-form-row">
+                            <td>
+                                <div class="buffer-existing-wrapper">
+                                    {{ buffer_form.existing_buffer }}
+                                </div>
+                                <div class="buffer-new-wrapper d-none">
+                                    {{ buffer_form.new_buffer_name }}
+                                </div>
+                                {% if buffer_form.existing_buffer.errors %}<div class="text-danger small mt-1">{{ buffer_form.existing_buffer.errors }}</div>{% endif %}
+                                {% if buffer_form.new_buffer_name.errors %}<div class="text-danger small mt-1">{{ buffer_form.new_buffer_name.errors }}</div>{% endif %}
+                                {% if buffer_form.non_field_errors %}<div class="text-danger small mt-1">{{ buffer_form.non_field_errors }}</div>{% endif %}
+                            </td>
+                            <td>
+                                {{ buffer_form.activity_percent }}
+                                {% if buffer_form.activity_percent.errors %}<div class="text-danger small mt-1">{{ buffer_form.activity_percent.errors }}</div>{% endif %}
+                            </td>
+                            <td class="text-end">
+                                <div class="d-none">{{ buffer_form.DELETE }}</div>
+                                <button type="button" class="btn btn-outline-danger btn-sm buffer-row-remove">Remove</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <input type="submit" value="{% if is_edit %}Save changes{% else %}Create{% endif %}" class="btn btn-primary">
+            </div>
+        </form>
+    </div>
+    <div class="col-lg-4">
+        <div class="alert alert-info border">
+            <h5>How this works</h5>
+            <p class="mb-2">Each enzyme can have one or more compatible buffers, and each buffer stores its own activity percentage.</p>
+            <p class="mb-2">Once a buffer is created here, it becomes available in the dropdown for the next enzymes you load.</p>
+            <p class="mb-0">For a fresh YTK setup, you can start with `BsaI`, `BsmBI`, and the buffers you actually use in the lab.</p>
+        </div>
+    </div>
+</div>
+
+<template id="empty-buffer-form-row">
+    <tr class="buffer-form-row">
+        <td>
+            <div class="buffer-existing-wrapper">
+                {{ buffer_formset.empty_form.existing_buffer }}
+            </div>
+            <div class="buffer-new-wrapper d-none">
+                {{ buffer_formset.empty_form.new_buffer_name }}
+            </div>
+        </td>
+        <td>
+            {{ buffer_formset.empty_form.activity_percent }}
+        </td>
+        <td class="text-end">
+            <div class="d-none">{{ buffer_formset.empty_form.DELETE }}</div>
+            <button type="button" class="btn btn-outline-danger btn-sm buffer-row-remove">Remove</button>
+        </td>
+    </tr>
+</template>
+
+<script>
+(() => {
+    const addRowButton = document.getElementById("add-buffer-row");
+    const tableBody = document.querySelector("#restriction-buffer-formset tbody");
+    const totalFormsInput = document.getElementById("id_buffers-TOTAL_FORMS");
+    const template = document.getElementById("empty-buffer-form-row");
+
+    if (!addRowButton || !tableBody || !totalFormsInput || !template) {
+        return;
+    }
+
+    const syncBufferRow = (row) => {
+        const select = row.querySelector(".buffer-choice-select");
+        const existingWrapper = row.querySelector(".buffer-existing-wrapper");
+        const newWrapper = row.querySelector(".buffer-new-wrapper");
+        const newInput = row.querySelector(".buffer-new-name");
+        if (!select || !existingWrapper || !newWrapper || !newInput) {
+            return;
+        }
+        const isNewBuffer = select.value === "__new__";
+        existingWrapper.classList.toggle("d-none", isNewBuffer);
+        newWrapper.classList.toggle("d-none", !isNewBuffer);
+        if (isNewBuffer) {
+            newInput.focus();
+        } else {
+            newInput.value = "";
+        }
+    };
+
+    addRowButton.addEventListener("click", () => {
+        const nextIndex = Number(totalFormsInput.value);
+        const row = template.content.firstElementChild.cloneNode(true);
+        row.innerHTML = row.innerHTML.replace(/__prefix__/g, String(nextIndex));
+        tableBody.appendChild(row);
+        syncBufferRow(row);
+        totalFormsInput.value = String(nextIndex + 1);
+    });
+
+    document.querySelectorAll(".buffer-form-row").forEach(syncBufferRow);
+
+    document.addEventListener("change", (event) => {
+        const select = event.target.closest(".buffer-choice-select");
+        if (!select) {
+            return;
+        }
+        const row = select.closest(".buffer-form-row");
+        if (row) {
+            syncBufferRow(row);
+        }
+    });
+
+    document.addEventListener("click", (event) => {
+        const removeButton = event.target.closest(".buffer-row-remove");
+        if (!removeButton) {
+            return;
+        }
+        const row = removeButton.closest(".buffer-form-row");
+        if (!row) {
+            return;
+        }
+        const deleteInput = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
+        row.querySelectorAll("input, select").forEach((input) => {
+            if (input.type === "checkbox") {
+                input.checked = false;
+                return;
+            }
+            input.value = "";
+        });
+        if (deleteInput) {
+            deleteInput.checked = true;
+        }
+        row.classList.add("d-none");
+    });
+})();
+</script>
+{% endblock %}

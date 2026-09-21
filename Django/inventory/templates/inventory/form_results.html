@@ -37,6 +37,12 @@
 </div>
 {% endif %}
 
+{% if request.GET.form_result_plasmid_import_success %}
+<div class="alert alert-success" role="alert">
+  GenBank plasmids imported!
+</div>
+{% endif %}
+
 {% if request.GET.form_result_glycerolstock_edit_success %}
 <div class="alert alert-success" role="alert">
   Glycerol stock edited!
@@ -106,6 +112,13 @@
 {% if request.GET.form_result_primer_edit_success %}
 <div class="alert alert-success" role="alert">
   Primer edited!
+</div>
+{% endif %}
+
+{% if request.GET.form_result_primer_import_success %}
+<div class="alert alert-success" role="alert">
+  Primer batch import complete! {{ request.GET.primer_import_changed }} primer{{ request.GET.primer_import_changed|pluralize }} loaded into Weaver.
+  <span class="small d-block mt-1">Created {{ request.GET.primer_import_created }}, updated {{ request.GET.primer_import_updated }}, skipped {{ request.GET.primer_import_skipped }}, errors {{ request.GET.primer_import_errors }}.</span>
 </div>
 {% endif %}
 

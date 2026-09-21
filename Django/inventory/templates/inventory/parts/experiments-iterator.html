@@ -1,0 +1,43 @@
+<div class="my-2">
+    <div>
+        {% if plasmid.level != 0 and plasmid.type.id != 1 %}
+        <span data-bs-toggle="collapse" href="#collapse-{{plasmid.idx}}" role="button" aria-expanded="{% if plasmid.is_validated %}true{% else %}false{% endif %}" aria-controls="collapse-{{plasmid.idx}}">
+            <i class="bi bi-dash-lg text-secondary"></i>
+        </span>
+        {% else %}
+        <span>
+            <i class="bi bi-dot"></i>
+        </span>
+        {% endif %}
+        <span class="d-inline-block rounded p-2 text-bg-{% if plasmid.is_validated %}success{% else %}primary{% endif %}">
+            <a class="text-light" href="{% url 'plasmid' plasmid_id=plasmid.id %}" target="_blank">
+                {{plasmid.name}}<strong class="px-2">{{plasmid.idx}}</strong><i class="bi bi-box-arrow-up-right"></i>
+            </a>
+        </span>
+        {% if plasmid.is_validated %}
+            <span class="d-inline-block p-2 text-bg-secondary rounded">
+                {% if plasmid.no_colony %}
+                    NC
+                {% elif plasmid.working_colony != None %}
+                    c<span class="ps-1">{{plasmid.working_colony}}</span>
+                {% else %}
+                    NS
+                {% endif %}
+            </span>
+        {% else %}
+        <i class="bi bi-clipboard copy_clipboard ms-2" data-cc="{{ plasmid.ligation_raw }}" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-custom-class="custom-tooltip" data-bs-title="Copy ligation data"></i>
+        {% endif %}
+    </div>
+    {% if plasmid.level != 0 and plasmid.type.id != 1 %}
+        <div class="ps-4 pt-2 mb-4 border-start border-2 collapse {% if not plasmid.is_validated %}show{% endif %}" id="collapse-{{plasmid.idx}}">
+        {% if plasmid.backbone %}
+            {% with plasmid=plasmid.backbone %}
+                {% include "inventory/parts/experiments-iterator.html" %}
+            {% endwith %}
+        {% endif %}
+        {% for plasmid in plasmid.inserts.all %}
+            {% include "inventory/parts/experiments-iterator.html" %}
+        {% endfor %}
+        </div>
+    {% endif %}
+</div>

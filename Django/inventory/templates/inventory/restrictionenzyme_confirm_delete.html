@@ -1,0 +1,11 @@
+{% extends "inventory/parts/restrictionenzyme-base.html" %}
+
+{% block content %}
+{% if restrictionenzyme %}
+<div id="form-inventory">
+    {% include "inventory/parts/inventory_delete_form.html" %}
+</div>
+{% else %}
+<div class="alert alert-warning">No restriction enzyme found.</div>
+{% endif %}
+{% endblock %}

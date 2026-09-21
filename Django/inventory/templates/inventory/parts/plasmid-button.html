@@ -1,8 +1,9 @@
 <a href="{% url 'plasmid' plasmid_id=pr.id %}" class="btn {%if extra_class%}{{extra_class}}{% else %}btn-outline-secondary{% endif %}"
-   role="button">
+   role="button"{% if open_in_new_tab %} target="_blank" rel="noopener noreferrer"{% endif %}>
     <span>{{pr.name}}</span>
-    <span class="badge text-bg-light border fw-light p-1 fw-light m-0 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-custom-class="custom-tooltip" data-bs-title="Part ID">{{pr.idx}}</span>
+    <span class="badge {% if plasmid_badge_class %}{{plasmid_badge_class}}{% else %}text-bg-light border{% endif %} fw-light p-1 m-0 align-middle" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-custom-class="custom-tooltip" data-bs-title="Part ID">{{pr.idx}}</span>
 </a>
+{% if not hide_validation_status or not hide_copy %}
 <span class="plasmid-opts">
 {% if not hide_validation_status %}
     {% with get_check_state=pr.get_check_state %}
@@ -11,5 +12,8 @@
     </span>
     {% endwith %}
 {% endif %}
+{% if not hide_copy %}
 <i class="bi bi-clipboard copy_clipboard" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-custom-class="custom-tooltip" data-bs-title="Copy name & ID" data-cc="{{pr}}"></i>
+{% endif %}
 </span>
+{% endif %}

@@ -5,9 +5,18 @@
 {% if plasmid.reference_sequence %}
 <div class="alert alert-warning">Validation edit is not allowed, his plasmid is marked as reference sequence.</div>
 {% else %}
-<div id="form-inventory">
-    {% include "inventory/parts/inventory_update_form.html" %}
+{% if validation_link_payload %}
+<div class="alert alert-info">
+    Validation link loaded for {{validation_link_method}}. Review the fields and press Update to confirm.
 </div>
+{% endif %}
+{% if form.errors %}
+<div class="alert alert-danger">
+    Validation was not saved. Please review the highlighted fields.
+</div>
+{% endif %}
+{% url 'plasmid' plasmid_id=plasmid.id as cancel_url %}
+{% include "inventory/parts/inventory_form_panel.html" with form_section_label="Validation" form_title="Update validation" form_description="Review validation states, dates and observations." form_icon="bi-check2-square" submit_label="Save validation" submit_icon="bi-check-lg" cancel_url=cancel_url cancel_label="Back to plasmid" form_extra_template="inventory/parts/validation_sequencing_files.html" %}
 {% endif %}
 {% else %}
 <div class="alert alert-warning">No Plasmid found.</div>

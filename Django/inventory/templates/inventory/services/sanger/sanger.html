@@ -1,0 +1,526 @@
+{% extends "inventory/parts/base.html" %}
+
+{% block header_object_type %}Services{% endblock %}
+{% block header_object_name %}Sanger sequencing{% endblock %}
+{% block header_object_links %}
+    <a href="{% url 'services-sanger' %}" class="btn btn-secondary sanger-header-action-button" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Refresh" aria-label="Refresh"><i class="bi bi-arrow-clockwise"></i></a>
+    {% if can_upload_sanger_batch %}
+    <form method="POST" action="{% url 'sanger_rerun_all' %}" class="sanger-header-action-form" data-sanger-rerun-progress-form onsubmit="return confirm('Re-run all saved Sanger analyses? This may take some time.');">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-outline-warning sanger-header-action-button" data-bs-toggle="tooltip" data-bs-placement="top" title="Re-run all Sanger analyses" aria-label="Re-run all Sanger analyses"><i class="bi bi-arrow-repeat"></i></button>
+    </form>
+    <a href="{% url 'sanger_batch_upload' %}" class="btn btn-outline-primary sanger-batch-upload-button sanger-header-action-button" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Upload AB1 batch" aria-label="Upload AB1 batch"><i class="bi bi-upload"></i></a>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<style>
+    .sanger-services-page {
+        padding: 1rem 0 2rem;
+    }
+    form.sanger-header-action-form {
+        display: inline-flex !important;
+        align-items: center;
+        width: auto !important;
+        height: auto !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        border-radius: 0;
+        background: transparent !important;
+    }
+    .sanger-header-action-form .btn {
+        margin-bottom: 0;
+    }
+    #header-links .sanger-header-action-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.375rem;
+        min-width: 2.375rem;
+        max-width: 2.375rem;
+        height: 2.375rem;
+        min-height: 2.375rem;
+        max-height: 2.375rem;
+        flex: 0 0 2.375rem;
+        box-sizing: border-box;
+        padding: .375rem 0 !important;
+        margin-bottom: 0;
+        vertical-align: middle;
+    }
+    #header-links .sanger-header-action-form .sanger-header-action-button:not(:hover):not(:focus):not(:active),
+    #header-links .sanger-batch-upload-button:not(:hover):not(:focus):not(:active) {
+        background-color: #444444;
+    }
+    .sanger-services-page .table_search {
+        margin-bottom: 1.25rem;
+    }
+    .sanger-services-table {
+        min-width: 980px;
+        margin-bottom: 0;
+        vertical-align: middle;
+    }
+    .sanger-services-table thead th {
+        white-space: nowrap;
+        vertical-align: middle;
+        font-size: .78rem;
+        text-transform: uppercase;
+        letter-spacing: .02em;
+    }
+    .sanger-services-table tbody td {
+        padding: .7rem .6rem;
+        vertical-align: top;
+    }
+    .sanger-services-table .sanger-plasmid-cell {
+        min-width: 190px;
+    }
+    .sanger-services-table .sanger-date-cell {
+        min-width: 125px;
+        white-space: nowrap;
+    }
+    .sanger-services-table .sanger-date-info {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.1rem;
+        height: 1.1rem;
+        margin-left: .2rem;
+        padding: 0;
+        border: 0;
+        color: var(--bs-secondary-color);
+        vertical-align: -.08rem;
+    }
+    .sanger-services-table .sanger-date-info:hover {
+        color: var(--bs-body-color);
+    }
+    .sanger-services-table .sanger-ab1-metadata-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .2rem;
+        margin-top: .25rem;
+        white-space: normal;
+    }
+    .sanger-services-table .sanger-ab1-metadata-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: .25rem;
+        max-width: 100%;
+        padding: .12rem .35rem;
+        border: 1px solid var(--bs-secondary-border-subtle);
+        border-radius: .35rem;
+        color: var(--bs-secondary-color);
+        font-size: .68rem;
+        line-height: 1.25;
+        white-space: nowrap;
+    }
+    .sanger-services-table .sanger-files-cell {
+        min-width: 245px;
+        max-width: 330px;
+    }
+    .sanger-services-table .sanger-primers-cell {
+        min-width: 150px;
+        max-width: 210px;
+    }
+    .sanger-services-table .sanger-status-cell {
+        min-width: 120px;
+        white-space: nowrap;
+    }
+    .sanger-services-table .sanger-approval-cell {
+        min-width: 135px;
+    }
+    .sanger-services-table .sanger-actions-cell {
+        min-width: 130px;
+    }
+    .sanger-services-table .sanger-plasmid-name {
+        display: inline-flex;
+        align-items: stretch;
+        max-width: 100%;
+        text-decoration: none;
+        vertical-align: middle;
+    }
+    .sanger-services-table .sanger-plasmid-name-label,
+    .sanger-services-table .sanger-plasmid-id {
+        display: inline-flex;
+        align-items: center;
+        min-height: 1.95rem;
+    }
+    .sanger-services-table .sanger-plasmid-name-label {
+        min-width: 0;
+        max-width: 220px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .sanger-services-table .sanger-plasmid-id {
+        flex: 0 0 auto;
+        font-size: .72rem;
+    }
+    .sanger-services-table .sanger-files {
+        min-width: 0;
+        white-space: normal;
+    }
+    .sanger-services-table .sanger-read-file-grid {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: .35rem;
+        max-width: 100%;
+    }
+    .sanger-services-table .sanger-read-entry {
+        display: flex;
+        align-items: stretch;
+        min-width: 0;
+        max-width: 100%;
+    }
+    .sanger-services-table .sanger-read-direction,
+    .sanger-services-table .sanger-read-file {
+        display: inline-flex;
+        align-items: center;
+        min-height: 1.95rem;
+        flex: 0 0 auto;
+        font-size: .72rem;
+        font-weight: 700;
+    }
+    .sanger-services-table .sanger-read-entry > .btn {
+        margin-bottom: 0;
+    }
+    .sanger-services-table .sanger-read-direction {
+        width: 3.35rem;
+        min-width: 3.35rem;
+        justify-content: center;
+    }
+    .sanger-services-table .sanger-read-file {
+        min-width: 0;
+        gap: .25rem;
+        max-width: 190px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .sanger-services-table .sanger-primer-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .35rem;
+        max-width: 100%;
+    }
+    .sanger-services-table .sanger-primer-chip {
+        display: inline-flex;
+        align-items: stretch;
+        min-width: 0;
+        max-width: 100%;
+        text-decoration: none;
+        vertical-align: middle;
+    }
+    .sanger-services-table .sanger-primer-chip-label,
+    .sanger-services-table .sanger-primer-chip-id {
+        display: inline-flex;
+        align-items: center;
+        min-height: 1.95rem;
+    }
+    .sanger-services-table .sanger-primer-chip-label {
+        min-width: 0;
+        max-width: 160px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .sanger-services-table .sanger-primer-chip-id {
+        flex: 0 0 auto;
+    }
+    .sanger-services-table .sanger-actions {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: .35rem;
+    }
+    .sanger-services-table .sanger-actions .btn {
+        margin-bottom: 0;
+    }
+    .sanger-services-table .sanger-run-selector {
+        width: 100%;
+        max-width: 210px;
+        padding: .25rem 1.75rem .25rem .45rem;
+        font-size: .72rem;
+    }
+    .sanger-services-table .sanger-read-file:hover {
+        color: #fff;
+        filter: brightness(1.12);
+    }
+    .sanger-services-table .badge {
+        font-weight: 500;
+    }
+</style>
+
+<div class="sanger-services-page">
+    {% if rerun_all_done %}
+    <div class="alert alert-info">{{ rerun_all_done }}</div>
+    {% endif %}
+    {% if can_upload_sanger_batch %}
+    <div id="sanger-rerun-progress" class="alert alert-info d-none" role="status" aria-live="polite"></div>
+    {% endif %}
+    {% if sanger_runs %}
+    {% include "inventory/parts/table_search.html" with object_type="Sanger files" %}
+    {% if sanger_page_count > 1 %}
+    <nav class="mb-3" aria-label="Sanger sequencing pagination (top)">
+        <ul class="pagination justify-content-end mb-0">
+            <li class="page-item{% if sanger_page == 1 %} disabled{% endif %}">
+                {% if sanger_page > 1 %}
+                <a class="page-link" href="?page=1" aria-label="First page">&lt;&lt;</a>
+                {% else %}
+                <span class="page-link">&lt;&lt;</span>
+                {% endif %}
+            </li>
+            <li class="page-item{% if sanger_page == 1 %} disabled{% endif %}">
+                {% if sanger_page > 1 %}
+                <a class="page-link" href="?page={{ sanger_page|add:'-1' }}" aria-label="Previous page">Previous</a>
+                {% else %}
+                <span class="page-link">Previous</span>
+                {% endif %}
+            </li>
+            <li class="page-item disabled"><span class="page-link">{{ sanger_page }} / {{ sanger_page_count }}</span></li>
+            <li class="page-item{% if sanger_page == sanger_page_count %} disabled{% endif %}">
+                {% if sanger_page < sanger_page_count %}
+                <a class="page-link" href="?page={{ sanger_page|add:'1' }}" aria-label="Next page">Next</a>
+                {% else %}
+                <span class="page-link">Next</span>
+                {% endif %}
+            </li>
+            <li class="page-item{% if sanger_page == sanger_page_count %} disabled{% endif %}">
+                {% if sanger_page < sanger_page_count %}
+                <a class="page-link" href="?page={{ sanger_page_count }}" aria-label="Last page">&gt;&gt;</a>
+                {% else %}
+                <span class="page-link">&gt;&gt;</span>
+                {% endif %}
+            </li>
+        </ul>
+    </nav>
+    {% endif %}
+    <div class="table-responsive sanger-services-table-wrap">
+        <table class="table table-sm table-striped table-hover table-search-target sanger-services-table">
+            <thead>
+                <tr>
+                    <th scope="col">Plasmid</th>
+                    <th scope="col">Date</th>
+                    <th scope="col">User</th>
+                    <th scope="col">Sequencing files</th>
+                    <th scope="col">Primers</th>
+                    <th scope="col">Automatic result</th>
+                    <th scope="col">Approval</th>
+                    <th scope="col"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for run in sanger_runs %}
+                <tr class="sanger-services-row">
+                    <td class="sanger-plasmid-cell">
+                        <a class="btn-group table-search-search_on me-1 sanger-plasmid-name" href="{% url 'plasmid' plasmid_id=run.plasmid.id %}" title="{{ run.plasmid.name }}" role="button" data-search-all="{{ run.plasmid.name }} {{ run.plasmid.idx }} {{ run.plasmid.project.name }} {{ run.created_by }} {{ run.label }} {{ run.automated_state }} {{ run.manual_decision }}" data-search-idx="{{ run.plasmid.idx }}" data-search-name="{{ run.plasmid.name }}">
+                            <span class="btn btn-success plasmid_list-name sanger-plasmid-name-label">{{ run.plasmid.name|truncatechars:26 }}</span><span class="btn btn-success opacity-75 plasmid_list-id sanger-plasmid-id fw-bold">{{ run.plasmid.idx }}</span>
+                        </a>
+                        {% if run.label and run.label != "Batch AB1 upload" %}<div class="text-secondary small">{{ run.label }}</div>{% endif %}
+                    </td>
+                    <td class="sanger-date-cell">
+                        {% if run.services_sequence_date %}
+                        {{ run.services_sequence_date }}
+                        {% else %}
+                        <span class="text-secondary">—</span>
+                        {% endif %}
+                        <span class="sanger-date-info" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-custom-class="custom-tooltip" title="Date uploaded: {{ run.created_at|date:'d M Y' }}" aria-label="Date uploaded: {{ run.created_at|date:'d M Y' }}" role="img" tabindex="0">
+                            <i class="bi bi-info-circle" aria-hidden="true"></i>
+                        </span>
+                        <div class="text-secondary small">{{ run.services_selection_label }}</div>
+                    </td>
+                    <td>
+                        {% if run.created_by %}{{ run.created_by }}{% else %}<span class="text-secondary">—</span>{% endif %}
+                    </td>
+                    <td class="sanger-files-cell sanger-files">
+                        <div class="sanger-read-file-grid">
+                            {% for read in run.services_reads %}
+                            <div class="sanger-read-entry btn-group" role="group">
+                                {% if read.is_usable and read.detected_orientation == "forward" %}
+                                <span class="btn btn-success sanger-read-direction" title="Forward read">FWD</span>
+                                {% elif read.is_usable and read.detected_orientation == "reverse" %}
+                                <span class="btn btn-success sanger-read-direction" title="Reverse read">REV</span>
+                                {% else %}
+                                <span class="btn btn-secondary sanger-read-direction" title="Read without a reliable orientation">UNK</span>
+                                {% endif %}
+                                {% for uploaded_file in read.files.all %}
+                                    {% if uploaded_file.file %}
+                                    <a class="btn {% if read.is_usable and read.detected_orientation == 'forward' or read.is_usable and read.detected_orientation == 'reverse' %}btn-success{% else %}btn-secondary{% endif %} opacity-75 sanger-read-file" href="{% url 'sanger_read_file_download' plasmid_id=run.plasmid.id run_id=run.id read_id=read.id file_id=uploaded_file.id %}" download="{{ uploaded_file.original_name }}" data-sanger-file-name="{{ uploaded_file.original_name }}" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-custom-class="custom-tooltip" data-bs-title="Download original file: {{ uploaded_file.original_name }}" aria-label="Download original file: {{ uploaded_file.original_name }}">
+                                        {{ uploaded_file.format|upper }} <i class="bi bi-download" aria-hidden="true"></i>
+                                    </a>
+                                    {% else %}
+                                    <span class="btn {% if read.is_usable and read.detected_orientation == 'forward' or read.is_usable and read.detected_orientation == 'reverse' %}btn-success{% else %}btn-secondary{% endif %} opacity-75 sanger-read-file" data-sanger-file-name="{{ uploaded_file.original_name }}" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-custom-class="custom-tooltip" data-bs-title="Source unavailable: {{ uploaded_file.original_name }}">
+                                        {{ uploaded_file.format|upper }}
+                                    </span>
+                                    {% endif %}
+                                {% empty %}
+                                <span class="btn btn-outline-secondary sanger-read-file" title="Source unavailable">—</span>
+                                {% endfor %}
+                            </div>
+                            {% empty %}
+                            <span class="text-secondary small">No files recorded</span>
+                            {% endfor %}
+                        </div>
+                    </td>
+                    <td class="sanger-primers-cell">
+                        <div class="sanger-primer-list">
+                        {% for primer in run.services_primers %}
+                        <a href="{% url 'primer' primer_id=primer.id %}" class="btn-group sanger-primer-chip" title="{{ primer.name }}" role="button"><span class="btn btn-success sanger-primer-chip-label">{{ primer.services_display_name }}</span>{% if primer.services_display_id %}<span class="btn btn-success opacity-75 sanger-primer-chip-id fw-bold">{{ primer.services_display_id }}</span>{% endif %}</a>
+                        {% empty %}
+                        <span class="text-secondary">—</span>
+                        {% endfor %}
+                        </div>
+                    </td>
+                    <td class="sanger-status-cell">
+                        {% if run.automated_state == "PASS" %}
+                        <span class="badge text-bg-success">Pass</span>
+                        {% elif run.automated_state == "REVIEW" %}
+                        <span class="badge text-bg-warning">Review</span>
+                        {% elif run.automated_state == "FAIL" %}
+                        <span class="badge text-bg-danger">Fail</span>
+                        {% else %}
+                        <span class="badge text-bg-secondary">No usable data</span>
+                        {% endif %}
+                    </td>
+                    <td class="sanger-approval-cell">
+                        {% if run.manual_decision == "VERIFIED" %}
+                        <span class="badge text-bg-success">Approved</span>
+                        {% elif run.manual_decision == "REJECTED" %}
+                        <span class="badge text-bg-danger">Not approved</span>
+                        {% elif run.manual_decision == "INCONCLUSIVE" %}
+                        <span class="badge text-bg-warning">Inconclusive</span>
+                        {% else %}
+                        <span class="badge text-bg-secondary">Pending</span>
+                        {% endif %}
+                        {% if run.manual_decision_by %}<div class="text-secondary small mt-1">Authorized by {{ run.manual_decision_by }}</div>{% endif %}
+                    </td>
+                    <td class="sanger-actions-cell">
+                        <div class="sanger-actions">
+                        <a class="btn btn-sm btn-outline-primary text-nowrap" href="{% url 'sanger_run_detail' plasmid_id=run.plasmid.id run_id=run.id %}">
+                            <i class="bi bi-eye me-1"></i>Review
+                        </a>
+                        {% if run.services_run_count > 1 %}
+                        <a class="btn btn-sm btn-outline-secondary text-nowrap" href="{% url 'plasmid_align_sanger' plasmid_id=run.plasmid.id %}">
+                            <i class="bi bi-list-ul me-1"></i>All runs ({{ run.services_run_count }})
+                        </a>
+                        {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if sanger_page_count > 1 %}
+    <nav class="mt-3" aria-label="Sanger sequencing pagination">
+        <ul class="pagination justify-content-end mb-0">
+            <li class="page-item{% if sanger_page == 1 %} disabled{% endif %}">
+                {% if sanger_page > 1 %}
+                <a class="page-link" href="?page=1" aria-label="First page">&lt;&lt;</a>
+                {% else %}
+                <span class="page-link">&lt;&lt;</span>
+                {% endif %}
+            </li>
+            <li class="page-item{% if sanger_page == 1 %} disabled{% endif %}">
+                {% if sanger_page > 1 %}
+                <a class="page-link" href="?page={{ sanger_page|add:'-1' }}" aria-label="Previous page">Previous</a>
+                {% else %}
+                <span class="page-link">Previous</span>
+                {% endif %}
+            </li>
+            <li class="page-item disabled"><span class="page-link">{{ sanger_page }} / {{ sanger_page_count }}</span></li>
+            <li class="page-item{% if sanger_page == sanger_page_count %} disabled{% endif %}">
+                {% if sanger_page < sanger_page_count %}
+                <a class="page-link" href="?page={{ sanger_page|add:'1' }}" aria-label="Next page">Next</a>
+                {% else %}
+                <span class="page-link">Next</span>
+                {% endif %}
+            </li>
+            <li class="page-item{% if sanger_page == sanger_page_count %} disabled{% endif %}">
+                {% if sanger_page < sanger_page_count %}
+                <a class="page-link" href="?page={{ sanger_page_count }}" aria-label="Last page">&gt;&gt;</a>
+                {% else %}
+                <span class="page-link">&gt;&gt;</span>
+                {% endif %}
+            </li>
+        </ul>
+    </nav>
+    {% endif %}
+    {% else %}
+    <div class="alert alert-secondary">No Sanger sequencing runs are available in your accessible projects.</div>
+    {% endif %}
+</div>
+{% if can_upload_sanger_batch %}
+<script>
+(() => {
+    const form = document.querySelector("[data-sanger-rerun-progress-form]");
+    const progress = document.getElementById("sanger-rerun-progress");
+    if (!form || !progress) return;
+
+    const button = form.querySelector("button[type=submit]");
+    const csrfToken = form.querySelector("[name=csrfmiddlewaretoken]").value;
+
+    const updateProgress = (processed, skipped, failed, total) => {
+        const completed = processed + skipped + failed;
+        progress.textContent = `Recalculated ${completed} of ${total} Sanger analyses (processed: ${processed}, skipped: ${skipped}, failed: ${failed}).`;
+    };
+
+    const requestProgress = async (runId) => {
+        const body = new URLSearchParams({progress: "1"});
+        if (runId) body.set("run_id", runId);
+        const response = await fetch(form.action, {
+            method: "POST",
+            headers: {
+                "Accept": "application/json",
+                "X-CSRFToken": csrfToken,
+                "X-Requested-With": "XMLHttpRequest",
+            },
+            body,
+        });
+        const payload = await response.json();
+        if (!response.ok || payload.error) {
+            throw new Error(payload.error || "Unable to recalculate Sanger analyses.");
+        }
+        return payload;
+    };
+
+    form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        button.disabled = true;
+        progress.classList.remove("d-none", "alert-danger");
+        progress.classList.add("alert-info");
+        progress.textContent = "Preparing Sanger analyses...";
+
+        let processed = 0;
+        let skipped = 0;
+        let failed = 0;
+        try {
+            const manifest = await requestProgress();
+            const runIds = manifest.run_ids || [];
+            updateProgress(0, 0, 0, runIds.length);
+            for (const runId of runIds) {
+                const result = await requestProgress(runId);
+                if (result.status === "processed") processed += 1;
+                else if (result.status === "skipped") skipped += 1;
+                else failed += 1;
+                updateProgress(processed, skipped, failed, runIds.length);
+            }
+
+            const url = new URL(window.location.href);
+            url.searchParams.set("rerun_all", "1");
+            url.searchParams.set("processed", processed);
+            url.searchParams.set("skipped", skipped);
+            url.searchParams.set("failed", failed);
+            window.setTimeout(() => window.location.assign(url.toString()), 500);
+        } catch (error) {
+            progress.classList.remove("alert-info");
+            progress.classList.add("alert-danger");
+            progress.textContent = error.message;
+            button.disabled = false;
+        }
+    });
+})();
+</script>
+{% endif %}
+{% endblock %}

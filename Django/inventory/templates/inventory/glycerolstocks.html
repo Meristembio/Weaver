@@ -16,11 +16,11 @@
 {% block content %}
 {% include "./form_results.html" %}
 {% if has_glycerolstocks %}
-<div id="glycerolstocks-list">
+<div id="glycerolstocks-list" data-server-search="true">
     <div id="glycerolstocks-tables">
         <div class="row">
             <div class="col-4">
-                {% include "inventory/parts/table_search.html" with object_type="GS" %}
+                {% include "inventory/parts/table_search.html" with object_type="Stocks" %}
             </div>
             <div class="col-8 d-flex flex-row-reverse">
                 <div id="glycerolstocks-filter" class="pe-table-filter">
@@ -30,7 +30,7 @@
         </div>
         <div id="root-glycerolstocks">
         </div>
-        <script defer type="text/javascript" src="{% static 'js/glycerolstocks_table.js' %}{{version}}"></script>
+        <script defer type="text/javascript" src="{% static 'js/glycerolstocks_table.js' %}?version=14"></script>
     </div>
 </div>
 {% else %}

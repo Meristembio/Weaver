@@ -2,9 +2,8 @@
 
 {% block content %}
 {% if primer %}
-<div id="form-inventory">
-    {% include "inventory/parts/inventory_update_form.html" %}
-</div>
+{% url 'primer' primer_id=primer.id as cancel_url %}
+{% include "inventory/parts/inventory_form_panel.html" with form_section_label="Primer" form_title="Edit primer" form_description="Update the primer sequence and metadata." form_icon="bi-pencil-square" submit_label="Save primer" submit_icon="bi-check-lg" cancel_url=cancel_url cancel_label="Back to primer" %}
 {% else %}
 <p>No Primer found.</p>
 {% endif %}

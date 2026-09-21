@@ -142,7 +142,11 @@ def member_can_write_or_admin_plasmid(plasmid, member):
 
 
 def member_can_write_or_admin_primer(primer, member):
-    return on_project_member_can_write_or_admin(primer.project, member)
+    return bool(
+        member
+        and member.is_authenticated
+        and member.membership_set.filter(access_policies__in=['a', 'w']).exists()
+    )
 
 
 def member_can_write_or_admin_gs(gs, member):

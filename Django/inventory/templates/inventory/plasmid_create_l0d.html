@@ -1,10 +1,7 @@
 {% extends "inventory/parts/base.html" %}
+{% block header_object_type %}Plasmid{% endblock %}
+{% block header_object_name %}Create - L0D{% endblock %}
 {% block content %}
-<div id="header">
-    <div id="header-element">
-        <span class="badge text-dark fw-light fs-2 p-1 ps-0 m-0 align-middle">Plasmid / Create / L0D</span>
-    </div>
-</div>
 {% if error %}
 <div class="alert alert-danger">
     {{error}}

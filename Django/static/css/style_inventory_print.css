@@ -1,7 +1,9 @@
 
 /* print */
 #label-inputs,
-#label-instructions,
+.label-inputs,
+.label-instructions,
+.label-print-button,
 #label-print-button,
 #header,
 nav,
@@ -9,7 +11,19 @@ nav,
 #recipe-concentration-wrapper{
     display:none !important;
 }
-div#label {
+/* Batch labels live inside the shared content container. Remove that
+   container's screen padding so their print origin matches an individual
+   label, which is positioned at the page origin. */
+body:has(.batch-prints-page) #content-container > .container {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0 !important;
+}
+body:has(.batch-prints-page) #header-container {
+    display: none !important;
+}
+div.label {
     position:absolute;
     left: 0;
     top: 0;
@@ -20,34 +34,40 @@ div#label {
     /*transform: rotate(90deg);
     transform-origin: 9mm 9mm; */
 }
-div#label.plasmid {
+/*div.label.plasmid {
     transform: rotate(90deg);
     transform-origin: 10mm 10mm;
-}
-div#label-qrcode {
+}*/
+div.label-qrcode {
     border-right: solid 1px #000;
 }
-div#label-qrcode img {
+div.label-qrcode img {
     width: 18mm;
     padding: 0;
     margin: 0;
     margin-right: 24mm;
     margin-left: 4mm;
 }
-div#label-info{
+div.label-info{
     margin: 0;
     padding: 0;
 }
-div#label-info p#label-name {
+div.label-info p#label-name,
+div.label-info p#label-strain,
+div.label-info p.label-id-colony {
     font-size: .8rem;
     line-height: 1em;
     margin: 0;
     margin-bottom: .5rem;
 }
-div#label.plasmid div#label-info p#label-name {
+div.label-info p#label-strain{
+    font-size: .6rem;
+    line-height: .8em;
+}
+div.label.plasmid div.label-info p.label-id-colony {
     font-size: .8rem;
 }
-div#label-info p:not(#label-name) {
+div.label-info p:not(.label-id-colony) {
     font-size: .4rem;
     line-height: 1em;
     padding: 0;

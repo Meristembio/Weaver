@@ -3,95 +3,3203 @@
 
 {% block content %}
 <link rel="stylesheet" type="text/css" media="print" href="{% static 'css/style_inventory_print.css' %}"/>
+<style>
+    .sanger-drop-zone {
+        border: 2px dashed #7a8aa0;
+        border-radius: 8px;
+        padding: 1.5rem;
+        background: #2b3036;
+        cursor: pointer;
+    }
+    .sanger-drop-zone.is-dragover {
+        background: #25364a;
+        border-color: #0d6efd;
+    }
+    .sanger-file-row {
+        display: grid;
+        grid-template-columns: minmax(180px, 1fr) 90px 100px minmax(150px, .8fr) minmax(220px, 1fr) 44px;
+        gap: .75rem;
+        align-items: center;
+        border-bottom: 1px solid #3f474f;
+        padding: .5rem 0;
+    }
+    .sanger-file-header {
+        display: grid;
+        grid-template-columns: minmax(180px, 1fr) 90px 100px minmax(150px, .8fr) minmax(220px, 1fr) 44px;
+        gap: .75rem;
+    }
+    .sanger-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: .75rem;
+    }
+    .sanger-metric {
+        border: 1px solid #49525c;
+        border-radius: 8px;
+        padding: .75rem;
+        background: #2b3036;
+        color: #f2f5f8;
+    }
+    .sanger-metric .text-muted {
+        color: #aab4be !important;
+    }
+    .sanger-alignment {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        max-height: 260px;
+        overflow: auto;
+        background: #1a1f24;
+        border: 1px solid #49525c;
+        padding: .75rem;
+    }
+    .sanger-panel {
+        border: 1px solid #49525c;
+        border-radius: 8px;
+        background: #252a30;
+        padding: 1rem;
+    }
+    .sanger-action-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .4rem;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    .sanger-action-bar .btn {
+        display: inline-flex;
+        align-items: center;
+        min-height: 0;
+        height: auto;
+        margin-bottom: 0;
+        padding: .25rem .5rem !important;
+        border-radius: .2rem;
+        font-size: .875rem !important;
+        line-height: 1.5 !important;
+        font-weight: 400;
+        transform: none !important;
+    }
+    .sanger-action-bar .btn-outline-warning,
+    .sanger-action-bar .btn-outline-danger {
+        background-color: #212529;
+    }
+    .sanger-action-bar .btn-outline-warning:hover,
+    .sanger-action-bar .btn-outline-warning:focus-visible {
+        background-color: #ffc107;
+        border-color: #ffc107;
+        color: #000;
+    }
+    .sanger-action-bar .btn-outline-danger:hover,
+    .sanger-action-bar .btn-outline-danger:focus-visible {
+        background-color: #dc3545;
+        border-color: #dc3545;
+        color: #fff;
+    }
+    .sanger-action-bar form {
+        display: inline-flex;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        width: auto;
+        height: auto;
+    }
+    .sanger-run-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .35rem;
+        align-items: center;
+    }
+    .sanger-inline-form {
+        display: inline-flex !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        background: transparent !important;
+        width: auto !important;
+        height: auto !important;
+        min-height: 0 !important;
+    }
+    .sanger-inline-form .btn,
+    .sanger-run-actions .btn {
+        display: inline-flex;
+        align-items: center;
+        min-height: 0;
+        height: auto;
+        margin-bottom: 0;
+        padding: .25rem .5rem !important;
+        border-radius: .2rem;
+        font-size: .875rem !important;
+        line-height: 1.5 !important;
+        font-weight: 400;
+        transform: none !important;
+    }
+    .sanger-action-bar .btn:focus,
+    .sanger-action-bar .btn:active,
+    .sanger-run-actions .btn:focus,
+    .sanger-run-actions .btn:active,
+    .sanger-delete-button {
+        transform: none !important;
+    }
+    .sanger-delete-button:focus,
+    .sanger-delete-button:active {
+        transform: none !important;
+    }
+    .sanger-run-list {
+        display: grid;
+        gap: .75rem;
+    }
+    .sanger-run-card {
+        border: 1px solid #49525c;
+        border-radius: 8px;
+        background: #252a30;
+        overflow: hidden;
+    }
+    .sanger-run-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+        padding: .85rem 1rem .7rem;
+        border-bottom: 1px solid #3f474f;
+    }
+    .sanger-run-card-kicker,
+    .sanger-run-card-section-label {
+        color: #aab4be;
+        font-size: .72rem;
+        letter-spacing: .02em;
+        text-transform: uppercase;
+    }
+    .sanger-run-card-date {
+        margin: .15rem 0 .1rem;
+        color: #f2f5f8;
+        font-size: 1.05rem;
+        font-weight: 500;
+    }
+    .sanger-run-card-uploaded {
+        color: #aab4be;
+        font-size: .78rem;
+    }
+    .sanger-run-card-statuses {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: .35rem;
+    }
+    .sanger-run-card-body {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 1rem;
+        align-items: end;
+        padding: .85rem 1rem;
+    }
+    .sanger-run-card-summary {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .45rem;
+        margin-bottom: .8rem;
+    }
+    .sanger-run-stat {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        padding: .3rem .5rem;
+        border: 1px solid #49525c;
+        border-radius: .35rem;
+        color: #f2f5f8;
+        font-size: .78rem;
+    }
+    .sanger-run-stat-label {
+        color: #aab4be;
+    }
+    .sanger-run-file-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .4rem;
+        margin-top: .35rem;
+    }
+    .sanger-run-file-chip {
+        display: inline-flex;
+        align-items: center;
+        min-width: 0;
+        max-width: 100%;
+        padding: .28rem .45rem;
+        border: 1px solid #49525c;
+        border-radius: .35rem;
+        background: #1f2429;
+        color: #f2f5f8;
+        font-size: .78rem;
+    }
+    .sanger-run-file-chip .badge {
+        flex: 0 0 auto;
+        margin-right: .4rem;
+        font-size: .65rem;
+        font-weight: 500;
+    }
+    .sanger-run-file-name {
+        min-width: 0;
+        max-width: 520px;
+        overflow: hidden;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .sanger-run-file-primer {
+        max-width: 180px;
+        margin-left: .5rem;
+        overflow: hidden;
+        color: #aab4be;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .sanger-run-file-primer a {
+        color: #6ea8fe;
+    }
+    .sanger-run-card-actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: .35rem;
+    }
+    @media (max-width: 767.98px) {
+        .sanger-run-card-header,
+        .sanger-run-card-body {
+            display: block;
+        }
+        .sanger-run-card-statuses,
+        .sanger-run-card-actions {
+            justify-content: flex-start;
+            margin-top: .65rem;
+        }
+        .sanger-run-file-name {
+            max-width: 210px;
+        }
+    }
+    .sanger-map {
+        position: relative;
+        height: 86px;
+        border: 1px solid #4d5863;
+        border-radius: 8px;
+        background: #151a1f;
+        overflow: hidden;
+        cursor: grab;
+        user-select: none;
+    }
+    .sanger-map:active {
+        cursor: grabbing;
+    }
+    .sanger-map-axis {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 28px;
+        height: 2px;
+        background: #5f6f7d;
+    }
+    .sanger-map-read {
+        position: absolute;
+        height: 10px;
+        border-radius: 999px;
+        background: #39b7c8;
+        box-shadow: 0 0 0 1px rgba(255,255,255,.16) inset;
+    }
+    .sanger-map-read.reverse {
+        background: #d6b344;
+    }
+    .sanger-map-read-low-quality {
+        position: absolute;
+        height: 18px;
+        border-radius: 3px;
+        background: rgba(154, 161, 169, .34);
+        border: 1px solid rgba(210, 216, 222, .28);
+        pointer-events: none;
+    }
+    .sanger-map-gap {
+        position: absolute;
+        top: 24px;
+        height: 8px;
+        background: rgba(220, 53, 69, .28);
+        border-radius: 3px;
+    }
+    .sanger-map-variant {
+        position: absolute;
+        width: 2px;
+        top: 45px;
+        height: 22px;
+        background: #ff8b98;
+        border-radius: 2px;
+    }
+    .sanger-map-variant.insertion {
+        width: 3px;
+        background: #28c7d9;
+        box-shadow: 0 0 0 1px rgba(40, 199, 217, .25);
+    }
+    .sanger-map-variant.deletion {
+        width: 2px;
+        top: 45px;
+        height: 22px;
+        margin-left: 0;
+        background: #ffb347;
+        border: 0;
+        border-radius: 2px;
+    }
+    .sanger-map-variant.low-quality {
+        width: 3px;
+        background: #9aa1a9;
+        box-shadow: 0 0 0 1px rgba(210, 216, 222, .22);
+    }
+    .sanger-map-window {
+        position: absolute;
+        top: 8px;
+        bottom: 8px;
+        border: 2px solid #0d6efd;
+        background: rgba(13, 110, 253, .15);
+        border-radius: 6px;
+        pointer-events: none;
+    }
+    #sanger-map-window-wrap {
+        display: none;
+    }
+    .sanger-browser-controls {
+        display: grid;
+        grid-template-columns: minmax(128px, 210px) auto 1fr auto;
+        gap: .45rem;
+        align-items: center;
+    }
+    .sanger-browser-controls::before {
+        content: "";
+    }
+    .sanger-browser-step {
+        width: 28px;
+        height: 28px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #4d5863;
+        border-radius: 4px;
+        background: #1c2228;
+        color: #dce5ee;
+        line-height: 1;
+        padding: 0;
+    }
+    .sanger-browser-step:hover {
+        border-color: #0d6efd;
+        color: #ffffff;
+    }
+    .sanger-browser-controls input[type="range"] {
+        border: 0 !important;
+        box-shadow: none !important;
+        background-color: transparent;
+    }
+    .sanger-map-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .75rem;
+        color: #aab4be;
+        font-size: .85rem;
+        margin-bottom: .65rem;
+    }
+    .sanger-map-legend span::before {
+        content: "";
+        display: inline-block;
+        width: 18px;
+        height: 8px;
+        border-radius: 999px;
+        margin-right: .35rem;
+        vertical-align: middle;
+        background: #39b7c8;
+    }
+    .sanger-map-legend .reverse::before {
+        background: #d6b344;
+    }
+    .sanger-map-legend .variant::before {
+        width: 3px;
+        height: 14px;
+        border-radius: 2px;
+        background: #ff8b98;
+    }
+    .sanger-map-legend .insertion::before {
+        width: 3px;
+        height: 14px;
+        border-radius: 2px;
+        background: #28c7d9;
+    }
+    .sanger-map-legend .deletion::before {
+        width: 3px;
+        height: 14px;
+        border-radius: 2px;
+        background: #ffb347;
+    }
+    .sanger-map-legend .low-quality::before {
+        width: 18px;
+        height: 8px;
+        border-radius: 2px;
+        background: rgba(154, 161, 169, .34);
+        border: 1px solid rgba(210, 216, 222, .28);
+    }
+    .sanger-map-legend .intermediate-quality::before {
+        width: 18px;
+        height: 8px;
+        border-radius: 2px;
+        background: rgba(255, 209, 102, .22);
+        border: 1px solid rgba(255, 209, 102, .32);
+    }
+    .sanger-map-legend .gap::before {
+        background: rgba(220, 53, 69, .55);
+    }
+    .sanger-map-legend .feature-cds::before {
+        background: #2fb344;
+    }
+    .sanger-map-legend .feature-promoter::before {
+        background: #f0b429;
+    }
+    .sanger-map-legend .feature-terminator::before {
+        background: #d94841;
+    }
+    .sanger-map-legend .feature-cutsite::before {
+        background: #8f63d9;
+    }
+    .sanger-map-legend .feature-recombination::before {
+        background: #e66fb2;
+    }
+    .sanger-base-view {
+        --sanger-base-font-size: 14px;
+        --sanger-window-size: 100;
+        --sanger-content-width: 0px;
+        border: 1px solid #49525c;
+        border-radius: 8px;
+        background: #11161b;
+        overflow-x: auto;
+        overflow-y: hidden;
+    }
+    .sanger-base-row {
+        display: grid;
+        grid-template-columns: minmax(128px, 210px) var(--sanger-content-width, 1fr);
+        width: 100%;
+        border-bottom: 1px solid #2f3842;
+        min-width: 100%;
+    }
+    .sanger-base-row:last-child {
+        border-bottom: 0;
+    }
+    .sanger-base-label {
+        position: sticky;
+        left: 0;
+        z-index: 2;
+        background: #1c2228;
+        border-right: 1px solid #3f474f;
+        color: #dce5ee;
+        padding: .42rem .5rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: .92rem;
+    }
+    .sanger-read-label-content {
+        display: flex;
+        align-items: center;
+        gap: .4rem;
+        min-width: 0;
+    }
+    .sanger-read-label-name {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .sanger-read-hide-btn,
+    .sanger-hidden-read-btn {
+        border: 1px solid #49525c;
+        border-radius: 4px;
+        background: #121820;
+        color: #9fc8ff;
+        font-size: .75rem;
+        line-height: 1;
+        padding: .2rem .35rem;
+    }
+    .sanger-read-hide-btn {
+        flex: 0 0 auto;
+        margin-left: auto;
+    }
+    .sanger-read-hide-btn:hover,
+    .sanger-hidden-read-btn:hover {
+        border-color: #0d6efd;
+        color: #dcecff;
+    }
+    .sanger-hidden-read-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .4rem;
+        align-items: center;
+        margin: -.2rem 0 .55rem;
+        color: #aab4be;
+        font-size: .85rem;
+    }
+    .sanger-base-seq {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: var(--sanger-base-font-size);
+        line-height: 1.45;
+        letter-spacing: 0;
+        white-space: pre;
+        padding: .42rem .5rem;
+        color: #dce5ee;
+        overflow: visible;
+    }
+    .sanger-base-columns {
+        padding-left: 0;
+        padding-right: 0;
+    }
+    .sanger-base-columns > span {
+        display: inline-block;
+        width: calc(100% / var(--sanger-window-size));
+        min-width: 0;
+        text-align: center;
+        vertical-align: top;
+        position: relative;
+    }
+    .sanger-base-insertion,
+    .sanger-base-insertion-ref {
+        background: rgba(40, 199, 217, .2);
+        color: #5ce1ef;
+        font-weight: 700;
+    }
+    .sanger-base-insertion-ref {
+        color: #46c6d2;
+    }
+    .sanger-display-only-gap {
+        background: transparent;
+    }
+    .sanger-display-only-marker {
+        position: absolute;
+        top: 7px;
+        height: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        border-radius: 3px;
+        background: rgba(154, 161, 169, .42);
+        color: #f2f5f8;
+        font: 11px system-ui, sans-serif;
+        line-height: 18px;
+        padding: 0 5px;
+        white-space: nowrap;
+        z-index: 1;
+    }
+    .sanger-feature-track {
+        position: relative;
+        height: 32px;
+        padding: 0 !important;
+        background: #141a20;
+    }
+    .sanger-feature {
+        position: absolute;
+        top: 7px;
+        height: 18px;
+        border-radius: 3px;
+        color: #081018;
+        font: 11px system-ui, sans-serif;
+        line-height: 18px;
+        overflow: hidden;
+        padding: 0 5px;
+        white-space: nowrap;
+        background: #7fb3ff;
+    }
+    .sanger-map-feature {
+        position: absolute;
+        height: 12px;
+        border-radius: 3px;
+        box-shadow: 0 0 0 1px rgba(255,255,255,.18) inset;
+        color: #081018;
+        font: 10px system-ui, sans-serif;
+        line-height: 12px;
+        padding: 0 3px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: clip;
+    }
+    .sanger-trace-track {
+        height: 108px;
+        padding: 0 !important;
+        background: #101214;
+        cursor: grab;
+        touch-action: none;
+    }
+    .sanger-base-view.is-dragging-trace .sanger-trace-track {
+        cursor: grabbing;
+    }
+    .sanger-trace-track canvas {
+        display: block;
+        width: 100%;
+        height: 108px;
+    }
+    .sanger-trace-label {
+        padding: .3rem .45rem;
+    }
+    .sanger-trace-label-content {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: .2rem;
+        min-width: 0;
+    }
+    .sanger-trace-label-name {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .sanger-inline-autoadjust {
+        display: flex;
+        align-items: center;
+        gap: .25rem;
+        margin: 0 0 0 -.15rem;
+        padding-left: 0;
+        color: #dce5ee;
+        cursor: pointer;
+        font-size: .92rem;
+        font-weight: 400;
+        line-height: 1.45;
+        justify-content: flex-start;
+        white-space: nowrap;
+    }
+    .sanger-inline-autoadjust .form-check-input {
+        flex: 0 0 auto;
+        margin: 0;
+    }
+    .sanger-browser-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .5rem;
+        align-items: center;
+        margin-bottom: .75rem;
+    }
+    .sanger-browser-toolbar .form-check {
+        margin-bottom: 0;
+    }
+    .sanger-browser-toolbar .form-check-label {
+        color: #dce5ee;
+    }
+    .sanger-zoom-control {
+        display: inline-grid;
+        grid-template-columns: auto 180px auto auto;
+        gap: .45rem;
+        align-items: center;
+        color: #dce5ee;
+    }
+    .sanger-zoom-control input[type="range"] {
+        border: 0 !important;
+        box-shadow: none !important;
+        background-color: transparent !important;
+        padding: 0;
+        margin: 0;
+    }
+    .sanger-zoom-mark {
+        color: #dce5ee;
+        font-weight: 700;
+        line-height: 1;
+    }
+    .sanger-variant-detail {
+        min-height: 38px;
+        border: 1px solid #49525c;
+        border-radius: 6px;
+        background: #1c2228;
+        padding: .5rem .65rem;
+        color: #dce5ee;
+        margin-bottom: .75rem;
+    }
+    .sanger-base-index {
+        color: #8fa0b2;
+        font-size: .82rem;
+    }
+    .sanger-base-mismatch {
+        color: #ff7f96;
+        font-weight: 700;
+        background: rgba(255, 92, 122, .2);
+    }
+    .sanger-base-clickable {
+        cursor: pointer;
+        border-radius: 2px;
+    }
+    .sanger-base-clickable:hover,
+    .sanger-base-selected {
+        outline: 1px solid #ffc107;
+        background: rgba(255, 193, 7, .18);
+    }
+    .sanger-base-gap {
+        color: #6f7b86;
+    }
+    .sanger-base-deletion {
+        color: #ffc247;
+        font-weight: 700;
+        background: rgba(255, 179, 71, .22);
+        border-radius: 2px;
+    }
+    .sanger-base-low-quality {
+        color: #b5bcc4 !important;
+        background: rgba(155, 161, 169, .26) !important;
+        font-weight: 500;
+    }
+    .sanger-base-intermediate-quality {
+        color: #ffd166 !important;
+        background: rgba(255, 209, 102, .14) !important;
+        font-weight: 500;
+    }
+    .sanger-base-match {
+        color: #dce5ee;
+    }
+    .sanger-decision {
+        border: 1px solid #49525c;
+        border-radius: 8px;
+        background: #2b3036;
+        padding: 1rem;
+    }
+    .sanger-trace-panel {
+        border: 1px solid #49525c;
+        border-radius: 8px;
+        background: #111417;
+        overflow: hidden;
+    }
+    .sanger-trace-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: .75rem;
+        align-items: center;
+        padding: .75rem;
+        border-bottom: 1px solid #343c44;
+        background: #1c2228;
+    }
+    .sanger-trace-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .5rem;
+        align-items: center;
+    }
+    .sanger-trace-controls input[type="range"],
+    #sanger-trace-slider {
+        border: 0 !important;
+        box-shadow: none !important;
+        background-color: transparent;
+    }
+    .sanger-trace-canvas-wrap {
+        position: relative;
+        height: 390px;
+        background: #101214;
+        cursor: grab;
+        user-select: none;
+    }
+    .sanger-trace-canvas-wrap:active {
+        cursor: grabbing;
+    }
+    #sanger-trace-canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+    .sanger-trace-tooltip {
+        position: absolute;
+        z-index: 4;
+        display: none;
+        pointer-events: none;
+        padding: .25rem .4rem;
+        border: 1px solid #4d5863;
+        border-radius: 4px;
+        background: #1c2228;
+        color: #dce5ee;
+        font-size: .78rem;
+        line-height: 1.2;
+        white-space: nowrap;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, .35);
+    }
+    .sanger-trace-empty {
+        padding: 1rem;
+        color: #aab4be;
+        border-top: 1px solid #343c44;
+    }
+    .sanger-primer-edit {
+        display: flex;
+        align-items: center;
+        gap: .35rem;
+        width: 180px;
+        min-width: 0;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        background: transparent !important;
+        height: auto !important;
+    }
+    .sanger-primer-edit .form-select {
+        width: 148px;
+        min-width: 0;
+        padding: .2rem 1.75rem .2rem .45rem;
+        font-size: .78rem;
+    }
+    .sanger-primer-name {
+        display: inline-flex;
+        align-items: center;
+        gap: .25rem;
+        max-width: 220px;
+    }
+    .sanger-run-selector-wrap {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+    }
+    .sanger-run-selector {
+        width: 360px;
+        max-width: 38vw;
+        padding: .25rem 1.75rem .25rem .5rem;
+        font-size: .82rem;
+    }
+    .sanger-base-a { color: #23d03f; }
+    .sanger-base-c { color: #7fa1ff; }
+    .sanger-base-g { color: #e6e6e6; }
+    .sanger-base-t { color: #ff3b30; }
+</style>
+
 {% if plasmid %}
-{% if not show_upload_form %}
-<p>
-    <a href="{% url 'plasmid_align_sanger' plasmid_id=plasmid.id %}" class="btn btn-outline-primary" role="button"><i class="bi bi-plus-circle-dotted"></i> New alignment</a>
-</p>
-{% endif %}
-<div class="alert alert-warning">Beta version</div>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h2 class="mb-1">{% if alignment_source_type == "FASTA" %}FASTA alignment{% else %}Sequence alignment{% endif %}</h2>
+        <div class="text-muted">{{ plasmid.name }}</div>
+    </div>
+    <div class="d-flex gap-2">
+        {% if not show_upload_form %}
+        {% if is_saved_run_view %}
+        {% if sanger_run_choices|length > 1 %}
+        <div class="sanger-run-selector-wrap">
+            <label class="small text-muted mb-0" for="sanger-run-selector-detail">Run</label>
+            <select id="sanger-run-selector-detail" class="form-select sanger-run-selector" aria-label="Select Sanger run" onchange="if (this.value) window.location.href = this.value;">
+                {% for run_choice in sanger_run_choices %}
+                <option value="{{ run_choice.url }}"{% if run_choice.selected %} selected{% endif %}>{{ run_choice.label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+        {% endif %}
+        {% endif %}
+        {% if alignment_source_type != "FASTA" %}
+        <a href="{% url 'services-sanger' %}" class="btn btn-outline-warning" role="button" title="Return to run tables"><i class="bi bi-arrow-left me-1"></i> Return to run tables</a>
+        {% endif %}
+    </div>
+</div>
+
 {% if error %}
-<div class="alert alert-danger">{{error}}</div>
-<a href="{% url 'plasmid_align_sanger' plasmid_id=plasmid.id %}" class="btn btn-primary">Try again</a>
+<div class="alert alert-danger">{{ error }}</div>
+<a href="{% url 'plasmid_align' plasmid_id=plasmid.id %}" class="btn btn-primary">Try again</a>
+{% endif %}
+
+{% if save_clustal_done %}
+<div class="alert alert-success">{{ save_clustal_done }}</div>
+{% endif %}
+
+{% if upload_done %}
+<div class="alert alert-success">{{ upload_done }}</div>
+{% endif %}
+
+{% if primer_update_done %}
+<div class="alert alert-success">{{ primer_update_done }}</div>
+{% endif %}
+
+{% if rerun_done %}
+<div class="alert alert-success">{{ rerun_done }}</div>
+{% endif %}
+
+{% if rerun_error %}
+<div class="alert alert-danger">{{ rerun_error }}</div>
+{% endif %}
+
+{% if recent_runs and not is_saved_run_view %}
+<div class="d-flex justify-content-between align-items-center mt-4 mb-2 gap-2 flex-wrap">
+    <h4 class="mb-0">Saved Sanger runs</h4>
+</div>
+<div class="sanger-run-list mb-4" aria-label="Saved Sanger runs">
+    {% for previous_run in recent_runs %}
+    <article class="sanger-run-card">
+        <div class="sanger-run-card-header">
+            <div>
+                <div class="sanger-run-card-kicker">Sequencing run</div>
+                <div class="sanger-run-card-date">{{ previous_run.services_sequence_date|default:"Date unavailable" }}</div>
+                <div class="sanger-run-card-uploaded">Uploaded {{ previous_run.created_at|date:"d M Y" }}</div>
+            </div>
+            <div class="sanger-run-card-statuses">
+                {% if previous_run.automated_state == "PASS" %}
+                <span class="badge text-bg-success">Pass</span>
+                {% elif previous_run.automated_state == "REVIEW" %}
+                <span class="badge text-bg-warning">Review</span>
+                {% elif previous_run.automated_state == "FAIL" %}
+                <span class="badge text-bg-danger">Fail</span>
+                {% else %}
+                <span class="badge text-bg-secondary">No usable data</span>
+                {% endif %}
+                <span class="badge text-bg-secondary">{{ previous_run.get_manual_decision_display|default:"Pending" }}</span>
+            </div>
+        </div>
+        <div class="sanger-run-card-body">
+            <div>
+                <div class="sanger-run-card-summary">
+                    <span class="sanger-run-stat"><span class="sanger-run-stat-label">Reads</span><strong>{{ previous_run.combined_metrics.useful_reads }}/{{ previous_run.combined_metrics.read_count }}</strong></span>
+                    <span class="sanger-run-stat"><span class="sanger-run-stat-label">Coverage</span><strong>{{ previous_run.combined_metrics.combined_coverage }}%</strong></span>
+                </div>
+                <div class="sanger-run-card-section-label">Uploaded files</div>
+                <div class="sanger-run-file-list">
+                    {% for previous_read in previous_run.reads.all %}
+                        {% for uploaded_file in previous_read.files.all %}
+                        <span class="sanger-run-file-chip" title="{{ uploaded_file.original_name }}">
+                            <span class="badge text-bg-secondary">{{ uploaded_file.format|upper }}</span>
+                            <span class="sanger-run-file-name">{{ uploaded_file.original_name }}</span>
+                            {% if uploaded_file.primer %}<span class="sanger-run-file-primer">primer: <a href="{% url 'primer' primer_id=uploaded_file.primer.id %}">{{ uploaded_file.primer.name }}</a></span>{% endif %}
+                        </span>
+                        {% empty %}
+                        <span class="sanger-run-file-chip" title="Source unavailable"><span class="sanger-run-file-name">{{ previous_read.name }} (source unavailable)</span></span>
+                        {% endfor %}
+                    {% empty %}
+                    <span class="text-secondary">No files recorded</span>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="sanger-run-card-actions">
+                <a class="btn btn-outline-primary btn-sm" href="{% url 'sanger_run_detail' plasmid_id=plasmid.id run_id=previous_run.id %}"><i class="bi bi-box-arrow-up-right me-1" aria-hidden="true"></i>Open</a>
+                <a class="btn btn-outline-secondary btn-sm" href="{% url 'sanger_run_download' plasmid_id=plasmid.id run_id=previous_run.id kind='reads' %}"><i class="bi bi-download me-1" aria-hidden="true"></i>Metrics</a>
+                {% if user_can_edit_plasmid %}
+                <form method="POST" action="{% url 'sanger_run_delete' plasmid_id=plasmid.id run_id=previous_run.id %}" class="sanger-inline-form" onsubmit="return confirm('Delete this Sanger run and its uploaded files?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-danger btn-sm sanger-delete-button">Delete</button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </article>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if show_upload_form %}
+{% if alignment_source_type == "FASTA" %}
+<form method="POST" enctype="multipart/form-data" id="fasta-upload-form">
+    {% csrf_token %}
+    <div class="sanger-drop-zone mb-3" id="fasta-drop-zone">
+        <div class="h5 mb-1">Paste or drop FASTA sequences here</div>
+        <div class="text-muted">Accepted input: one or more FASTA records, plain DNA sequence, or a .fa/.fas/.fasta file. Orientation is detected automatically.</div>
+        <div class="mt-3">
+            <label class="form-label" for="{{ upload_form.fasta_sequence.id_for_label }}">Sequence text</label>
+            {{ upload_form.fasta_sequence }}
+        </div>
+        <div class="mt-3">
+            <label class="form-label" for="{{ upload_form.fasta_file.id_for_label }}">FASTA file</label>
+            {{ upload_form.fasta_file }}
+        </div>
+    </div>
+    <div class="mb-3">
+        <label class="form-label" for="{{ upload_form.alignment_view_mode.id_for_label }}">View mode</label>
+        {{ upload_form.alignment_view_mode }}
+    </div>
+    {% if upload_form.non_field_errors %}
+    <div class="alert alert-danger">{{ upload_form.non_field_errors }}</div>
+    {% endif %}
+    <input class="btn btn-primary" type="submit" value="Align">
+</form>
+<script>
+(function () {
+    const dropZone = document.getElementById("fasta-drop-zone");
+    const textArea = document.getElementById("{{ upload_form.fasta_sequence.id_for_label }}");
+    const fileInput = document.getElementById("{{ upload_form.fasta_file.id_for_label }}");
+    if (!dropZone || !textArea) return;
+    textArea.classList.add("form-control");
+    textArea.rows = 10;
+    textArea.placeholder = ">query\nACGT...";
+
+    function containsDraggedFile(event) {
+        const types = event.dataTransfer ? Array.from(event.dataTransfer.types || []) : [];
+        return types.includes("Files");
+    }
+
+    ["dragover", "drop"].forEach(function (eventName) {
+        window.addEventListener(eventName, function (event) {
+            if (!containsDraggedFile(event)) return;
+            event.preventDefault();
+        });
+    });
+
+    dropZone.addEventListener("dragenter", function (event) {
+        event.preventDefault();
+        dropZone.classList.add("is-dragover");
+    });
+    dropZone.addEventListener("dragover", function (event) {
+        event.preventDefault();
+        dropZone.classList.add("is-dragover");
+    });
+    dropZone.addEventListener("dragleave", function () {
+        dropZone.classList.remove("is-dragover");
+    });
+    dropZone.addEventListener("drop", function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        dropZone.classList.remove("is-dragover");
+        const files = event.dataTransfer ? event.dataTransfer.files : null;
+        if (files && files.length && fileInput) {
+            const dt = new DataTransfer();
+            Array.from(files).forEach((file) => dt.items.add(file));
+            fileInput.files = dt.files;
+            return;
+        }
+        const text = event.dataTransfer ? event.dataTransfer.getData("text/plain") : "";
+        if (!text.trim()) return;
+        textArea.value = text.trim();
+        textArea.focus();
+    });
+})();
+</script>
 {% else %}
-    {% if save_clustal_error %}
-    <div class="alert alert-danger">{{save_clustal_error}}</div>
+<form method="POST" enctype="multipart/form-data" id="sanger-upload-form">
+    {% csrf_token %}
+    <div class="sanger-drop-zone mb-3" id="sanger-drop-zone">
+        <div class="h5 mb-1">Drop sequencing files here</div>
+        <div class="text-muted">Accepted formats: Sanger (.ab1/.phd.1/.seq) or FASTA (.fa/.fas/.fasta). Select multiple <code>.ab1</code> files together; files with the same base name are grouped as one read.</div>
+        <div class="mt-3">
+            {{ upload_form.sanger_files }}
+        </div>
+    </div>
+    <div class="row g-3 mb-3">
+        <div class="col-md-6">
+            <label class="form-label" for="{{ upload_form.label.id_for_label }}">Run label</label>
+            {{ upload_form.label }}
+        </div>
+        <div class="col-md-6">
+            <label class="form-label" for="{{ upload_form.notes.id_for_label }}">Notes</label>
+            {{ upload_form.notes }}
+        </div>
+    </div>
+    <div class="form-check mb-3">
+        {{ upload_form.save_clustal_file }}
+        <label class="form-check-label" for="{{ upload_form.save_clustal_file.id_for_label }}">Save Clustal file</label>
+    </div>
+    {% if upload_form.non_field_errors %}
+    <div class="alert alert-danger">{{ upload_form.non_field_errors }}</div>
     {% endif %}
-    {% if save_clustal_error %}
-    <div class="alert alert-danger">{{save_clustal_error}}</div>
-    {% endif %}
-    {% if show_upload_form %}
-    <!-- File loading -->
-    <form method="POST" enctype="multipart/form-data">
-        {% csrf_token %}
-        {{ upload_form.as_p }}
-        <input class="btn btn-primary" type="submit" value="Submit">
-    </form>
-    <!-- /File loading -->
-    {% else %}
-    <!-- AlignmentView -->
-    <div id="alignmentView"></div>
-    <script type="text/javascript" src="{% static 'js/open-vector-editor.js' %}{{version}}"></script>
-    <script>
-        const createAlignmentViewNode = document.createElement("div");
-        $('#alignmentView').append(createAlignmentViewNode);
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <strong id="sanger-queue-count">No files selected</strong>
+        <button type="button" class="btn btn-outline-secondary btn-sm" id="sanger-clear-files">Clear queue</button>
+    </div>
+    <div class="sanger-file-header small text-muted mb-1" aria-hidden="true">
+        <span>File</span><span>Format</span><span>Size</span><span>Read group</span><span>Primer used (required for Sanger files)</span><span></span>
+    </div>
+    <div id="sanger-file-list" class="mb-3"></div>
+    <div class="alert alert-info" id="sanger-group-summary">No read groups detected yet.</div>
+    <input class="btn btn-primary" type="submit" value="Align">
+</form>
+{{ sanger_primer_choices|json_script:"sanger-primer-options" }}
+{% endif %}
 
-        var plasmid_sequence_file_contents = `{{plasmid_sequence_file_contents}}`;
-        var align_data = JSON.parse(`{{align_data|safe}}`);
+<script>
+(function () {
+    const input = document.getElementById("id_sanger_files");
+    const dropZone = document.getElementById("sanger-drop-zone");
+    const list = document.getElementById("sanger-file-list");
+    const count = document.getElementById("sanger-queue-count");
+    const summary = document.getElementById("sanger-group-summary");
+    const clear = document.getElementById("sanger-clear-files");
+    const primerOptionsElement = document.getElementById("sanger-primer-options");
+    const primerOptions = primerOptionsElement ? JSON.parse(primerOptionsElement.textContent) : [];
+    const dt = new DataTransfer();
+    const primerSelections = {};
+    const validSuffixes = [".ab1", ".phd.1", ".seq", ".fa", ".fas", ".fasta"];
 
-        async function sequenceToJson() {
-            if(typeof plasmid_sequence_file_contents == 'undefined') {return;}
-            var jsonOutput = await window.bioParsers.anyToJson(plasmid_sequence_file_contents);
-            if(jsonOutput[0]['success']){
-                var alignmentTracks = [];
-                alignmentTracks.push(
-                {
-                    sequenceData: jsonOutput[0]['parsedSequence'],
-                    alignmentData: {
-                      name: align_data[0][0],
-                      sequence:align_data[2][0]
-                    },
-                }
-                );
-                for(var r = 1; r < align_data[0].length; r++) {
-                    alignmentTracks.push(
-                    {
-                        sequenceData: {
-                            name: align_data[0][r],
-                            sequence: align_data[1][r],
-                        },
-                        alignmentData: {
-                            name: align_data[0][r],
-                            sequence: align_data[2][r]
-                        },
-                        chromatogramData: align_data[3][r],
-                    }
-                    );
-                }
+    function fileKey(file) {
+        return `${file.name}|${file.size}|${file.lastModified}`;
+    }
 
-                const alignment = window.createAlignmentView(createAlignmentViewNode, {
-                    id: 'sanger',
-                    alignmentName: "{{plasmid.name}}",
-                    alignmentType: 'Sanger',
-                    alignmentAnnotationLabelVisibility: {
-                        "features": true,
-                        "parts": true,
-                        "chromatogram": true,
-                        "reverseSequence": false,
-                        "dnaColors": true,
-                        "cutsites": false
-                    },
-                    alignmentTracks: alignmentTracks
+    function formatOf(name) {
+        const lower = name.toLowerCase();
+        if (lower.endsWith(".phd.1")) return "PHD.1";
+        if (lower.endsWith(".ab1")) return "AB1";
+        if (lower.endsWith(".seq")) return "SEQ";
+        if (lower.endsWith(".fa") || lower.endsWith(".fas") || lower.endsWith(".fasta")) return "FASTA";
+        return "invalid";
+    }
+    function groupOf(name) {
+        if (name.toLowerCase().endsWith(".phd.1")) return name.slice(0, -6);
+        if (name.toLowerCase().endsWith(".ab1") || name.toLowerCase().endsWith(".seq")) return name.slice(0, -4);
+        if (name.toLowerCase().endsWith(".fasta")) return name.slice(0, -6);
+        if (name.toLowerCase().endsWith(".fas")) return name.slice(0, -4);
+        if (name.toLowerCase().endsWith(".fa")) return name.slice(0, -3);
+        return name.replace(/\.[^.]+$/, "");
+    }
+    function sync() {
+        input.files = dt.files;
+        list.innerHTML = "";
+        const groups = {};
+        Array.from(dt.files).forEach((file, index) => {
+            const format = formatOf(file.name);
+            const group = groupOf(file.name);
+            groups[group] = groups[group] || [];
+            groups[group].push(format);
+            const row = document.createElement("div");
+            row.className = "sanger-file-row";
+            row.innerHTML = `<span>${file.name}</span><span>${format}</span><span>${Math.ceil(file.size / 1024)} KB</span><span>${group}</span>`;
+            const primerSelect = document.createElement("select");
+            primerSelect.className = "form-select form-select-sm";
+            primerSelect.name = "primer_id";
+            primerSelect.required = ["AB1", "PHD.1", "SEQ"].includes(format);
+            primerSelect.setAttribute("aria-label", `Primer used for ${file.name}`);
+            const placeholder = document.createElement("option");
+            placeholder.value = "";
+            placeholder.textContent = primerOptions.length
+                ? (primerSelect.required ? "Select primer" : "No primer (FASTA)")
+                : "No primers available";
+            placeholder.selected = true;
+            primerSelect.appendChild(placeholder);
+            primerOptions.forEach((primer) => {
+                const option = document.createElement("option");
+                option.value = primer.id;
+                option.textContent = primer.label;
+                primerSelect.appendChild(option);
+            });
+            primerSelect.value = primerSelections[fileKey(file)] || "";
+            primerSelect.addEventListener("change", function () {
+                primerSelections[fileKey(file)] = primerSelect.value;
+            });
+            row.appendChild(primerSelect);
+            const remove = document.createElement("button");
+            remove.type = "button";
+            remove.className = "btn btn-outline-danger btn-sm";
+            remove.innerHTML = '<i class="bi bi-x"></i>';
+            remove.addEventListener("click", function () {
+                const fresh = new DataTransfer();
+                Array.from(dt.files).forEach((kept, keptIndex) => {
+                    if (keptIndex !== index) fresh.items.add(kept);
                 });
+                dt.items.clear();
+                Array.from(fresh.files).forEach((kept) => dt.items.add(kept));
+                delete primerSelections[fileKey(file)];
+                sync();
+            });
+            row.appendChild(remove);
+            list.appendChild(row);
+        });
+        count.textContent = dt.files.length ? `${dt.files.length} file(s) selected` : "No files selected";
+        const invalid = Array.from(dt.files).filter((file) => !validSuffixes.some((suffix) => file.name.toLowerCase().endsWith(suffix)));
+        summary.className = invalid.length ? "alert alert-warning" : "alert alert-info";
+        const formats = new Set(Array.from(dt.files).map((file) => formatOf(file.name)));
+        const hasFasta = formats.has("FASTA");
+        const hasSanger = ["AB1", "PHD.1", "SEQ"].some((format) => formats.has(format));
+        summary.textContent = hasFasta
+            ? `${dt.files.length} FASTA file(s) selected.${hasSanger ? " Do not mix FASTA and Sanger files in the same upload." : ""}${invalid.length ? " Invalid extensions are present and will be rejected." : ""}`
+            : `${Object.keys(groups).length} Sanger read group(s) detected.${invalid.length ? " Invalid extensions are present and will be rejected." : ""}`;
+    }
+    function addFiles(files) {
+        Array.from(files).forEach((file) => dt.items.add(file));
+        sync();
+    }
+    input.addEventListener("change", function () { addFiles(input.files); });
+    clear.addEventListener("click", function () {
+        dt.items.clear();
+        Object.keys(primerSelections).forEach((key) => delete primerSelections[key]);
+        sync();
+    });
+    dropZone.addEventListener("dragover", function (event) {
+        event.preventDefault();
+        dropZone.classList.add("is-dragover");
+    });
+    dropZone.addEventListener("dragleave", function () { dropZone.classList.remove("is-dragover"); });
+    dropZone.addEventListener("drop", function (event) {
+        event.preventDefault();
+        dropZone.classList.remove("is-dragover");
+        addFiles(event.dataTransfer.files);
+    });
+    sync();
+})();
+</script>
+{% endif %}
+
+{% if show_results and sanger_result %}
+{% if alignment_source_type != "FASTA" %}
+<div class="alert alert-info">
+    <div class="h4 mb-1">Automated analysis</div>
+    <div>The final decision must always be recorded by the user.</div>
+    <ul class="mb-0">
+        {% for reason in sanger_result.classification.reasons %}
+        <li>{{ reason }}</li>
+        {% endfor %}
+    </ul>
+</div>
+
+<div class="sanger-summary-grid mb-3">
+    <div class="sanger-metric"><div class="text-muted">Plasmid bases covered</div><strong>{{ sanger_result.combined.combined_coverage }}%</strong></div>
+    <div class="sanger-metric"><div class="text-muted">Useful-region identity</div><strong>{{ sanger_result.combined.mean_identity }}%</strong></div>
+    <div class="sanger-metric"><div class="text-muted">Useful reads</div><strong>{{ sanger_result.combined.useful_reads }} / {{ sanger_result.combined.read_count }}</strong></div>
+    <div class="sanger-metric"><div class="text-muted">High-confidence variants</div><strong>{{ sanger_result.combined.high_quality_variant_count }}</strong>{% if sanger_result.combined.high_quality_variant_density != None %}<div class="text-muted">{{ sanger_result.combined.high_quality_variant_density }}% of aligned bases</div>{% endif %}</div>
+</div>
+{% endif %}
+
+{% if alignment_source_type != "FASTA" %}
+{% for read in sanger_result.failed_reads %}
+<div class="alert alert-warning sanger-review-suggestion">
+    <div class="fw-semibold">{{ read.name }} did not produce a reliable alignment.</div>
+    <div class="small mb-2">This failed read is kept separately from the active sequencing evidence. Review the raw trace to inspect the failure.</div>
+    <div class="d-flex flex-wrap gap-2">
+        {% if run and read.id and read.chromatogram.aTrace %}
+        <a class="btn btn-outline-warning btn-sm" href="{% url 'sanger_read_chromatogram' plasmid_id=plasmid.id run_id=run.id read_id=read.id %}" target="_blank" rel="noopener">Open chromatogram window</a>
+        {% endif %}
+        {% if read.raw_sequence %}
+        <a class="btn btn-outline-primary btn-sm" href="{% url 'services-blast' %}?sequence={{ read.raw_sequence|urlencode }}&name={{ read.name|urlencode }}">Local BLAST</a>
+        {% endif %}
+    </div>
+</div>
+{% endfor %}
+{% endif %}
+
+{% if alignment_source_type == "FASTA" and show_results and fasta_clustal_content %}
+<div class="sanger-action-bar">
+    <button class="btn btn-outline-primary btn-sm" type="button" id="fasta-download-clustal">Download Clustal</button>
+</div>
+<script>
+(function () {
+    const button = document.getElementById("fasta-download-clustal");
+    if (!button) return;
+    const clustalText = "{{ fasta_clustal_content|escapejs }}";
+    const fileName = "{{ fasta_clustal_filename|default:'fasta-alignment.clustal'|escapejs }}";
+    button.addEventListener("click", function () {
+        const blob = new Blob([clustalText], { type: "text/plain;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+    });
+})();
+</script>
+{% endif %}
+
+{% if run %}
+<div class="sanger-action-bar">
+    <a class="btn btn-outline-primary btn-sm" href="{% url 'sanger_run_download' plasmid_id=plasmid.id run_id=run.id kind='reads' %}">Metrics</a>
+    <a class="btn btn-outline-primary btn-sm" href="{% url 'sanger_run_download' plasmid_id=plasmid.id run_id=run.id kind='variants' %}">Variants</a>
+    {% if run.clustal_file %}
+    <a class="btn btn-outline-primary btn-sm" href="{% url 'sanger_run_download' plasmid_id=plasmid.id run_id=run.id kind='clustal' %}">Clustal</a>
+    {% endif %}
+    {% if user_can_edit_plasmid %}
+    <form method="POST" action="{% url 'sanger_run_rerun' plasmid_id=plasmid.id run_id=run.id %}" class="sanger-inline-form" onsubmit="return confirm('Re-run this Sanger analysis?');">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-outline-warning btn-sm" title="Re-run analysis"><i class="bi bi-arrow-repeat me-1" aria-hidden="true"></i>Re-run analysis</button>
+    </form>
+    {% endif %}
+    {% if user_can_edit_plasmid %}
+    <form method="POST" action="{% url 'sanger_run_delete' plasmid_id=plasmid.id run_id=run.id %}" class="sanger-inline-form" onsubmit="return confirm('Delete this Sanger run and its uploaded files?');">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-outline-danger btn-sm sanger-delete-button">Delete</button>
+    </form>
+    {% endif %}
+</div>
+{% endif %}
+
+<div class="sanger-panel mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <div>
+            <h4 class="mb-1">{% if alignment_source_type == "FASTA" %}Alignment Map{% else %}Read Coverage{% endif %}</h4>
+            {% if alignment_source_type != "FASTA" %}<div class="text-muted">Click or drag to choose the visible base window below.</div>{% endif %}
+        </div>
+        <div class="text-muted" id="sanger-browser-window-label"></div>
+    </div>
+    <div class="sanger-map-legend">
+        <span>{% if alignment_source_type == "FASTA" %}Forward sequence{% else %}Forward read{% endif %}</span>
+        <span class="reverse">{% if alignment_source_type == "FASTA" %}Reverse-complement sequence{% else %}Reverse read{% endif %}</span>
+        <span class="variant">Variant</span>
+        <span class="insertion">Insertion</span>
+        <span class="deletion">Deletion</span>
+        {% if alignment_source_type != "FASTA" %}
+        <span class="low-quality">Low quality</span>
+        <span class="intermediate-quality">Intermediate</span>
+        {% endif %}
+        <span class="feature-cds">CDS</span>
+        <span class="feature-promoter">Promoter</span>
+        <span class="feature-terminator">Terminator</span>
+        <span class="feature-cutsite">Cut site</span>
+        <span class="feature-recombination">Recombination</span>
+    </div>
+    <div class="sanger-map mb-3" id="sanger-map" aria-label="Sanger alignment map">
+        <div class="sanger-map-axis"></div>
+        <div class="sanger-map-window" id="sanger-map-window"></div>
+        <div class="sanger-map-window" id="sanger-map-window-wrap"></div>
+    </div>
+    <div class="sanger-browser-toolbar">
+        {% if alignment_source_type != "FASTA" %}
+        <div class="sanger-zoom-control">
+            <span class="sanger-zoom-mark">-</span>
+            <input type="range" class="form-range" min="0" max="88" value="0" id="sanger-zoom-slider" aria-label="Zoom">
+            <span class="sanger-zoom-mark">+</span>
+            <span class="text-muted" id="sanger-zoom-label">100 columns</span>
+        </div>
+        {% endif %}
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" id="sanger-toggle-features" checked>
+            <label class="form-check-label" for="sanger-toggle-features">Features</label>
+        </div>
+        {% if alignment_source_type == "FASTA" and fasta_view_mode == "individual" %}
+        <select class="form-select form-select-sm" id="fasta-individual-read-select" aria-label="FASTA sequence" style="max-width: 260px;"></select>
+        {% endif %}
+        {% if alignment_source_type != "FASTA" %}
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" id="sanger-toggle-traces" checked>
+            <label class="form-check-label" for="sanger-toggle-traces">Chromatograms</label>
+        </div>
+        {% endif %}
+    </div>
+    {% if alignment_source_type != "FASTA" %}
+    <div class="sanger-variant-detail" id="sanger-variant-detail">Select a mismatch, indel, or ambiguous base to inspect evidence.</div>
+    {% else %}
+    <div class="sanger-variant-detail d-none" id="sanger-variant-detail"></div>
+    {% endif %}
+    <div class="sanger-hidden-read-bar d-none" id="sanger-hidden-read-bar"></div>
+    <div class="sanger-base-view" id="sanger-base-view"></div>
+    <div class="sanger-browser-controls mb-3">
+        <button type="button" class="sanger-browser-step" id="sanger-step-left" aria-label="Move one base left">&lsaquo;</button>
+        <input type="range" class="form-range" min="0" value="0" id="sanger-browser-slider">
+        <button type="button" class="sanger-browser-step" id="sanger-step-right" aria-label="Move one base right">&rsaquo;</button>
+    </div>
+</div>
+
+{% if alignment_source_type != "FASTA" %}
+<div class="sanger-trace-panel mb-4 d-none" id="sanger-trace-panel">
+    <div class="sanger-trace-toolbar">
+        <div>
+            <h4 class="mb-1">Chromatogram</h4>
+            <div class="text-muted" id="sanger-trace-status">AB1 peak traces are shown for reads that include chromatogram data.</div>
+        </div>
+        <div class="sanger-trace-controls">
+            <select class="form-select form-select-sm" id="sanger-trace-read" aria-label="Trace read"></select>
+            <div class="btn-group btn-group-sm" role="group" aria-label="Trace scale">
+                <button type="button" class="btn btn-outline-primary active" id="sanger-trace-standard">Standard</button>
+                <button type="button" class="btn btn-outline-secondary" id="sanger-trace-autoscale">Autoscaled</button>
+            </div>
+            <label class="text-muted mb-0" for="sanger-trace-zoom">Zoom</label>
+            <input type="range" class="form-range" min="250" max="2200" value="900" id="sanger-trace-zoom" style="width: 180px;">
+        </div>
+    </div>
+    <div class="sanger-trace-canvas-wrap" id="sanger-trace-wrap">
+        <canvas id="sanger-trace-canvas"></canvas>
+        <div class="sanger-trace-tooltip" id="sanger-trace-tooltip"></div>
+    </div>
+    <div class="p-2">
+        <input type="range" class="form-range" min="0" value="0" id="sanger-trace-slider">
+    </div>
+    <div class="sanger-trace-empty d-none" id="sanger-trace-empty">No AB1 chromatogram data is available for this run.</div>
+</div>
+{% endif %}
+
+{% if user_can_edit_plasmid and run %}
+<form method="POST" action="{% url 'sanger_run_decision' plasmid_id=plasmid.id run_id=run.id %}" class="sanger-decision mb-4" onsubmit="return confirm('Save the user decision for this run?');">
+    {% csrf_token %}
+    <div class="row g-2 align-items-end">
+        <div class="col-md-3">
+            <label class="form-label">User decision</label>
+            <select name="manual_decision" class="form-select form-select-sm">
+                <option value="PENDING" {% if run.manual_decision == "PENDING" or not run.manual_decision %}selected{% endif %}>Pending</option>
+                <option value="VERIFIED" {% if run.manual_decision == "VERIFIED" %}selected{% endif %}>Verified / Approved</option>
+                <option value="REJECTED" {% if run.manual_decision == "REJECTED" %}selected{% endif %}>Failed / Rejected</option>
+                <option value="INCONCLUSIVE" {% if run.manual_decision == "INCONCLUSIVE" %}selected{% endif %}>Inconclusive</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Effective validation date</label>
+            <input type="date" class="form-control form-control-sm" name="manual_decision_effective_date" value="{{ run.manual_decision_effective_date|date:'Y-m-d' }}">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Decision comment</label>
+            <input type="text" class="form-control form-control-sm" name="manual_decision_comment" value="{{ run.manual_decision_comment }}">
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-primary btn-sm w-100" type="submit">Save decision</button>
+        </div>
+    </div>
+    {% if run.manual_decision_by %}
+    <div class="text-muted mt-2">Last decided by {{ run.manual_decision_by }} on {{ run.manual_decision_at|date:"d M Y H:i" }}.</div>
+    {% endif %}
+</form>
+{% endif %}
+
+{% if alignment_source_type != "FASTA" %}
+<h4>Reads</h4>
+<div class="table-responsive mb-4">
+    <table class="table table-sm align-middle">
+        <thead>
+            <tr>
+                <th>{% if alignment_source_type == "FASTA" %}Sequence{% else %}Read{% endif %}</th><th>Formats</th><th>Source</th><th>Primer</th><th>Orientation</th><th>Coordinates</th><th>Length</th>{% if alignment_source_type != "FASTA" %}<th>Quality</th>{% endif %}<th>Identity</th><th>Variants</th><th>Use</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for read in sanger_result.reads %}
+            <tr>
+                <td>{{ read.name }}</td>
+                <td>{{ read.formats|join:", " }}</td>
+                <td>{{ read.selected_source|upper }}</td>
+                <td>
+                    {% if read.source_file_id %}
+                    {% if user_can_edit_plasmid and run %}
+                    <form method="POST" action="{% url 'sanger_read_file_primer_update' plasmid_id=plasmid.id run_id=run.id read_id=read.id file_id=read.source_file_id %}" class="sanger-primer-edit">
+                        {% csrf_token %}
+                        <select name="primer_id" class="form-select form-select-sm" aria-label="Primer used for {{ read.name }}">
+                            <option value="">No primer</option>
+                            {% for primer in sanger_primer_choices %}
+                            <option value="{{ primer.id }}"{% if read.primer_id == primer.id %} selected{% endif %}>{{ primer.label }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="btn btn-outline-primary btn-sm" title="Save primer" aria-label="Save primer"><i class="bi bi-check2"></i></button>
+                    </form>
+                    {% elif read.primer_name %}
+                    <a class="sanger-primer-name" href="{% url 'primer' primer_id=read.primer_id %}">
+                        {% if read.primer_display_id %}{{ read.primer_display_id }} - {% endif %}{{ read.primer_display_name|default:read.primer_name }}
+                    </a>
+                    {% else %}
+                    <span class="text-muted">No primer</span>
+                    {% endif %}
+                    {% else %}
+                    <span class="text-muted">—</span>
+                    {% endif %}
+                </td>
+                <td>{{ read.alignment.orientation|default:"unmapped" }}</td>
+                <td>{% if read.alignment %}{{ read.alignment.start_display }}..{{ read.alignment.end_display }}{% if read.alignment.crosses_origin %} (crosses origin){% endif %}{% else %}-{% endif %}</td>
+                <td>{{ read.quality_metrics.raw_length }} -> {{ read.quality_metrics.trimmed_length }}</td>
+                {% if alignment_source_type != "FASTA" %}<td>{% if read.quality_metrics.quality_available %}Q{{ read.quality_metrics.mean_quality }}{% else %}not available{% endif %}</td>{% endif %}
+                <td>{{ read.alignment.identity|default:"-" }}%</td>
+                <td>{% if read.alignment %}{{ read.alignment.variants|length }}{% else %}0{% endif %}</td>
+                <td>
+                    {% if run and read.id and read.chromatogram.aTrace %}
+                    <a class="btn btn-outline-primary btn-sm me-2" href="{% url 'sanger_read_chromatogram' plasmid_id=plasmid.id run_id=run.id read_id=read.id %}" target="_blank" rel="noopener">Chromatogram</a>
+                    {% endif %}
+                    {% for warning in read.warnings %}
+                        {% if warning == "trimmed sequence shorter than minimum" or warning == "The usable sequence is too short for reliable alignment." %}
+                        <button type="button" class="btn btn-link text-warning p-0 sanger-warning-icon" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-custom-class="custom-tooltip" data-bs-title="The usable sequence is too short for reliable alignment." aria-label="The usable sequence is too short for reliable alignment."><i class="bi bi-exclamation-triangle-fill"></i></button>
+                        {% endif %}
+                    {% endfor %}
+                    {% if read.is_usable %}
+                    <span class="badge bg-success">usable</span>
+                    {% else %}
+                    <span class="badge bg-secondary">discarded</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% for warning in read.warnings %}
+            {% if warning != "trimmed sequence shorter than minimum" and warning != "The usable sequence is too short for reliable alignment." %}
+            <tr>
+                <td></td>
+                <td colspan="10">
+                    <div class="text-warning">{{ warning }}</div>
+                </td>
+            </tr>
+            {% endif %}
+            {% endfor %}
+            {% for error in read.errors %}
+            <tr>
+                <td></td>
+                <td colspan="10"><div class="text-danger">{{ error }}</div></td>
+            </tr>
+            {% endfor %}
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% if sanger_result.combined.variants and alignment_source_type != "FASTA" %}
+<h4>Variants</h4>
+<div class="table-responsive mb-4">
+    <table class="table table-sm">
+        <thead><tr><th>Read</th><th>Coordinate</th><th>Type</th><th>Expected</th><th>Observed</th><th>Phred</th><th>Flag</th></tr></thead>
+        <tbody>
+        {% for variant in sanger_result.combined.variants|slice:":200" %}
+        <tr>
+            <td>{{ variant.read }}</td>
+            <td>{{ variant.coordinate|add:1 }}</td>
+            <td>{{ variant.type }}</td>
+            <td>{{ variant.expected }}</td>
+            <td>{{ variant.observed }}</td>
+            <td>{{ variant.quality|default:"" }}</td>
+            <td>{% if variant.low_quality %}low quality{% endif %}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<script>
+(function () {
+    const data = JSON.parse('{{ sanger_browser_data|escapejs }}');
+    const map = document.getElementById("sanger-map");
+    const slider = document.getElementById("sanger-browser-slider");
+    const stepLeft = document.getElementById("sanger-step-left");
+    const stepRight = document.getElementById("sanger-step-right");
+    const windowMarker = document.getElementById("sanger-map-window");
+    const label = document.getElementById("sanger-browser-window-label");
+    const baseView = document.getElementById("sanger-base-view");
+    const hiddenReadBar = document.getElementById("sanger-hidden-read-bar");
+    const detail = document.getElementById("sanger-variant-detail");
+    const toggleFeatures = document.getElementById("sanger-toggle-features");
+    const toggleTraces = document.getElementById("sanger-toggle-traces");
+    const zoomSlider = document.getElementById("sanger-zoom-slider");
+    const zoomLabel = document.getElementById("sanger-zoom-label");
+    const fastaIndividualSelect = document.getElementById("fasta-individual-read-select");
+    const wrappedWindowMarker = document.getElementById("sanger-map-window-wrap");
+    if (!map || !data || !data.referenceLength) return;
+
+    const isFastaAlignment = "{{ alignment_source_type|default:'' }}" === "FASTA";
+    const fastaViewMode = "{{ fasta_view_mode|default:'combined' }}";
+    const referenceLength = data.referenceLength;
+    const displayOrigin = Number(data.displayOrigin || 0) % referenceLength;
+    const minimumWindowSize = Math.min(referenceLength, 12);
+    const maximumWindowSize = Math.min(referenceLength, 100);
+    let windowSize = 100;
+    let manualWindowSize = 0;
+    // This is an index into the complete alignment-column stream, not a
+    // plasmid coordinate. A one-step move therefore always advances exactly
+    // one displayed column, including insertions.
+    let alignmentStart = 0;
+    let globalAlignmentColumnCache = null;
+    let selectedBaseKey = "";
+    let selectedDisplayCoordinate = null;
+    const hiddenReadIndexes = new Set();
+    const inlineTraceStates = new Map();
+    let inlineDragging = false;
+    let inlineDragStartX = 0;
+    let inlineDragStartWindow = 0;
+    let inlineDragWidth = 0;
+    const lowQualityDisplayPhred = 20;
+    const lowQualityWindowSize = 12;
+
+    function pct(position) {
+        return position / referenceLength * 100;
+    }
+    function plasmidCoord(displayCoord) {
+        return (displayOrigin + displayCoord + referenceLength) % referenceLength;
+    }
+    function displayCoord(plasmidCoordinate) {
+        return (plasmidCoordinate - displayOrigin + referenceLength) % referenceLength;
+    }
+    function displayBp(plasmidCoordinate) {
+        return displayCoord(plasmidCoordinate) + 1;
+    }
+    function isLowQualityValue(quality) {
+        return quality !== null && quality !== undefined && !Number.isNaN(Number(quality)) && Number(quality) < lowQualityDisplayPhred;
+    }
+    function confidenceRegionsVisible() {
+        return true;
+    }
+    function regionContainsBase(region, baseIndex) {
+        const index = normalizedBaseIndex(baseIndex);
+        if (index === null) return false;
+        return index >= Number(region.start) && index <= Number(region.end);
+    }
+    function confidenceRegionForBase(read, baseIndex, level) {
+        const regions = level === "intermediate" ? (read.intermediateConfidenceRegions || []) : (read.confidenceRegions || []);
+        return regions.find((region) => regionContainsBase(region, baseIndex)) || null;
+    }
+    function confidenceRegionTitle(region) {
+        if (!region) return "";
+        const mean = region.mean_phred === null || region.mean_phred === undefined ? "n/a" : region.mean_phred;
+        const median = region.median_phred === null || region.median_phred === undefined ? "n/a" : region.median_phred;
+        const q20 = region.q20_low_percent === null || region.q20_low_percent === undefined ? "n/a" : `${region.q20_low_percent}%`;
+        const signal = region.median_relative_signal === null || region.median_relative_signal === undefined ? "n/a" : region.median_relative_signal;
+        const reason = (region.reasons || []).join("; ") || region.level || "confidence region";
+        return `Bases ${region.start_display}..${region.end_display}, ${region.length} bp | mean Q ${mean}, median Q ${median}, Q<20 ${q20}, relative signal ${signal} | ${reason}`;
+    }
+    function localQualityMask(read) {
+        if ((read.confidenceRegions || []).length) {
+            const length = ((read.chromatogram || {}).qualNums || read.rawSequence || []).length;
+            const maxEnd = Math.max(0, ...read.confidenceRegions.map((region) => Number(region.end || 0) + 1));
+            const mask = Array(Math.max(length, maxEnd)).fill(false);
+            read.confidenceRegions.forEach((region) => {
+                for (let i = Number(region.start); i <= Number(region.end); i++) mask[i] = true;
+            });
+            return mask;
+        }
+        if (read._sangerLocalQualityMask) return read._sangerLocalQualityMask;
+        const qualities = ((read.chromatogram || {}).qualNums || []).map((quality) => Number(quality || 0));
+        const halfWindow = Math.floor(lowQualityWindowSize / 2);
+        read._sangerLocalQualityMask = qualities.map((quality, index) => {
+            let left = Math.max(0, index - halfWindow);
+            let right = Math.min(qualities.length, left + lowQualityWindowSize);
+            left = Math.max(0, right - lowQualityWindowSize);
+            const window = qualities.slice(left, right);
+            const localMean = window.length ? window.reduce((sum, value) => sum + value, 0) / window.length : 0;
+            return quality < lowQualityDisplayPhred || localMean < lowQualityDisplayPhred;
+        });
+        return read._sangerLocalQualityMask;
+    }
+    function isLocalLowQualityBase(read, baseIndex) {
+        const index = normalizedBaseIndex(baseIndex);
+        if (index === null) return false;
+        return Boolean(localQualityMask(read)[index]);
+    }
+    function visibleBaseCount() {
+        if (manualWindowSize) return manualWindowSize;
+        const rowWidth = baseView.clientWidth || 0;
+        const labelWidth = Math.min(210, Math.max(128, rowWidth * 0.19));
+        const sequenceWidth = Math.max(120, rowWidth - labelWidth - 16);
+        const charWidth = 8.05;
+        return Math.max(minimumWindowSize, Math.min(maximumWindowSize, Math.floor(sequenceWidth / charWidth)));
+    }
+    function refreshWindowSize() {
+        windowSize = visibleBaseCount();
+        if (zoomSlider) {
+            zoomSlider.min = "0";
+            zoomSlider.max = String(maximumWindowSize - minimumWindowSize);
+            zoomSlider.value = String(maximumWindowSize - windowSize);
+        }
+        if (zoomLabel) zoomLabel.textContent = `${windowSize} columns`;
+        slider.max = String(maxStart());
+        alignmentStart = clampStart(alignmentStart);
+    }
+    function sequenceWidthPixels() {
+        const rowWidth = baseView.clientWidth || 0;
+        const labelWidth = Math.min(210, Math.max(128, rowWidth * 0.19));
+        return Math.max(120, rowWidth - labelWidth - 16);
+    }
+    function updateBaseZoomStyle() {
+        const sequenceWidth = sequenceWidthPixels();
+        const horizontalPadding = 16;
+        const fontSize = Math.max(8, Math.min(18, (sequenceWidth - horizontalPadding) / Math.max(1, windowSize) * 1.72));
+        baseView.style.setProperty("--sanger-base-font-size", `${fontSize.toFixed(2)}px`);
+        baseView.style.setProperty("--sanger-window-size", String(windowSize));
+        baseView.style.setProperty(
+            "--sanger-content-width",
+            `${Math.max(120, sequenceWidth - horizontalPadding).toFixed(2)}px`
+        );
+    }
+    function maxZoomWindowSize() {
+        return Math.max(minimumWindowSize, Math.min(maximumWindowSize, Math.floor((sequenceWidthPixels() - 16) / (8 / 1.72))));
+    }
+    function maxStart() {
+        // Every alignment column can be the first column of a circular
+        // viewport. The viewport itself is allowed to continue at column 0.
+        return Math.max(0, globalAlignmentColumns().length - 1);
+    }
+    function clampStart(nextStart) {
+        const columnCount = globalAlignmentColumns().length;
+        if (!columnCount) return 0;
+        const numericStart = Number(nextStart);
+        const roundedStart = Number.isFinite(numericStart) ? Math.round(numericStart) : 0;
+        return ((roundedStart % columnCount) + columnCount) % columnCount;
+    }
+    function addSegment(className, startCoord, endCoord, top, title) {
+        const el = document.createElement("div");
+        el.className = className;
+        el.style.left = `${pct(startCoord)}%`;
+        el.style.width = `${Math.max(.3, pct(endCoord - startCoord + 1))}%`;
+        if (top !== null) el.style.top = `${top}px`;
+        if (title) el.title = title;
+        map.appendChild(el);
+    }
+    function addPlasmidSegment(className, plasmidStart, plasmidEnd, top, title) {
+        const viewStart = displayCoord(plasmidStart);
+        const viewEnd = displayCoord(plasmidEnd);
+        if (viewStart <= viewEnd) {
+            addSegment(className, viewStart, viewEnd, top, title);
+        } else {
+            addSegment(className, viewStart, referenceLength - 1, top, title);
+            addSegment(className, 0, viewEnd, top, title);
+        }
+    }
+    function textColorForBackground(color) {
+        const match = String(color || "").trim().match(/^#?([0-9a-f]{6})$/i);
+        if (!match) return "#081018";
+        const hex = match[1];
+        const r = parseInt(hex.slice(0, 2), 16);
+        const g = parseInt(hex.slice(2, 4), 16);
+        const b = parseInt(hex.slice(4, 6), 16);
+        const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+        return luminance < 0.52 ? "#f2f5f8" : "#081018";
+    }
+    function featureColor(feature) {
+        return feature.color || "#7fb3ff";
+    }
+    function addFeatureMapSegment(feature, segmentStart, segmentEnd, top) {
+        const viewStart = displayCoord(segmentStart);
+        const viewEnd = displayCoord(segmentEnd);
+        if (viewStart > viewEnd) {
+            addFeatureMapSegmentView(feature, viewStart, referenceLength - 1, top);
+            addFeatureMapSegmentView(feature, 0, viewEnd, top);
+            return;
+        }
+        addFeatureMapSegmentView(feature, viewStart, viewEnd, top);
+    }
+    function addFeatureMapSegmentView(feature, viewStart, viewEnd, top) {
+        const el = document.createElement("div");
+        const widthPct = Math.max(.3, pct(viewEnd - viewStart + 1));
+        el.className = "sanger-map-feature";
+        el.style.left = `${pct(viewStart)}%`;
+        el.style.width = `${widthPct}%`;
+        el.style.top = `${top}px`;
+        el.style.background = featureColor(feature);
+        el.style.color = textColorForBackground(featureColor(feature));
+        el.title = `${feature.name}: plasmid bp ${displayBp(feature.start)}..${displayBp(feature.end)}${feature.strand < 0 ? " reverse" : ""}`;
+        if (widthPct >= 4.5) {
+            el.textContent = feature.name;
+        }
+        map.appendChild(el);
+    }
+    function addReadSegment(read, segmentStart, segmentEnd, index) {
+        const cls = `sanger-map-read ${read.orientation === "reverse" ? "reverse" : ""}`;
+        addPlasmidSegment(cls, segmentStart, segmentEnd, 48 + index * 15, `${read.name}: plasmid bp ${displayBp(segmentStart)}..${displayBp(segmentEnd)}`);
+    }
+    function addReadLowQualitySegments(read, index) {
+        const lowRegions = read.confidenceRegions || [];
+        const projectionIndices = read.projectionBaseIndices || [];
+        if (!lowRegions.length || !projectionIndices.length) return;
+        lowRegions.forEach((region) => {
+            const startBase = Number(region.start);
+            const endBase = Number(region.end);
+            if (Number.isNaN(startBase) || Number.isNaN(endBase)) return;
+            const lowCoords = [];
+            projectionIndices.forEach((baseIndex, coord) => {
+                const normalized = normalizedBaseIndex(baseIndex);
+                if (normalized !== null && normalized >= startBase && normalized <= endBase) {
+                    lowCoords.push(displayCoord(coord));
+                }
+            });
+            if (!lowCoords.length) return;
+            lowCoords.sort((a, b) => a - b);
+            let bestStart = lowCoords[0];
+            let bestEnd = lowCoords[lowCoords.length - 1];
+            if (lowCoords.length > 1) {
+                let largestGap = -1;
+                let gapIndex = -1;
+                for (let i = 0; i < lowCoords.length - 1; i += 1) {
+                    const gap = lowCoords[i + 1] - lowCoords[i];
+                    if (gap > largestGap) {
+                        largestGap = gap;
+                        gapIndex = i;
+                    }
+                }
+                const wrapsVisualOrigin = largestGap > referenceLength / 2;
+                if (wrapsVisualOrigin) {
+                    addSegment("sanger-map-read-low-quality", lowCoords[gapIndex + 1], referenceLength - 1, 44 + index * 15, `${read.name}: low-confidence region`);
+                    addSegment("sanger-map-read-low-quality", 0, lowCoords[gapIndex], 44 + index * 15, `${read.name}: low-confidence region`);
+                    return;
+                }
+            }
+            addSegment("sanger-map-read-low-quality", bestStart, bestEnd, 44 + index * 15, `${read.name}: low-confidence region`);
+        });
+    }
+    function addCircularMapRange(className, startDisplay, length, top, title) {
+        const span = Math.min(referenceLength, Math.max(0, Number(length) || 0));
+        if (!span) return;
+        const normalizedStart = ((Number(startDisplay) % referenceLength) + referenceLength) % referenceLength;
+        const normalizedEnd = normalizedStart + span - 1;
+        if (normalizedEnd < referenceLength) {
+            addSegment(className, normalizedStart, normalizedEnd, top, title);
+            return;
+        }
+        addSegment(className, normalizedStart, referenceLength - 1, top, title);
+        addSegment(className, 0, normalizedEnd - referenceLength, top, title);
+    }
+    function addReadUnalignedLowQualitySegments(read, index) {
+        const displayOnlyVariants = (read.variants || []).filter((variant) => variant.display_only);
+        if (!displayOnlyVariants.length) return;
+        const start = Number(read.start);
+        const end = Number(read.end);
+        if (!Number.isFinite(start) || !Number.isFinite(end)) return;
+        const leftAnchor = ((start - 1) % referenceLength + referenceLength) % referenceLength;
+        const rightAnchor = ((end % referenceLength) + referenceLength) % referenceLength;
+        const leftCount = displayOnlyVariants.filter((variant) => Number(variant.coordinate) === leftAnchor).length;
+        const rightCount = displayOnlyVariants.filter((variant) => Number(variant.coordinate) === rightAnchor).length;
+        const top = 44 + index * 15;
+        if (leftCount) {
+            addCircularMapRange(
+                "sanger-map-read-low-quality",
+                displayCoord(leftAnchor) - leftCount,
+                leftCount,
+                top,
+                `${read.name}: ${leftCount} unaligned low-confidence base(s) before the aligned region`,
+            );
+        }
+        if (rightCount) {
+            addCircularMapRange(
+                "sanger-map-read-low-quality",
+                displayCoord(rightAnchor) + 1,
+                rightCount,
+                top,
+                `${read.name}: ${rightCount} unaligned low-confidence base(s) after the aligned region`,
+            );
+        }
+    }
+    function drawMap() {
+        Array.from(map.children).forEach((child) => {
+            if (child.id !== "sanger-map-window" && child.id !== "sanger-map-window-wrap" && !child.classList.contains("sanger-map-axis")) {
+                child.remove();
+            }
+        });
+        const visibleEntries = visibleReadEntries();
+        map.style.height = `${Math.max(86, 64 + visibleEntries.length * 15)}px`;
+        (data.features || []).forEach((feature) => {
+            if (feature.crosses_origin || feature.start > feature.end) {
+                addFeatureMapSegment(feature, feature.start, referenceLength - 1, 12);
+                addFeatureMapSegment(feature, 0, feature.end, 12);
             } else {
-                window.toastr.success("Error parsing plasmid sequence file.");
+                addFeatureMapSegment(feature, feature.start, feature.end, 12);
+            }
+        });
+        visibleEntries.forEach(({read}, index) => {
+            addReadLowQualitySegments(read, index);
+            addReadUnalignedLowQualitySegments(read, index);
+            const segments = (read.segments || []).length ? read.segments : [read];
+            segments.forEach((segment) => {
+                if (segment.crosses_origin || segment.start > segment.end) {
+                    addReadSegment(read, segment.start, referenceLength - 1, index);
+                    addReadSegment(read, 0, segment.end, index);
+                } else {
+                    addReadSegment(read, segment.start, segment.end, index);
+                }
+            });
+            read.variants.forEach((variant) => {
+                const el = document.createElement("div");
+                const baseIndex = normalizedBaseIndex(variant.base_index);
+                const localLowQuality = baseIndex !== null && isLocalLowQualityBase(read, baseIndex);
+                const lowQualityVariant = !(isFastaAlignment && variant.type === "deletion") && (variant.low_quality || localLowQuality);
+                if (lowQualityVariant) return;
+                el.className = `sanger-map-variant ${variant.type === "deletion" ? "deletion" : variant.type === "insertion" ? "insertion" : ""}${lowQualityVariant ? " low-quality" : ""}`;
+                el.style.left = `${pct(displayCoord(variant.coordinate))}%`;
+                el.title = `${read.name} ${variant.type} at plasmid bp ${displayBp(variant.coordinate)}: ${variant.expected || "-"} -> ${variant.observed || "-"}${variant.quality === null ? "" : " Q" + variant.quality}`;
+                map.appendChild(el);
+            });
+        });
+    }
+    function variantsForRead(read) {
+        const byCoordinate = {};
+        const insertionsByCoordinate = {};
+        (read.variants || []).forEach((variant) => {
+            if (variant.type === "insertion") {
+                insertionsByCoordinate[variant.coordinate] = insertionsByCoordinate[variant.coordinate] || [];
+                insertionsByCoordinate[variant.coordinate].push(variant);
+            } else {
+                byCoordinate[variant.coordinate] = variant;
+            }
+        });
+        Object.values(insertionsByCoordinate).forEach((items) => {
+            items.sort((a, b) => Number(a.base_index ?? 0) - Number(b.base_index ?? 0));
+        });
+        return {byCoordinate, insertionsByCoordinate};
+    }
+    function insertionVariants(read, coordinate) {
+        if (!read._sangerVariantCache) read._sangerVariantCache = variantsForRead(read);
+        return read._sangerVariantCache.insertionsByCoordinate[coordinate] || [];
+    }
+    function variantAt(read, coordinate) {
+        if (!read._sangerVariantCache) read._sangerVariantCache = variantsForRead(read);
+        return read._sangerVariantCache.byCoordinate[coordinate];
+    }
+    function normalizedBaseIndex(value) {
+        if (value === null || value === undefined || value === "") return null;
+        const number = Number(value);
+        return Number.isNaN(number) ? null : number;
+    }
+    function neighboringCoordinate(coordinate, offset) {
+        return plasmidCoord(displayCoord(coordinate) + offset);
+    }
+    function inferredInsertionBaseIndex(read, coordinate, insertionIndex) {
+        const projectionBaseIndices = read.projectionBaseIndices || [];
+        const step = read.orientation === "reverse" ? -1 : 1;
+        const previousBaseIndex = normalizedBaseIndex(projectionBaseIndices[coordinate]);
+        if (previousBaseIndex !== null) {
+            return previousBaseIndex + step * (insertionIndex + 1);
+        }
+        const nextCoordinate = neighboringCoordinate(coordinate, 1);
+        const nextBaseIndex = normalizedBaseIndex(projectionBaseIndices[nextCoordinate]);
+        const insertionCount = insertionVariants(read, coordinate).length;
+        if (nextBaseIndex !== null) {
+            return nextBaseIndex - step * (insertionCount - insertionIndex);
+        }
+        return null;
+    }
+    function insertionBaseIndex(read, coordinate, insertionIndex) {
+        const insertion = insertionVariants(read, coordinate)[insertionIndex];
+        const explicit = normalizedBaseIndex(insertion && insertion.base_index);
+        return explicit !== null ? explicit : inferredInsertionBaseIndex(read, coordinate, insertionIndex);
+    }
+    function visibleReadEntries() {
+        return data.reads
+            .map((read, readIndex) => ({read, readIndex}))
+            .filter((entry) => !hiddenReadIndexes.has(entry.readIndex));
+    }
+    function globalAlignmentColumns() {
+        if (globalAlignmentColumnCache) return globalAlignmentColumnCache;
+        const columns = [];
+        const reads = data.reads || [];
+        for (let displayOffset = 0; displayOffset < referenceLength; displayOffset++) {
+            const coordinate = plasmidCoord(displayOffset);
+            columns.push({kind: "reference", coordinate, displayOffset});
+            const insertionCount = Math.max(0, ...reads.map((read) => insertionVariants(read, coordinate).length));
+            for (let insertionIndex = 0; insertionIndex < insertionCount; insertionIndex++) {
+                const supportingInsertions = reads
+                    .map((read) => ({read, insertion: insertionVariants(read, coordinate)[insertionIndex]}))
+                    .filter((entry) => entry.insertion);
+                const lowQuality = supportingInsertions.length > 0 && supportingInsertions.every((entry) => {
+                    const baseIndex = insertionBaseIndex(entry.read, coordinate, insertionIndex);
+                    return entry.insertion.low_quality || isLowQualityValue(entry.insertion.quality) || isLocalLowQualityBase(entry.read, baseIndex);
+                });
+                const displayOnly = supportingInsertions.length > 0 && supportingInsertions.every((entry) => entry.insertion.display_only);
+                columns.push({kind: "insertion", coordinate, displayOffset, insertionIndex, lowQuality, displayOnly});
             }
         }
-        sequenceToJson();
-    </script>
-    <!-- /AlignmentView -->
-    {% endif %}
+        globalAlignmentColumnCache = columns;
+        return columns;
+    }
+    function alignmentColumnsForWindow() {
+        const allColumns = globalAlignmentColumns();
+        if (!allColumns.length) return [];
+        return Array.from({length: windowSize}, (_, offset) => (
+            allColumns[(alignmentStart + offset) % allColumns.length]
+        ));
+    }
+    function alignmentStartForReference(displayCoordinate) {
+        const coordinate = plasmidCoord(displayCoordinate);
+        const index = globalAlignmentColumns().findIndex((column) => column.kind === "reference" && column.coordinate === coordinate);
+        return index >= 0 ? index : 0;
+    }
+    function baseIndexHtml(columns) {
+        let firstReference = true;
+        return columns.map((column) => {
+            if (column.kind !== "reference") {
+                return column.displayOnly
+                    ? '<span class="sanger-display-only-gap" title="Unaligned low-confidence flank">&nbsp;</span>'
+                    : "<span>&nbsp;</span>";
+            }
+            const oneBased = displayBp(column.coordinate);
+            if (firstReference || oneBased === 1 || oneBased % 10 === 0) {
+                firstReference = false;
+                return `<span>${oneBased}</span>`;
+            }
+            return "<span>&nbsp;</span>";
+        }).join("");
+    }
+    function escapeHtml(value) {
+        return String(value || "").replace(/[&<>"']/g, function (char) {
+            return {"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[char];
+        });
+    }
+    function row(labelText, sequenceHtml, extraClass) {
+        const el = document.createElement("div");
+        el.className = "sanger-base-row";
+        el.innerHTML = `<div class="sanger-base-label">${escapeHtml(labelText)}</div><div class="sanger-base-seq ${extraClass || ""}">${sequenceHtml}</div>`;
+        baseView.appendChild(el);
+        return el;
+    }
+    function readRow(read, readIndex, sequenceHtml, extraClass) {
+        const el = document.createElement("div");
+        el.className = "sanger-base-row";
+        const labelNode = document.createElement("div");
+        labelNode.className = "sanger-base-label";
+        const hideButton = fastaViewMode === "individual" ? "" : `<button type="button" class="sanger-read-hide-btn" data-read-index="${readIndex}" title="Hide this read sequence and chromatogram">Hide</button>`;
+        labelNode.innerHTML = `
+            <div class="sanger-read-label-content">
+                <span class="sanger-read-label-name" title="${escapeHtml(read.name)}">${escapeHtml(read.name)}</span>
+                ${hideButton}
+            </div>`;
+        const body = document.createElement("div");
+        body.className = `sanger-base-seq ${extraClass || ""}`;
+        body.innerHTML = sequenceHtml;
+        el.appendChild(labelNode);
+        el.appendChild(body);
+        baseView.appendChild(el);
+        return el;
+    }
+    function referenceHtml(columns) {
+        return columns.map((column) => {
+            if (column.kind === "insertion") {
+                if (column.displayOnly) return `<span class="sanger-display-only-gap" title="Unaligned low-confidence flank">&nbsp;</span>`;
+                if (column.lowQuality) return `<span>&nbsp;</span>`;
+                return `<span class="sanger-base-insertion-ref${column.lowQuality ? " sanger-base-low-quality" : ""}">+</span>`;
+            }
+            const base = (data.referenceSequence || "")[column.coordinate] || "-";
+            return `<span>${escapeHtml(base)}</span>`;
+        }).join("");
+    }
+    function readHtml(read, readIndex, columns) {
+        return columns.map((column) => {
+            const referenceCoordinate = column.coordinate;
+            if (column.kind === "insertion") {
+                const insertion = insertionVariants(read, referenceCoordinate)[column.insertionIndex];
+                if (column.lowQuality && !insertion) {
+                    return column.displayOnly
+                        ? `<span class="sanger-display-only-gap" title="Unaligned low-confidence flank">&nbsp;</span>`
+                        : "<span>&nbsp;</span>";
+                }
+                const base = insertion ? (insertion.observed || "-") : "-";
+                const selected = selectedBaseKey === `${readIndex}:${referenceCoordinate}:insertion:${column.insertionIndex}` ? " sanger-base-selected" : "";
+                if (!insertion) return `<span class="sanger-base-gap">-</span>`;
+                const baseIndex = insertionBaseIndex(read, referenceCoordinate, column.insertionIndex);
+                const baseIndexAttr = baseIndex !== null && baseIndex !== undefined ? ` data-base-index="${baseIndex}"` : "";
+                const lowRegion = confidenceRegionForBase(read, baseIndex, "low");
+                const intermediateRegion = confidenceRegionForBase(read, baseIndex, "intermediate");
+                const lowQuality = insertion.low_quality || isLowQualityValue(insertion.quality) || isLocalLowQualityBase(read, baseIndex);
+                const confidenceClass = confidenceRegionsVisible() && lowRegion ? " sanger-base-low-quality" : confidenceRegionsVisible() && intermediateRegion ? " sanger-base-intermediate-quality" : "";
+                const regionTitle = lowRegion || intermediateRegion;
+                    const title = `Insertion after plasmid bp ${displayBp(referenceCoordinate)}: ${base}${insertion.quality === null || insertion.quality === undefined ? "" : " Q" + insertion.quality}${lowQuality ? " | local low-quality region, not trusted" : ""}${regionTitle ? " | " + confidenceRegionTitle(regionTitle) : ""}`;
+                const displayOnlyClass = column.displayOnly ? " sanger-display-only-gap" : "";
+                return `<span class="sanger-base-insertion${displayOnlyClass}${confidenceClass} sanger-base-clickable${selected}" data-read-index="${readIndex}" data-reference-coordinate="${referenceCoordinate}" data-variant-type="insertion" data-insertion-index="${column.insertionIndex}"${baseIndexAttr} title="${escapeHtml(title)}">${escapeHtml(base)}</span>`;
+            }
+            const base = (read.projection || "")[referenceCoordinate] || "-";
+            const ref = (data.referenceSequence || "")[referenceCoordinate] || "-";
+            const baseIndex = (read.projectionBaseIndices || [])[referenceCoordinate];
+            const variant = variantAt(read, referenceCoordinate);
+            const chromQuality = (read.chromatogram || {}).qualNums || [];
+            const baseQuality = baseIndex !== null && baseIndex !== undefined ? chromQuality[Number(baseIndex)] : null;
+            let cls = "sanger-base-match";
+            if (base === "-" && variant && variant.type === "deletion") cls = "sanger-base-deletion";
+            else if (base === "-") cls = "sanger-base-gap";
+            else if (base !== ref) cls = "sanger-base-mismatch";
+            const lowRegion = confidenceRegionForBase(read, baseIndex, "low");
+            const intermediateRegion = confidenceRegionForBase(read, baseIndex, "intermediate");
+            if (confidenceRegionsVisible() && lowRegion) cls += " sanger-base-low-quality";
+            else if (confidenceRegionsVisible() && intermediateRegion) cls += " sanger-base-intermediate-quality";
+            else if (
+                !(isFastaAlignment && variant && variant.type === "deletion")
+                && ((variant && variant.low_quality) || isLowQualityValue(baseQuality) || isLocalLowQualityBase(read, baseIndex))
+            ) cls += " sanger-base-low-quality";
+            if (variant || (base !== "-" && baseIndex !== null && baseIndex !== undefined)) {
+                const selected = selectedBaseKey === `${readIndex}:${referenceCoordinate}:base:0` ? " sanger-base-selected" : "";
+                const baseIndexAttr = baseIndex !== null && baseIndex !== undefined ? ` data-base-index="${baseIndex}"` : "";
+                const title = variant
+                    ? `${variant.type} at plasmid bp ${displayBp(referenceCoordinate)}: ${variant.expected || "-"} -> ${variant.observed || "-"}${lowRegion || intermediateRegion ? " | " + confidenceRegionTitle(lowRegion || intermediateRegion) : ""}`
+                    : `Inspect base ${baseIndex + 1}, plasmid bp ${displayBp(referenceCoordinate)}${lowRegion || intermediateRegion ? " | " + confidenceRegionTitle(lowRegion || intermediateRegion) : ""}`;
+                return `<span class="${cls} sanger-base-clickable${selected}" data-read-index="${readIndex}"${baseIndexAttr} data-reference-coordinate="${referenceCoordinate}" data-column-kind="base" title="${escapeHtml(title)}">${escapeHtml(base)}</span>`;
+            }
+            return `<span class="${cls}">${escapeHtml(base)}</span>`;
+        }).join("");
+    }
+    function rowNode(labelText, node, extraClass) {
+        const el = document.createElement("div");
+        el.className = "sanger-base-row";
+        const labelNode = document.createElement("div");
+        labelNode.className = "sanger-base-label";
+        labelNode.textContent = labelText;
+        const body = document.createElement("div");
+        body.className = extraClass || "";
+        body.appendChild(node);
+        el.appendChild(labelNode);
+        el.appendChild(body);
+        baseView.appendChild(el);
+        return el;
+    }
+    function circularDistance(from, to) {
+        return (to - from + referenceLength) % referenceLength;
+    }
+    function featureIntersects(feature, columns) {
+        for (const column of columns) {
+            if (column.kind !== "reference") continue;
+            const coord = column.coordinate;
+            if (!feature.crosses_origin && feature.start <= feature.end && coord >= feature.start && coord <= feature.end) return true;
+            if ((feature.crosses_origin || feature.start > feature.end) && (coord >= feature.start || coord <= feature.end)) return true;
+        }
+        return false;
+    }
+    function featureTrack(columns) {
+        const track = document.createElement("div");
+        track.className = "sanger-feature-track";
+        let displayOnlyStart = null;
+        for (let index = 0; index <= columns.length; index++) {
+            const displayOnly = index < columns.length && columns[index].displayOnly;
+            if (displayOnly && displayOnlyStart === null) displayOnlyStart = index;
+            if ((!displayOnly || index === columns.length) && displayOnlyStart !== null) {
+                const marker = document.createElement("div");
+                marker.className = "sanger-display-only-marker";
+                marker.style.left = `${displayOnlyStart / columns.length * 100}%`;
+                marker.style.width = `${Math.max(1, (index - displayOnlyStart) / columns.length * 100)}%`;
+                marker.title = "Unaligned low-confidence flank; shown as alignment columns without a plasmid coordinate";
+                if (index - displayOnlyStart >= 8) marker.textContent = "low-Q unaligned flank";
+                track.appendChild(marker);
+                displayOnlyStart = null;
+            }
+        }
+        (data.features || []).filter((feature) => featureIntersects(feature, columns)).forEach((feature) => {
+            let segmentStart = null;
+            for (let i = 0; i <= columns.length; i++) {
+                const column = i < columns.length ? columns[i] : null;
+                const coord = column && column.kind === "reference" ? column.coordinate : null;
+                const inside = coord !== null && (
+                    (!feature.crosses_origin && feature.start <= feature.end && coord >= feature.start && coord <= feature.end)
+                    || ((feature.crosses_origin || feature.start > feature.end) && (coord >= feature.start || coord <= feature.end))
+                );
+                if (inside && segmentStart === null) segmentStart = i;
+                if ((!inside || i === columns.length) && segmentStart !== null) {
+                    const visibleLeft = segmentStart;
+                    const visibleWidth = Math.max(1, i - segmentStart);
+                    const el = document.createElement("div");
+                    el.className = "sanger-feature";
+                    el.style.left = `${visibleLeft / columns.length * 100}%`;
+                    el.style.width = `${visibleWidth / columns.length * 100}%`;
+                    el.style.background = featureColor(feature);
+                    el.style.color = textColorForBackground(featureColor(feature));
+                    el.title = `${feature.name} plasmid bp ${displayBp(feature.start)}..${displayBp(feature.end)}${feature.strand < 0 ? " reverse" : ""}`;
+                    if (visibleWidth >= Math.max(6, feature.name.length + 2)) {
+                        el.textContent = `${feature.strand < 0 ? "< " : ""}${feature.name}${feature.strand > 0 ? " >" : ""}`;
+                    }
+                    track.appendChild(el);
+                    segmentStart = null;
+                }
+            }
+        });
+        return track;
+    }
+    function traceAnchorsForColumns(read, columns) {
+        const chrom = read.chromatogram || {};
+        const basePositions = chrom.basePos || [];
+        const qualities = chrom.qualNums || [];
+        const anchors = [];
+        columns.forEach((column, columnIndex) => {
+            let baseIndex = null;
+            let quality = null;
+            if (column.kind === "insertion") {
+                const insertion = insertionVariants(read, column.coordinate)[column.insertionIndex];
+                if (!insertion) return;
+                baseIndex = insertionBaseIndex(read, column.coordinate, column.insertionIndex);
+                quality = insertion.quality;
+            } else {
+                baseIndex = (read.projectionBaseIndices || [])[column.coordinate];
+                quality = qualities[Number(baseIndex)];
+            }
+            if (baseIndex === null || baseIndex === undefined || Number.isNaN(Number(baseIndex))) return;
+            if (baseIndex < 0 || baseIndex >= basePositions.length) return;
+            anchors.push({
+                columnIndex: columnIndex,
+                coordinate: column.coordinate,
+                baseIndex: Number(baseIndex),
+                tracePos: basePositions[Number(baseIndex)],
+                quality: quality === null || quality === undefined ? qualities[Number(baseIndex)] : quality,
+                localLowQuality: isLocalLowQualityBase(read, baseIndex),
+                kind: column.kind,
+            });
+        });
+        return anchors;
+    }
+    function traceWindowForColumns(read, columns) {
+        const visible = traceAnchorsForColumns(read, columns);
+        const traceOrdered = visible
+            .filter((point) => point.tracePos !== null && point.tracePos !== undefined)
+            .sort((a, b) => a.tracePos - b.tracePos);
+        if (visible.length < 2 || traceOrdered.length < 2) return null;
+        const traceLength = ((read.chromatogram || {}).aTrace || []).length;
+        if (!traceLength) return null;
+        return {
+            visible: visible,
+            traceOrdered: traceOrdered,
+            traceStart: Math.max(0, Math.min(...traceOrdered.map((point) => point.tracePos))),
+            traceEnd: Math.min(traceLength - 1, Math.max(...traceOrdered.map((point) => point.tracePos))),
+        };
+    }
+    function inlineTraceStateFor(readIndex) {
+        if (!inlineTraceStates.has(readIndex)) {
+            inlineTraceStates.set(readIndex, {
+                autoscaled: false,
+                animatedScaleMax: null,
+                scaleAnimationFrame: null,
+            });
+        }
+        return inlineTraceStates.get(readIndex);
+    }
+    function inlineTraceScaleMax(read, traceStart, traceEnd, autoscaled) {
+        const chrom = read.chromatogram || {};
+        const traces = ["aTrace", "cTrace", "gTrace", "tTrace"];
+        const traceLength = (chrom.aTrace || []).length;
+        if (!autoscaled && read.traceMaxSignal) return Number(read.traceMaxSignal) || 1;
+        const rangeStart = autoscaled ? Math.max(0, Math.floor(traceStart)) : 0;
+        const rangeEnd = autoscaled
+            ? Math.min(traceLength, Math.ceil(traceEnd) + 1)
+            : traceLength;
+        let maxSignal = 1;
+        traces.forEach((key) => {
+            const trace = chrom[key] || [];
+            for (let i = rangeStart; i < rangeEnd && i < trace.length; i += 1) {
+                if (trace[i] > maxSignal) maxSignal = trace[i];
+            }
+        });
+        return maxSignal;
+    }
+    function drawTraceCanvas(canvas, read, columns, state) {
+        const chrom = read.chromatogram || {};
+        const traces = [
+            ["aTrace", "#23d03f"],
+            ["cTrace", "#7fa1ff"],
+            ["gTrace", "#e6e6e6"],
+            ["tTrace", "#ff3b30"],
+        ];
+        const ratio = window.devicePixelRatio || 1;
+        const rect = canvas.getBoundingClientRect();
+        const width = Math.max(1, rect.width);
+        const height = Math.max(1, rect.height);
+        canvas.width = Math.floor(width * ratio);
+        canvas.height = Math.floor(height * ratio);
+        const ctx = canvas.getContext("2d");
+        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = "#101214";
+        ctx.fillRect(0, 0, width, height);
+        const traceWindow = traceWindowForColumns(read, columns);
+        const visible = traceWindow ? traceWindow.visible : [];
+        const traceOrdered = traceWindow ? traceWindow.traceOrdered : [];
+        if (!traceWindow) {
+            ctx.fillStyle = "#8fa0b2";
+            ctx.font = "12px system-ui, sans-serif";
+            ctx.fillText("No aligned AB1 trace in this window", 12, 22);
+            return;
+        }
+        const traceStart = traceWindow.traceStart;
+        const traceEnd = traceWindow.traceEnd;
+        function isHighQualityAnchor(point) {
+            return !point.localLowQuality && (point.quality === null || point.quality === undefined || Number(point.quality) >= 20);
+        }
+        function isInsertionSegment(left, right) {
+            return left.kind === "insertion" || right.kind === "insertion";
+        }
+        function isTrustedInsertionSegment(left, right) {
+            return isInsertionSegment(left, right) && isHighQualityAnchor(left) && isHighQualityAnchor(right);
+        }
+        const trustedAnchors = traceOrdered.filter(isHighQualityAnchor);
+        const trustedVisibleAnchors = visible.filter(isHighQualityAnchor).sort((a, b) => a.columnIndex - b.columnIndex);
+        function baseColumnMetrics() {
+            const sequenceRow = baseView.querySelector(".sanger-base-columns") || baseView.querySelector(".sanger-base-seq");
+            if (!sequenceRow) {
+                return {left: 0, pitch: width / Math.max(1, columns.length)};
+            }
+            return {
+                left: 0,
+                pitch: sequenceRow.clientWidth / Math.max(1, columns.length),
+            };
+        }
+        const columnMetrics = baseColumnMetrics();
+        function anchorX(point) {
+            return columnMetrics.left + (point.columnIndex + 0.5) * columnMetrics.pitch;
+        }
+        function xForTracePosition(tracePosition, left, right) {
+            const span = right.tracePos - left.tracePos || 1;
+            const fraction = Math.max(0, Math.min(1, (tracePosition - left.tracePos) / span));
+            return anchorX(left) + (anchorX(right) - anchorX(left)) * fraction;
+        }
+        function drawableTraceSegments(anchors, includeSegment) {
+            const segments = [];
+            for (let i = 0; i < anchors.length - 1; i++) {
+                const left = anchors[i];
+                const right = anchors[i + 1];
+                if (includeSegment && !includeSegment(left, right)) {
+                    continue;
+                }
+                if (right.tracePos < traceStart || left.tracePos > traceEnd) {
+                    continue;
+                }
+                segments.push({
+                    left: left,
+                    right: right,
+                    startTrace: Math.max(traceStart, left.tracePos),
+                    endTrace: Math.min(traceEnd, right.tracePos),
+                });
+            }
+            return segments;
+        }
+        const lowQualityTraceSegments = drawableTraceSegments(traceOrdered, (left, right) => !isHighQualityAnchor(left) || !isHighQualityAnchor(right));
+        const insertionTraceSegments = drawableTraceSegments(traceOrdered, isTrustedInsertionSegment);
+        const trustedTraceSegments = drawableTraceSegments(trustedAnchors);
+        function isSkippedReferenceGap(segment) {
+            if (segment.right.columnIndex - segment.left.columnIndex <= 1) return false;
+            return !visible.some((point) => (
+                point.columnIndex > segment.left.columnIndex
+                && point.columnIndex < segment.right.columnIndex
+                && point.kind === "insertion"
+            ));
+        }
+        function shadeConfidenceColumns() {
+            if (!confidenceRegionsVisible()) return;
+            const sorted = visible.slice().sort((a, b) => a.columnIndex - b.columnIndex);
+            function shade(level, color) {
+                const regions = level === "intermediate" ? (read.intermediateConfidenceRegions || []) : (read.confidenceRegions || []);
+                regions.forEach((region) => {
+                    const startBase = Number(region.start);
+                    const endBase = Number(region.end);
+                    if (Number.isNaN(startBase) || Number.isNaN(endBase)) return;
+                    const points = sorted.filter((point) => point.baseIndex >= startBase && point.baseIndex <= endBase);
+                    if (!points.length) return;
+                    const startPoint = points[0];
+                    const endPoint = points[points.length - 1];
+                    const x1 = anchorX(startPoint) - columnMetrics.pitch / 2;
+                    const x2 = anchorX(endPoint) + columnMetrics.pitch / 2;
+                    ctx.fillStyle = color;
+                    ctx.fillRect(x1, 0, Math.max(columnMetrics.pitch, x2 - x1), height);
+                });
+            }
+            shade("intermediate", "rgba(255, 209, 102, .12)");
+            shade("low", "rgba(154, 161, 169, .24)");
+        }
+        function shadeSkippedReferenceGaps() {
+            for (let i = 0; i < trustedVisibleAnchors.length - 1; i++) {
+                const left = trustedVisibleAnchors[i];
+                const right = trustedVisibleAnchors[i + 1];
+                if (Math.abs(right.columnIndex - left.columnIndex) <= 1) continue;
+                const hasSequencedInsertion = visible.some((point) => (
+                    point.kind === "insertion"
+                    && point.columnIndex > left.columnIndex
+                    && point.columnIndex < right.columnIndex
+                ));
+                if (hasSequencedInsertion) continue;
+                const x1 = anchorX(left) + columnMetrics.pitch / 2;
+                const x2 = anchorX(right) - columnMetrics.pitch / 2;
+                if (x2 <= x1) continue;
+                ctx.fillStyle = "rgba(255, 193, 7, .08)";
+                ctx.fillRect(x1, 24, x2 - x1, height - 36);
+            }
+        }
+        const activeTraceState = state || {autoscaled: false, animatedScaleMax: null};
+        const maxSignal = activeTraceState.animatedScaleMax === null
+            ? inlineTraceScaleMax(read, traceStart, traceEnd, activeTraceState.autoscaled)
+            : Math.max(1, Number(activeTraceState.animatedScaleMax) || 1);
+        shadeConfidenceColumns();
+        function drawTraceSegments(segments, alpha, lineWidth, fillAlpha) {
+            ctx.save();
+            traces.forEach(([key, color]) => {
+                const trace = chrom[key] || [];
+                segments.forEach((segment) => {
+                    const baseline = height - 12;
+                    const skippedReferenceGap = isSkippedReferenceGap(segment);
+                    const traceMidpoint = skippedReferenceGap
+                        ? (segment.left.tracePos + segment.right.tracePos) / 2
+                        : null;
+                    const gapStartX = skippedReferenceGap
+                        ? anchorX(segment.left) + columnMetrics.pitch / 2
+                        : null;
+                    const gapEndX = skippedReferenceGap
+                        ? anchorX(segment.right) - columnMetrics.pitch / 2
+                        : null;
+                    function traceX(tracePosition) {
+                        if (!skippedReferenceGap) return xForTracePosition(tracePosition, segment.left, segment.right);
+                        if (tracePosition <= traceMidpoint) {
+                            return anchorX(segment.left) + (gapStartX - anchorX(segment.left)) * (
+                                (tracePosition - segment.left.tracePos) / Math.max(1, traceMidpoint - segment.left.tracePos)
+                            );
+                        }
+                        return gapEndX + (anchorX(segment.right) - gapEndX) * (
+                            (tracePosition - traceMidpoint) / Math.max(1, segment.right.tracePos - traceMidpoint)
+                        );
+                    }
+                    ctx.beginPath();
+                    let started = false;
+                    let previousSide = null;
+                    const points = [];
+                    for (let i = segment.startTrace; i <= segment.endTrace && i < trace.length; i++) {
+                        const x = traceX(i);
+                        if (x < -4 || x > width + 4) continue;
+                        const y = baseline - (trace[i] / maxSignal * (height - 28));
+                        const side = skippedReferenceGap && i > traceMidpoint ? "right" : "left";
+                        points.push({x: x, y: y, side: side});
+                        if (!started) {
+                            ctx.moveTo(x, y);
+                            started = true;
+                        } else if (side !== previousSide) {
+                            ctx.lineTo(gapStartX, baseline);
+                            ctx.moveTo(gapEndX, baseline);
+                            ctx.lineTo(x, y);
+                        } else {
+                            ctx.lineTo(x, y);
+                        }
+                        previousSide = side;
+                    }
+                    if (started) {
+                        if (!skippedReferenceGap) {
+                            ctx.beginPath();
+                            ctx.moveTo(points[0].x, baseline);
+                            points.forEach((point) => ctx.lineTo(point.x, point.y));
+                            ctx.lineTo(points[points.length - 1].x, baseline);
+                            ctx.closePath();
+                            ctx.fillStyle = color;
+                            ctx.globalAlpha = fillAlpha;
+                            ctx.fill();
+                        }
+                        ctx.strokeStyle = color;
+                        ctx.lineWidth = lineWidth;
+                        ctx.globalAlpha = alpha;
+                        ctx.beginPath();
+                        points.forEach((point, index) => {
+                            if (index === 0) {
+                                ctx.moveTo(point.x, point.y);
+                            } else if (point.side !== points[index - 1].side) {
+                                ctx.lineTo(gapStartX, baseline);
+                                ctx.moveTo(gapEndX, baseline);
+                                ctx.lineTo(point.x, point.y);
+                            } else {
+                                ctx.lineTo(point.x, point.y);
+                            }
+                        });
+                        ctx.stroke();
+                    }
+                });
+            });
+            ctx.restore();
+        }
+        drawTraceSegments(lowQualityTraceSegments, 0.32, 0.9, 0.06);
+        drawTraceSegments(insertionTraceSegments, 0.82, 1.1, 0.10);
+        drawTraceSegments(trustedTraceSegments, 1, 1.2, 0.12);
+        const basePos = chrom.basePos || [];
+        const baseCalls = chrom.baseCalls || [];
+        const qualNums = chrom.qualNums || [];
+        ctx.font = "12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+        visible.forEach((point) => {
+            const x = anchorX(point);
+            const base = baseCalls[point.baseIndex] || "";
+            const q = qualNums[point.baseIndex];
+            ctx.fillStyle = base === "A" ? "#23d03f" : base === "C" ? "#7fa1ff" : base === "G" ? "#e6e6e6" : base === "T" ? "#ff3b30" : "#aab4be";
+            ctx.fillText(base, x - 4, 13);
+            if (q !== undefined) {
+                ctx.fillStyle = q >= 30 ? "#5bd475" : q >= 20 ? "#ffc107" : "#ff6b7a";
+                ctx.fillRect(x - 2, 18, 4, 4);
+            }
+        });
+    }
+    function animateInlineTraceScale(canvas, read, columns, state, fromScale) {
+        if (state.scaleAnimationFrame !== null) cancelAnimationFrame(state.scaleAnimationFrame);
+        const traceWindow = traceWindowForColumns(read, columns);
+        if (!traceWindow) {
+            state.animatedScaleMax = null;
+            state.scaleAnimationFrame = null;
+            drawTraceCanvas(canvas, read, columns, state);
+            return;
+        }
+        const targetScale = inlineTraceScaleMax(read, traceWindow.traceStart, traceWindow.traceEnd, state.autoscaled);
+        const startScale = Number.isFinite(fromScale) ? fromScale : targetScale;
+        const duration = 280;
+        const animationStart = performance.now();
+        function frame(now) {
+            const rawProgress = Math.min(1, (now - animationStart) / duration);
+            const progress = rawProgress < .5
+                ? 2 * rawProgress * rawProgress
+                : 1 - Math.pow(-2 * rawProgress + 2, 2) / 2;
+            state.animatedScaleMax = startScale + (targetScale - startScale) * progress;
+            drawTraceCanvas(canvas, read, columns, state);
+            if (rawProgress < 1) {
+                state.scaleAnimationFrame = requestAnimationFrame(frame);
+            } else {
+                state.animatedScaleMax = null;
+                state.scaleAnimationFrame = null;
+            }
+        }
+        state.scaleAnimationFrame = requestAnimationFrame(frame);
+    }
+    function traceTrack(read, columns, readIndex) {
+        const state = inlineTraceStateFor(readIndex);
+        const canvas = document.createElement("canvas");
+        const row = document.createElement("div");
+        row.className = "sanger-base-row";
+        const labelNode = document.createElement("div");
+        labelNode.className = "sanger-base-label sanger-trace-label";
+        const labelContent = document.createElement("div");
+        labelContent.className = "sanger-trace-label-content";
+        const nameNode = document.createElement("span");
+        nameNode.className = "sanger-trace-label-name";
+        nameNode.title = read.name || "trace";
+        nameNode.textContent = `${read.name} trace`;
+        const autoAdjustLabel = document.createElement("label");
+        autoAdjustLabel.className = "sanger-inline-autoadjust form-check form-switch";
+        const autoAdjustInput = document.createElement("input");
+        autoAdjustInput.className = "form-check-input";
+        autoAdjustInput.type = "checkbox";
+        autoAdjustInput.role = "switch";
+        autoAdjustInput.id = `sanger-inline-autoadjust-${readIndex}`;
+        autoAdjustInput.setAttribute("aria-label", `Auto-adjust ${read.name || "trace"}`);
+        autoAdjustInput.checked = Boolean(state.autoscaled);
+        const autoAdjustText = document.createElement("span");
+        autoAdjustText.textContent = "Auto-adjust";
+        autoAdjustLabel.appendChild(autoAdjustInput);
+        autoAdjustLabel.appendChild(autoAdjustText);
+        autoAdjustInput.addEventListener("change", function () {
+            const traceWindow = traceWindowForColumns(read, columns);
+            const fromScale = state.animatedScaleMax === null && traceWindow
+                ? inlineTraceScaleMax(read, traceWindow.traceStart, traceWindow.traceEnd, state.autoscaled)
+                : state.animatedScaleMax;
+            state.autoscaled = autoAdjustInput.checked;
+            animateInlineTraceScale(canvas, read, columns, state, fromScale);
+        });
+        labelContent.appendChild(nameNode);
+        labelContent.appendChild(autoAdjustLabel);
+        labelNode.appendChild(labelContent);
+        const body = document.createElement("div");
+        body.className = "sanger-trace-track";
+        body.appendChild(canvas);
+        row.appendChild(labelNode);
+        row.appendChild(body);
+        baseView.appendChild(row);
+        requestAnimationFrame(() => drawTraceCanvas(canvas, read, columns, state));
+        return row;
+    }
+    function showVariant(variant) {
+        if (!variant || !detail) return;
+        const observed = variant.observed || "-";
+        const expected = variant.expected || "-";
+        const quality = variant.quality === null || variant.quality === undefined ? "not available" : `Q${variant.quality}`;
+        const baseIndex = variant.base_index === null || variant.base_index === undefined ? null : Number(variant.base_index);
+        const readBaseText = baseIndex !== null && !Number.isNaN(baseIndex) ? `, read base ${baseIndex + 1}` : "";
+        if (variant.type === "insertion") {
+            detail.textContent = `${variant.readName} (${variant.orientation}) | insertion after plasmid bp ${displayBp(variant.coordinate)}: + column, inserted base ${observed}${readBaseText}, Phred ${quality}${variant.low_quality ? " | low quality" : ""}`;
+            return;
+        }
+        detail.textContent = `${variant.readName} (${variant.orientation}) | ${variant.type} at plasmid bp ${displayBp(variant.coordinate)}: reference ${expected}, observed ${observed}, Phred ${quality}${variant.low_quality ? " | low quality" : ""}`;
+    }
+    function qualityLabel(quality) {
+        if (quality === null || quality === undefined || Number.isNaN(Number(quality))) return "not available";
+        if (quality >= 30) return `Q${quality} high confidence`;
+        if (quality >= 20) return `Q${quality} usable`;
+        return `Q${quality} low confidence`;
+    }
+    function showBaseDetail(read, referenceCoordinate, baseIndex) {
+        if (!read || !detail) return;
+        const expected = (data.referenceSequence || "")[referenceCoordinate] || "-";
+        const observed = (read.projection || "")[referenceCoordinate] || "-";
+        const chrom = read.chromatogram || {};
+        const qualNums = chrom.qualNums || [];
+        const quality = baseIndex !== null && baseIndex !== undefined && !Number.isNaN(Number(baseIndex)) ? qualNums[Number(baseIndex)] : undefined;
+        const readBaseText = baseIndex !== null && baseIndex !== undefined && !Number.isNaN(Number(baseIndex)) ? `read base ${Number(baseIndex) + 1}` : "read base not mapped";
+        detail.textContent = `${read.name} (${read.orientation}) | match at plasmid bp ${displayBp(referenceCoordinate)}: base ${observed || expected}, ${readBaseText}, Phred ${qualityLabel(quality)}`;
+    }
+    function renderBases() {
+        refreshWindowSize();
+        const columns = alignmentColumnsForWindow();
+        updateBaseZoomStyle();
+        renderHiddenReadBar();
+        baseView.innerHTML = "";
+        row("Plasmid bp", baseIndexHtml(columns), "sanger-base-index sanger-base-columns");
+        if (!toggleFeatures || toggleFeatures.checked) {
+            rowNode("Features", featureTrack(columns), "sanger-feature-track");
+        }
+        row(data.referenceName, referenceHtml(columns), "sanger-base-columns");
+        visibleReadEntries().forEach(({read, readIndex}) => {
+            readRow(read, readIndex, readHtml(read, readIndex, columns), "sanger-base-columns");
+            const chrom = read.chromatogram || {};
+            if ((!toggleTraces || toggleTraces.checked) && Array.isArray(chrom.aTrace) && chrom.aTrace.length) {
+                traceTrack(read, columns, readIndex);
+            }
+        });
+        const referenceColumns = columns.filter((column) => column.kind === "reference");
+        const firstReference = referenceColumns[0];
+        const lastReference = referenceColumns[referenceColumns.length - 1];
+        const mapStart = firstReference ? displayCoord(firstReference.coordinate) : 0;
+        const mapEnd = lastReference ? displayCoord(lastReference.coordinate) : mapStart;
+        const mapWidth = Math.max(1, circularDistance(mapStart, mapEnd) + 1);
+        if (firstReference && lastReference) {
+            label.textContent = `bp ${displayBp(firstReference.coordinate)} → ${displayBp(lastReference.coordinate)} · circular · cols ${alignmentStart + 1}..${alignmentStart + columns.length} / ${globalAlignmentColumns().length}`;
+        } else {
+            label.textContent = `cols ${alignmentStart + 1}..${alignmentStart + columns.length}`;
+        }
+        slider.max = String(maxStart());
+        slider.value = String(clampStart(alignmentStart));
+        if (mapWidth >= referenceLength) {
+            windowMarker.style.left = "0%";
+            windowMarker.style.width = "100%";
+            if (wrappedWindowMarker) {
+                wrappedWindowMarker.style.display = "none";
+                wrappedWindowMarker.style.width = "0%";
+            }
+        } else {
+            const visibleBeforeOrigin = Math.min(mapWidth, referenceLength - mapStart);
+            windowMarker.style.left = `${pct(mapStart)}%`;
+            windowMarker.style.width = `${Math.max(1, pct(visibleBeforeOrigin))}%`;
+            if (wrappedWindowMarker) {
+                const visibleAfterOrigin = mapWidth - visibleBeforeOrigin;
+                if (visibleAfterOrigin > 0) {
+                    wrappedWindowMarker.style.display = "block";
+                    wrappedWindowMarker.style.left = "0%";
+                    wrappedWindowMarker.style.width = `${pct(visibleAfterOrigin)}%`;
+                } else {
+                    wrappedWindowMarker.style.display = "none";
+                    wrappedWindowMarker.style.width = "0%";
+                }
+            }
+        }
+    }
+    function setStart(nextStart) {
+        alignmentStart = clampStart(nextStart);
+        renderBases();
+    }
+    function setStartBounded(nextStart) {
+        alignmentStart = clampStart(nextStart);
+        renderBases();
+    }
+    function displayCoordinateIsVisible(displayCoordinate) {
+        return displayCoordinate !== null && alignmentColumnsForWindow().some((column) => (
+            column.kind === "reference" && displayCoord(column.coordinate) === displayCoordinate
+        ));
+    }
+    function positionFromEvent(event) {
+        const rect = map.getBoundingClientRect();
+        const x = Math.max(0, Math.min(rect.width, event.clientX - rect.left));
+        return Math.floor(x / rect.width * referenceLength);
+    }
+
+    let dragging = false;
+    map.addEventListener("pointerdown", function (event) {
+        dragging = true;
+        map.setPointerCapture(event.pointerId);
+        setStart(alignmentStartForReference(positionFromEvent(event)));
+    });
+    map.addEventListener("pointermove", function (event) {
+        if (dragging) setStart(alignmentStartForReference(positionFromEvent(event)));
+    });
+    map.addEventListener("pointerup", function () {
+        dragging = false;
+    });
+    map.addEventListener("wheel", function (event) {
+        event.preventDefault();
+        const delta = event.deltaY || event.deltaX;
+        if (!delta) return;
+        const step = Math.max(1, Math.round(windowSize * 0.2));
+        setStartBounded(alignmentStart + (delta > 0 ? step : -step));
+    }, { passive: false });
+    baseView.addEventListener("wheel", function (event) {
+        event.preventDefault();
+        const delta = event.deltaY || event.deltaX;
+        if (!delta) return;
+        const step = Math.max(1, Math.round(windowSize * 0.2));
+        setStartBounded(alignmentStart + (delta > 0 ? step : -step));
+    }, { passive: false });
+    baseView.addEventListener("pointerdown", function (event) {
+        const traceTrack = event.target.closest(".sanger-trace-track");
+        if (!traceTrack || event.button !== 0) return;
+        inlineDragging = true;
+        inlineDragStartX = event.clientX;
+        inlineDragStartWindow = alignmentStart;
+        inlineDragWidth = Math.max(1, traceTrack.getBoundingClientRect().width);
+        baseView.classList.add("is-dragging-trace");
+        baseView.setPointerCapture(event.pointerId);
+        event.preventDefault();
+    });
+    baseView.addEventListener("pointermove", function (event) {
+        if (!inlineDragging) return;
+        const dx = event.clientX - inlineDragStartX;
+        setStart(inlineDragStartWindow - dx / inlineDragWidth * windowSize);
+    });
+    function stopInlineDragging() {
+        inlineDragging = false;
+        baseView.classList.remove("is-dragging-trace");
+    }
+    baseView.addEventListener("pointerup", stopInlineDragging);
+    baseView.addEventListener("pointercancel", stopInlineDragging);
+    baseView.addEventListener("lostpointercapture", stopInlineDragging);
+    slider.addEventListener("input", function () {
+        setStart(Number(slider.value));
+    });
+    function enableHoldToRepeat(button, step) {
+        let delayTimer = null;
+        let repeatTimer = null;
+        function stopRepeating() {
+            if (delayTimer !== null) window.clearTimeout(delayTimer);
+            if (repeatTimer !== null) window.clearInterval(repeatTimer);
+            delayTimer = null;
+            repeatTimer = null;
+        }
+        function startRepeating(event) {
+            if (event.type === "pointerdown" && event.button !== undefined && event.button !== 0) return;
+            event.preventDefault();
+            stopRepeating();
+            setStartBounded(alignmentStart + step);
+            delayTimer = window.setTimeout(function () {
+                repeatTimer = window.setInterval(function () {
+                    setStartBounded(alignmentStart + step);
+                }, 75);
+            }, 300);
+            if (event.pointerId !== undefined && button.setPointerCapture) {
+                button.setPointerCapture(event.pointerId);
+            }
+        }
+        button.addEventListener("pointerdown", startRepeating);
+        button.addEventListener("pointerup", stopRepeating);
+        button.addEventListener("pointercancel", stopRepeating);
+        button.addEventListener("lostpointercapture", stopRepeating);
+        button.addEventListener("blur", stopRepeating);
+        button.addEventListener("keydown", function (event) {
+            if ((event.key !== "Enter" && event.key !== " ") || event.repeat) return;
+            startRepeating(event);
+        });
+        button.addEventListener("keyup", stopRepeating);
+    }
+    if (stepLeft) enableHoldToRepeat(stepLeft, -1);
+    if (stepRight) enableHoldToRepeat(stepRight, 1);
+    window.addEventListener("resize", renderBases);
+    function renderHiddenReadBar() {
+        if (!hiddenReadBar) return;
+        if (fastaViewMode === "individual") {
+            hiddenReadBar.classList.add("d-none");
+            hiddenReadBar.innerHTML = "";
+            return;
+        }
+        if (!hiddenReadIndexes.size) {
+            hiddenReadBar.classList.add("d-none");
+            hiddenReadBar.innerHTML = "";
+            return;
+        }
+        const buttons = [...hiddenReadIndexes]
+            .sort((a, b) => a - b)
+            .map((readIndex) => `<button type="button" class="sanger-hidden-read-btn" data-read-index="${readIndex}">Show ${escapeHtml((data.reads[readIndex] || {}).name || "read")}</button>`)
+            .join("");
+        hiddenReadBar.classList.remove("d-none");
+        hiddenReadBar.innerHTML = `<span>Hidden reads:</span>${buttons}`;
+    }
+    if (hiddenReadBar) hiddenReadBar.addEventListener("click", function (event) {
+        const button = event.target.closest(".sanger-hidden-read-btn");
+        if (!button) return;
+        hiddenReadIndexes.delete(Number(button.dataset.readIndex));
+        drawMap();
+        renderBases();
+    });
+    baseView.addEventListener("click", function (event) {
+        const hideButton = event.target.closest(".sanger-read-hide-btn");
+        if (hideButton) {
+            hiddenReadIndexes.add(Number(hideButton.dataset.readIndex));
+            drawMap();
+            renderBases();
+            return;
+        }
+        const base = event.target.closest(".sanger-base-clickable");
+        if (!base) return;
+        if (isFastaAlignment) return;
+        const readIndex = Number(base.dataset.readIndex);
+        const baseIndex = base.dataset.baseIndex === undefined ? null : Number(base.dataset.baseIndex);
+        const referenceCoordinate = Number(base.dataset.referenceCoordinate);
+        const read = data.reads[readIndex];
+        if (!read || Number.isNaN(referenceCoordinate)) return;
+        const requestedVariantType = base.dataset.variantType || "";
+        const insertionIndex = base.dataset.insertionIndex === undefined ? 0 : Number(base.dataset.insertionIndex);
+        selectedBaseKey = `${readIndex}:${referenceCoordinate}:${requestedVariantType === "insertion" ? "insertion" : "base"}:${insertionIndex}`;
+        selectedDisplayCoordinate = displayCoord(referenceCoordinate);
+        renderBases();
+        let variant = null;
+        if (requestedVariantType === "insertion") {
+            variant = insertionVariants(read, referenceCoordinate)[insertionIndex];
+        } else {
+            variant = (read.variants || []).find((item) => item.coordinate === referenceCoordinate && (!requestedVariantType || item.type === requestedVariantType));
+        }
+        if (variant) {
+            const variantBaseIndex = requestedVariantType === "insertion"
+                ? insertionBaseIndex(read, referenceCoordinate, insertionIndex)
+                : baseIndex;
+            showVariant({
+                ...variant,
+                readName: read.name,
+                readIndex: readIndex,
+                orientation: read.orientation,
+                base_index: variant.base_index === null || variant.base_index === undefined ? variantBaseIndex : variant.base_index,
+                low_quality: variant.low_quality || isLocalLowQualityBase(read, variantBaseIndex),
+            });
+        } else {
+            showBaseDetail(read, referenceCoordinate, baseIndex);
+        }
+    });
+    [toggleFeatures, toggleTraces].forEach((control) => {
+        if (control) control.addEventListener("change", renderBases);
+    });
+    if (zoomSlider) zoomSlider.addEventListener("input", function () {
+        const selectedColumn = displayCoordinateIsVisible(selectedDisplayCoordinate)
+            ? alignmentStartForReference(selectedDisplayCoordinate)
+            : alignmentStart + windowSize / 2;
+        const requestedWindow = maximumWindowSize - Number(zoomSlider.value);
+        manualWindowSize = Math.max(minimumWindowSize, Math.min(maximumWindowSize, requestedWindow));
+        setStartBounded(selectedColumn - manualWindowSize / 2);
+    });
+    if (fastaIndividualSelect && fastaViewMode === "individual") {
+        data.reads.forEach((read, index) => {
+            const option = document.createElement("option");
+            option.value = String(index);
+            option.textContent = read.name || `Sequence ${index + 1}`;
+            fastaIndividualSelect.appendChild(option);
+        });
+        function showOnlyRead(readIndex) {
+            hiddenReadIndexes.clear();
+            data.reads.forEach((read, index) => {
+                if (index !== readIndex) hiddenReadIndexes.add(index);
+            });
+            selectedBaseKey = "";
+            selectedDisplayCoordinate = null;
+            setStartBounded(0);
+            drawMap();
+            renderBases();
+        }
+        fastaIndividualSelect.addEventListener("change", function () {
+            showOnlyRead(Number(fastaIndividualSelect.value || 0));
+        });
+        showOnlyRead(0);
+    }
+
+    drawMap();
+    renderBases();
+})();
+</script>
+
+{% if is_saved_run_view %}
+<script>
+(function () {
+    const plasmidHeader = document.getElementById("header-container");
+    if (!plasmidHeader) return;
+    if ("scrollRestoration" in window.history) window.history.scrollRestoration = "manual";
+    let scrollAnimationFrame = null;
+    function scrollToPlasmidHeader() {
+        const targetTop = plasmidHeader.getBoundingClientRect().top + window.scrollY;
+        const startTop = window.scrollY;
+        const distance = Math.max(0, targetTop) - startTop;
+        if (Math.abs(distance) < 1) return;
+        if (scrollAnimationFrame) window.cancelAnimationFrame(scrollAnimationFrame);
+        const startTime = performance.now();
+        const duration = 500;
+        function animateScroll(now) {
+            const progress = Math.min(1, (now - startTime) / duration);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            window.scrollTo(0, startTop + distance * eased);
+            if (progress < 1) scrollAnimationFrame = window.requestAnimationFrame(animateScroll);
+            else scrollAnimationFrame = null;
+        }
+        scrollAnimationFrame = window.requestAnimationFrame(animateScroll);
+    }
+    function settleScroll() {
+        window.requestAnimationFrame(function () {
+            window.requestAnimationFrame(scrollToPlasmidHeader);
+        });
+    }
+    if (document.readyState === "complete") settleScroll();
+    else window.addEventListener("load", settleScroll, {once: true});
+    window.setTimeout(scrollToPlasmidHeader, 180);
+})();
+</script>
 {% endif %}
+
+<script>
+(function () {
+    const data = JSON.parse('{{ sanger_browser_data|escapejs }}');
+    const panel = document.getElementById("sanger-trace-panel");
+    const canvas = document.getElementById("sanger-trace-canvas");
+    const wrap = document.getElementById("sanger-trace-wrap");
+    const select = document.getElementById("sanger-trace-read");
+    const slider = document.getElementById("sanger-trace-slider");
+    const zoom = document.getElementById("sanger-trace-zoom");
+    const autoscaleBtn = document.getElementById("sanger-trace-autoscale");
+    const standardBtn = document.getElementById("sanger-trace-standard");
+    const status = document.getElementById("sanger-trace-status");
+    const tooltip = document.getElementById("sanger-trace-tooltip");
+    const empty = document.getElementById("sanger-trace-empty");
+    if (!panel || !canvas || !data || !data.reads) return;
+
+    const reads = data.reads.filter((read) => {
+        const chrom = read.chromatogram || {};
+        return Array.isArray(chrom.aTrace) && chrom.aTrace.length;
+    });
+    if (!reads.length) {
+        wrap.classList.add("d-none");
+        slider.classList.add("d-none");
+        empty.classList.remove("d-none");
+        select.classList.add("d-none");
+        zoom.classList.add("d-none");
+        autoscaleBtn.classList.add("d-none");
+        standardBtn.classList.add("d-none");
+        return;
+    }
+
+    const channelConfig = [
+        ["aTrace", "#23d03f", "A"],
+        ["cTrace", "#7fa1ff", "C"],
+        ["gTrace", "#e6e6e6", "G"],
+        ["tTrace", "#ff3b30", "T"],
+    ];
+    let readIndex = 0;
+    let startTrace = 0;
+    let autoscaled = false;
+    let selectedTraceBase = null;
+
+    reads.forEach((read, index) => {
+        const option = document.createElement("option");
+        option.value = String(index);
+        option.textContent = read.name;
+        select.appendChild(option);
+    });
+
+    function activeRead() {
+        return reads[readIndex];
+    }
+    function activeChrom() {
+        return activeRead().chromatogram || {};
+    }
+    function traceLength() {
+        return (activeChrom().aTrace || []).length;
+    }
+    function calledBaseCount() {
+        return (activeChrom().baseCalls || []).length;
+    }
+    function visiblePoints() {
+        return Math.max(80, Math.min(Number(zoom.value), traceLength()));
+    }
+    function setSliderMax() {
+        slider.max = Math.max(0, traceLength() - visiblePoints());
+        slider.value = Math.min(startTrace, Number(slider.max));
+    }
+    function resizeCanvas() {
+        const ratio = window.devicePixelRatio || 1;
+        const rect = wrap.getBoundingClientRect();
+        canvas.width = Math.max(1, Math.floor(rect.width * ratio));
+        canvas.height = Math.max(1, Math.floor(rect.height * ratio));
+        canvas.style.width = `${rect.width}px`;
+        canvas.style.height = `${rect.height}px`;
+        const ctx = canvas.getContext("2d");
+        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    }
+    function maxSignal(chrom, start, end) {
+        let max = 1;
+        const rangeStart = autoscaled ? start : 0;
+        const rangeEnd = autoscaled ? end : traceLength();
+        channelConfig.forEach(([key]) => {
+            const trace = chrom[key] || [];
+            for (let i = rangeStart; i < rangeEnd && i < trace.length; i++) {
+                if (trace[i] > max) max = trace[i];
+            }
+        });
+        return max;
+    }
+    function baseClass(base) {
+        return `sanger-base-${String(base || "").toLowerCase()}`;
+    }
+    function drawTrace() {
+        resizeCanvas();
+        setSliderMax();
+        const chrom = activeChrom();
+        const ctx = canvas.getContext("2d");
+        const rect = wrap.getBoundingClientRect();
+        const width = rect.width;
+        const height = rect.height;
+        const top = 58;
+        const bottom = 34;
+        const plotHeight = height - top - bottom;
+        const points = visiblePoints();
+        const endTrace = Math.min(traceLength(), startTrace + points);
+        const scaleMax = maxSignal(chrom, startTrace, endTrace);
+
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = "#101214";
+        ctx.fillRect(0, 0, width, height);
+        function shadeTraceRegions(regions, color) {
+            const basePos = chrom.basePos || [];
+            (regions || []).forEach((region) => {
+                const leftIndex = Math.max(0, Number(region.start || 0));
+                const rightIndex = Math.min(basePos.length - 1, Number(region.end || 0));
+                if (rightIndex < leftIndex) return;
+                const leftTrace = basePos[leftIndex];
+                const rightTrace = basePos[rightIndex];
+                if (rightTrace < startTrace || leftTrace > endTrace) return;
+                const x1 = Math.max(0, (leftTrace - startTrace) / points * width);
+                const x2 = Math.min(width, (rightTrace - startTrace) / points * width);
+                ctx.fillStyle = color;
+                ctx.fillRect(x1, top - 28, Math.max(3, x2 - x1), plotHeight + 44);
+            });
+        }
+        shadeTraceRegions(activeRead().intermediateConfidenceRegions, "rgba(255, 209, 102, .11)");
+        shadeTraceRegions(activeRead().confidenceRegions, "rgba(154, 161, 169, .34)");
+
+        ctx.strokeStyle = "#2d353d";
+        ctx.lineWidth = 1;
+        ctx.fillStyle = "#8fa0b2";
+        ctx.font = "12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+        for (let i = Math.ceil(startTrace / 100) * 100; i < endTrace; i += 100) {
+            const x = (i - startTrace) / points * width;
+            ctx.beginPath();
+            ctx.moveTo(x, top - 20);
+            ctx.lineTo(x, height - bottom + 16);
+            ctx.stroke();
+            ctx.fillText(String(i), x + 4, height - 10);
+        }
+
+        const basePos = chrom.basePos || [];
+        const baseCalls = chrom.baseCalls || [];
+        const qualNums = chrom.qualNums || [];
+        ctx.font = "15px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+        for (let i = 0; i < basePos.length; i++) {
+            const pos = basePos[i];
+            if (pos < startTrace || pos > endTrace) continue;
+            const x = (pos - startTrace) / points * width;
+            const base = baseCalls[i] || "";
+            const q = qualNums[i];
+            ctx.fillStyle = base === "A" ? "#23d03f" : base === "C" ? "#7fa1ff" : base === "G" ? "#e6e6e6" : base === "T" ? "#ff3b30" : "#aab4be";
+            ctx.fillText(base, x - 4, 24);
+            if (q !== undefined) {
+                ctx.fillStyle = q >= 30 ? "#5bd475" : q >= 20 ? "#ffc107" : "#ff6b7a";
+                ctx.fillRect(x - 3, 32, 6, 4);
+            }
+        }
+
+        channelConfig.forEach(([key, color]) => {
+            const trace = chrom[key] || [];
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 1.3;
+            ctx.beginPath();
+            let hasPoint = false;
+            for (let i = startTrace; i < endTrace && i < trace.length; i++) {
+                const x = (i - startTrace) / points * width;
+                const y = top + plotHeight - (trace[i] / scaleMax * plotHeight);
+                if (!hasPoint) {
+                    ctx.moveTo(x, y);
+                    hasPoint = true;
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            ctx.stroke();
+        });
+
+        if (selectedTraceBase && selectedTraceBase.readName === activeRead().name && selectedTraceBase.tracePos >= startTrace && selectedTraceBase.tracePos <= endTrace) {
+            const x = (selectedTraceBase.tracePos - startTrace) / points * width;
+            ctx.strokeStyle = "#ffc107";
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(x, top - 12);
+            ctx.lineTo(x, height - bottom + 8);
+            ctx.stroke();
+        }
+
+        ctx.strokeStyle = "#8fa0b2";
+        ctx.beginPath();
+        ctx.moveTo(0, top + plotHeight);
+        ctx.lineTo(width, top + plotHeight);
+        ctx.stroke();
+        const selectedText = selectedTraceBase && selectedTraceBase.readName === activeRead().name
+            ? ` | selected plasmid bp ${selectedTraceBase.referenceCoordinate + 1}, read base ${selectedTraceBase.baseIndex + 1}${selectedTraceBase.qualityText}`
+            : "";
+        status.textContent = `${activeRead().name} | ${calledBaseCount()} called bases | ${autoscaled ? "autoscaled" : "standard scale"}${selectedText}`;
+    }
+    function setStart(next) {
+        startTrace = Math.max(0, Math.min(Math.round(next), Math.max(0, traceLength() - visiblePoints())));
+        slider.value = startTrace;
+        drawTrace();
+    }
+
+    let dragging = false;
+    let dragX = 0;
+    let dragStart = 0;
+    wrap.addEventListener("pointerdown", function (event) {
+        dragging = true;
+        dragX = event.clientX;
+        dragStart = startTrace;
+        hideTraceTooltip();
+        wrap.setPointerCapture(event.pointerId);
+    });
+    wrap.addEventListener("pointermove", function (event) {
+        if (dragging) {
+            const dx = event.clientX - dragX;
+            setStart(dragStart - dx / wrap.getBoundingClientRect().width * visiblePoints());
+            return;
+        }
+        showTraceTooltip(event);
+    });
+    wrap.addEventListener("pointerup", function () {
+        dragging = false;
+    });
+    wrap.addEventListener("pointerleave", function () {
+        dragging = false;
+        hideTraceTooltip();
+    });
+    wrap.addEventListener("wheel", function (event) {
+        event.preventDefault();
+        setStart(startTrace + Math.sign(event.deltaY) * visiblePoints() * 0.08);
+    }, { passive: false });
+    slider.addEventListener("input", function () {
+        setStart(Number(slider.value));
+    });
+    zoom.addEventListener("input", function () {
+        setStart(startTrace);
+    });
+    select.addEventListener("change", function () {
+        readIndex = Number(select.value);
+        startTrace = 0;
+        drawTrace();
+    });
+    autoscaleBtn.addEventListener("click", function () {
+        autoscaled = true;
+        autoscaleBtn.classList.add("active");
+        standardBtn.classList.remove("active");
+        drawTrace();
+    });
+    standardBtn.addEventListener("click", function () {
+        autoscaled = false;
+        standardBtn.classList.add("active");
+        autoscaleBtn.classList.remove("active");
+        drawTrace();
+    });
+    function qualityLabel(quality) {
+        if (quality === null || quality === undefined) return "Q not available";
+        if (quality >= 30) return `Q${quality} high`;
+        if (quality >= 20) return `Q${quality} usable`;
+        return `Q${quality} low`;
+    }
+    function nearestBaseIndex(tracePosition) {
+        const basePos = activeChrom().basePos || [];
+        if (!basePos.length) return null;
+        let bestIndex = 0;
+        let bestDistance = Math.abs(basePos[0] - tracePosition);
+        for (let i = 1; i < basePos.length; i++) {
+            const distance = Math.abs(basePos[i] - tracePosition);
+            if (distance < bestDistance) {
+                bestIndex = i;
+                bestDistance = distance;
+            }
+        }
+        return bestDistance <= Math.max(18, visiblePoints() * 0.015) ? bestIndex : null;
+    }
+    function showTraceTooltip(event) {
+        if (!tooltip) return;
+        const rect = wrap.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const tracePosition = startTrace + x / Math.max(1, rect.width) * visiblePoints();
+        const baseIndex = nearestBaseIndex(tracePosition);
+        if (baseIndex === null) {
+            hideTraceTooltip();
+            return;
+        }
+        const chrom = activeChrom();
+        const base = (chrom.baseCalls || [])[baseIndex] || "";
+        const quality = (chrom.qualNums || [])[baseIndex];
+        const lowRegion = (activeRead().confidenceRegions || []).find((region) => baseIndex >= Number(region.start) && baseIndex <= Number(region.end));
+        const midRegion = (activeRead().intermediateConfidenceRegions || []).find((region) => baseIndex >= Number(region.start) && baseIndex <= Number(region.end));
+        const region = lowRegion || midRegion;
+        const regionText = region ? ` | ${region.level}: ${region.start_display}..${region.end_display}, ${region.length} bp` : "";
+        tooltip.textContent = `Base ${baseIndex + 1}: ${base} | ${qualityLabel(quality)}${regionText}`;
+        tooltip.style.display = "block";
+        tooltip.style.left = `${Math.min(rect.width - tooltip.offsetWidth - 6, Math.max(6, x + 10))}px`;
+        tooltip.style.top = `${Math.max(6, event.clientY - rect.top - 34)}px`;
+    }
+    function hideTraceTooltip() {
+        if (tooltip) tooltip.style.display = "none";
+    }
+    window.WeaverSangerTrace = {
+        focusReadBase: function (readName, baseIndex, referenceCoordinate) {
+            const nextReadIndex = reads.findIndex((read) => read.name === readName);
+            if (nextReadIndex === -1) return;
+            readIndex = nextReadIndex;
+            select.value = String(readIndex);
+            const chrom = activeChrom();
+            const basePos = chrom.basePos || [];
+            const baseCalls = chrom.baseCalls || [];
+            const qualNums = chrom.qualNums || [];
+            const tracePos = Number(basePos[baseIndex]);
+            if (Number.isNaN(tracePos)) return;
+            const quality = qualNums[baseIndex];
+            selectedTraceBase = {
+                readName: activeRead().name,
+                baseIndex: baseIndex,
+                tracePos: tracePos,
+                referenceCoordinate: referenceCoordinate,
+                base: baseCalls[baseIndex] || "",
+                qualityText: quality === null || quality === undefined ? "" : ` Q${quality}`,
+            };
+            panel.scrollIntoView({ behavior: "smooth", block: "start" });
+            setStart(tracePos - visiblePoints() / 2);
+        }
+    };
+    window.addEventListener("resize", drawTrace);
+    drawTrace();
+})();
+</script>
+
+{% endif %}
+
 {% else %}
 <div class="alert alert-warning">No plasmid found.</div>
 {% endif %}

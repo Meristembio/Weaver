@@ -1,8 +1,7 @@
-{% extends "inventory/parts/base.html" %}
+{% extends "organization/parts/project-base.html" %}
 {% block content %}
 {% if project %}
-{% include "./parts/project-header.html" %}
-<div class="alert alert-danger">WARNING: If confirm, all plasmids, glycerolstocks, recipes and primers from this project will also be deleted.</div>
+<div class="alert alert-danger">WARNING: If confirm, all plasmids, glycerolstocks and recipes from this project will also be deleted.</div>
 <div id="form-inventory">
     {% include "inventory/parts/inventory_delete_form.html" %}
 </div>

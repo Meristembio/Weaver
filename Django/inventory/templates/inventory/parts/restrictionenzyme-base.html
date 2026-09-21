@@ -1,9 +1,13 @@
 {% extends "inventory/parts/base.html" %}
 
-{% if primer %}
+{% if restrictionenzyme %}
 {% block header_object_type %}Restriction Enzyme{% endblock %}
 {% block header_object_name %}{{restrictionenzyme}}{% endblock %}
 {% block header_object_links %}
         <a href="{% url 'restrictionenzymes' %}" class="btn btn-outline-warning" role="button"><i class="bi bi-arrow-return-left"></i></a>
+        <a href="{% url 'restrictionenzyme_edit' pk=restrictionenzyme.id %}" class="btn btn-outline-primary ms-2" role="button"><i class="bi bi-pencil"></i></a>
+        {% if user_can_edit_restrictionenzyme and request.resolver_match.url_name != 'restrictionenzyme_delete' %}
+        <a href="{% url 'restrictionenzyme_delete' pk=restrictionenzyme.id %}" class="btn btn-outline-danger ms-2" role="button"><i class="bi bi-trash"></i></a>
+        {% endif %}
 {% endblock %}
 {% endif %}

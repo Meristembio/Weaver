@@ -10,6 +10,7 @@ from .models import Location
 from .models import Box
 from .models import RestrictionEnzyme
 from .models import Primer
+from .models import Experiment
 
 admin.site.register(GlycerolStock)
 admin.site.register(Strain)
@@ -21,6 +22,7 @@ admin.site.register(Location)
 admin.site.register(Box)
 admin.site.register(RestrictionEnzyme)
 admin.site.register(Primer)
+admin.site.register(Experiment)
 
 admin.site.site_header = 'Weaver. Admin'
 admin.site.site_title = 'Weaver'

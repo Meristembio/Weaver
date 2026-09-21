@@ -11,8 +11,11 @@ a:active, a:focus {
   border: none;
   -moz-outline-style: none;
 }
-a.btn:hover{
-text-decoration: none;
+a,
+a.btn:hover,
+a.btn-group:hover .btn,
+.btn:hover{
+text-decoration: none !important;
 }
 .btn {
     margin-bottom: .2rem;
@@ -45,7 +48,7 @@ video {
 
 .diagonal-box {
  	position: relative;
- 	background-image: linear-gradient(45deg, #654ea3, #eaafc8);
+ 	background-image: linear-gradient(45deg, #654ea3 0%, #eaafc8 100%);
 }
 
 .diagonal-box:before {

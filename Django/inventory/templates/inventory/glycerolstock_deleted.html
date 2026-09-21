@@ -4,5 +4,16 @@
 {% block header_object_name %}Deleted{% endblock %}
 
 {% block content %}
-<div class="alert alert-danger">Glycerol Stock has been deleted</div>
+<div class="alert alert-danger d-flex align-items-center justify-content-between gap-3">
+    <span>Glycerol Stock has been deleted</span>
+    {% if box %}
+    <a class="btn btn-outline-light text-nowrap" href="{% url 'glycerolstock_box' box_id=box.id %}">
+        <i class="bi bi-arrow-return-left me-1"></i> Back to box
+    </a>
+    {% else %}
+    <a class="btn btn-outline-light text-nowrap" href="{% url 'glycerolstock_boxes' %}">
+        <i class="bi bi-boxes me-1"></i> Back to boxes
+    </a>
+    {% endif %}
+</div>
 {% endblock %}

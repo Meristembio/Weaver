@@ -1,0 +1,30 @@
+.download-links, #build-enzymes {
+  display: none;
+}
+
+.plasmid-pagination {
+  gap: 0 !important;
+}
+
+.plasmid-pagination .page-item {
+  margin: 0 !important;
+}
+
+.plasmid-pagination .page-item:not(:first-child) .page-link {
+  margin-left: -1px !important;
+}
+
+.plasmid-pagination .page-link {
+  margin-bottom: 0 !important;
+  border-radius: 0 !important;
+}
+
+.plasmid-pagination .page-item:first-child .page-link {
+  border-top-left-radius: var(--bs-pagination-border-radius) !important;
+  border-bottom-left-radius: var(--bs-pagination-border-radius) !important;
+}
+
+.plasmid-pagination .page-item:last-child .page-link {
+  border-top-right-radius: var(--bs-pagination-border-radius) !important;
+  border-bottom-right-radius: var(--bs-pagination-border-radius) !important;
+}

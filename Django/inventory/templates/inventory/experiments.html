@@ -1,0 +1,73 @@
+{% extends "inventory/parts/base.html" %}
+
+{% block header_object_name %}Experiments{% endblock %}
+
+{% block content %}
+<style>
+    .experiment-archived {
+        border-color: var(--bs-secondary-border-subtle);
+        opacity: 0.82;
+    }
+
+    .experiment-archived > .accordion-header .accordion-button {
+        color: var(--bs-secondary-color);
+        background-color: var(--bs-tertiary-bg);
+    }
+</style>
+{% if can_manage_experiments %}
+<div class="d-flex justify-content-end mb-3">
+    <a class="btn btn-primary" href="{% url 'experiment_create' %}">
+        <i class="bi bi-plus-lg" aria-hidden="true"></i> New experiment
+    </a>
+</div>
+{% endif %}
+{% if experiment_groups %}
+    <div class="accordion" id="accordionProjects">
+    {% for group in experiment_groups %}
+        <div class="accordion-item">
+            <h2 class="accordion-header">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-p{{group.id}}" aria-expanded="true" aria-controls="collapse-p{{group.id}}">
+                    {% if group.id == 'unassigned' %}
+                    <strong>{{group.name}}</strong>
+                    {% else %}
+                    Project <strong class="ms-1">{{group.name}}</strong>
+                    {% endif %}
+                </button>
+            </h2>
+            <div id="collapse-p{{group.id}}" class="accordion-collapse collapse show" data-bs-parent="#accordionProjects">
+                <div class="accordion-body">
+                    <div class="accordion" id="accordionExperiments">
+                        {% for experiment in group.experiments %}
+                        <div class="experiment accordion-item{% if experiment.archived %} experiment-archived{% endif %}">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-e{{experiment.id}}" aria-expanded="false" aria-controls="collapse-e{{experiment.id}}">
+                                   Experiment <strong class="ms-1">{{experiment}}</strong>
+                                   {% if experiment.archived %}<span class="badge text-bg-secondary ms-2"><i class="bi bi-archive" aria-hidden="true"></i> Archived</span>{% endif %}
+                                </button>
+                            </h2>
+                            <div id="collapse-e{{experiment.id}}" class="accordion-collapse collapse" data-bs-parent="#accordionExperiments">
+                                <div class="accordion-body">
+                                    {% if experiment.can_manage %}
+                                    <div class="d-flex justify-content-end gap-2 mb-2">
+                                        <a class="btn btn-sm btn-outline-secondary" href="{% url 'experiment_edit' experiment.id %}">Edit experiment</a>
+                                        <a class="btn btn-sm btn-outline-danger" href="{% url 'experiment_delete' experiment.id %}">Delete</a>
+                                    </div>
+                                    {% endif %}
+                                    <div class="alert alert-light">
+                                        {{experiment.description}}
+                                    </div>
+                                    <div class="weaver-experiment-flow mb-4" data-experiment-id="{{experiment.id}}"></div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+    </div>
+{% else %}
+<div class="alert alert-warning">No experiments found.</div>
+{% endif %}
+{% endblock %}

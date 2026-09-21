@@ -1,0 +1,47 @@
+<div class="inventory-form-panel {{form_panel_class}}">
+    <form method="post" enctype="multipart/form-data" class="default-style inventory-form-card">
+        {% csrf_token %}
+        <div class="inventory-form-intro">
+            <div>
+                <span class="inventory-form-kicker">{{form_section_label|default:"Inventory"}}</span>
+                <h2>{{form_title|default:"Edit record"}}</h2>
+                {% if form_description %}<p>{{form_description}}</p>{% endif %}
+            </div>
+            <i class="bi {{form_icon|default:"bi-pencil-square"}} inventory-form-intro-icon" aria-hidden="true"></i>
+        </div>
+
+        {% if form.non_field_errors %}
+        <div class="alert alert-warning inventory-form-errors">
+            {{form.non_field_errors}}
+        </div>
+        {% endif %}
+
+        {% for hidden in form.hidden_fields %}{{hidden}}{% endfor %}
+        <div class="inventory-form-fields">
+            {% for field in form.visible_fields %}
+            <div class="inventory-form-field inventory-form-field-{{field.name}}">
+                <label for="{{field.id_for_label}}">
+                    {{field.label}}{% if field.field.required %}<span class="inventory-form-required" aria-hidden="true">*</span>{% endif %}
+                </label>
+                {{field}}
+                {% if field.help_text %}<div class="inventory-form-help">{{field.help_text|safe}}</div>{% endif %}
+                {% for error in field.errors %}<div class="invalid-feedback d-block">{{error}}</div>{% endfor %}
+            </div>
+            {% endfor %}
+            {% if form_extra_template %}
+            {% include form_extra_template %}
+            {% endif %}
+        </div>
+
+        <div class="inventory-form-footer">
+            {% if cancel_url %}
+            <a href="{{cancel_url}}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> {{cancel_label|default:"Back"}}
+            </a>
+            {% else %}<span></span>{% endif %}
+            <button type="submit" class="btn btn-primary">
+                <i class="bi {{submit_icon|default:"bi-check-lg"}} me-1"></i> {{submit_label|default:"Save changes"}}
+            </button>
+        </div>
+    </form>
+</div>

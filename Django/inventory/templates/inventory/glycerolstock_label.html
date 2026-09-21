@@ -5,18 +5,22 @@
 {% block content %}
 <link rel="stylesheet" type="text/css" media="print" href="{% static 'css/style_inventory_print.css' %}"/>
 {% if glycerolstock %}
-<div id="label">
-    <div id="label-main">
-        <div id="label-info">
-            <p id="label-name">
-                {{glycerolstock.strain}}<br/>{% if glycerolstock.plasmid %}{{glycerolstock.plasmid.name}}{% endif %}
-            </p>
+<div class="glycerolstock label mb-4">
+    <div class="label-main">
+        <div class="label-info">
             {% if glycerolstock.plasmid %}
-            <p id="label-id">
+            <p class="label-id-colony">
                 <span class="label-name">ID</span>
                 <span class="label-value">{{glycerolstock.plasmid.idx}}</span>
+                ~ <span class="label-value">{% if glycerolstock.plasmid %}{{glycerolstock.plasmid.working_colony_text_short}}{% endif %}</span>
             </p>
             {% endif %}
+            <p id="label-name">
+                {% if glycerolstock.plasmid %}{{glycerolstock.plasmid.name}}{% endif %}
+            </p>
+            <p id="label-strain">
+                {{glycerolstock.strain}}
+            </p>
             <p id="label-resistance">
                     {% if resistantes_strain_human %}
                         <span class="label-name">Strain Marker</span>
@@ -27,35 +31,20 @@
                         <span class="label-value">{{ resistantes_human }}</span><br/>
                     {% endif %}
             </p>
-            <p id="label-colony">
-                <span class="label-name">Colony</span>
-                <span class="label-value">{% if glycerolstock.plasmid %}{{glycerolstock.plasmid.working_colony_text_short}}{% endif %}</span>
-            </p>
             <p id="label-box">
-                <span class="label-name">Box</span>
-                <span class="label-value">{% if glycerolstock.box_column and glycerolstock.box_row %}{{glycerolstock.box_row}}{{glycerolstock.box_column}}/{% endif %}{{glycerolstock.box.name}}</span>
+                <span class="label-value">{% if glycerolstock.box_column and glycerolstock.box_row %}{{glycerolstock.box_row}}{{glycerolstock.box_column}} @ {% endif %}{{glycerolstock.box.name}}</span>
             </p>
             <p id="label-location">
-                <span class="label-name">Location</span>
                 <span class="label-value">{{glycerolstock.box.location}}</span>
             </p>
             <p id="label-created">
-                <span class="label-name">Date</span>
                 <span class="label-value">{{glycerolstock.created_on}}</span>
             </p>
-            <p id="label-qr_id">
-                {{glycerolstock.qr_id}}
-            </p>
         </div>
-        <div id="label-qrcode"></div>
     </div>
 </div>
 <button id="label-print-button" type="button" class="btn btn-info" onclick="window.print();return false;">Print label
 </button>
-
-<script type="text/javascript">
-new QRCode(document.getElementById("label-qrcode"), "{{glycerolstock.qr_id}}");
-</script>
 {% else %}
 <div class="alert alert-warning">No glycerolstock found.</div>
 {% endif %}
